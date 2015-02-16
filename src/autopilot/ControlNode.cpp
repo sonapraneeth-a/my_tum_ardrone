@@ -38,6 +38,11 @@
 #include "KI/KILand.h"
 #include "KI/KIProcedure.h"
 
+/**
+CHANGES MADE
+*/
+#include "KI/KIAutoScaleInit.h"
+
 using namespace tum_ardrone;
 using namespace std;
 
@@ -193,6 +198,24 @@ void ControlNode::popNextCommand(const tum_ardrone::filter_stateConstPtr statePt
 			currentKI->setPointers(this,&controller);
 			commandUnderstood = true;
 		}
+
+		/**
+		CHANGES MADE
+		*/
+		//autoScaleInit
+		if(sscanf(command.c_str(), "autoScaleInit %f %f %f %f %f %f", &parameters[0], &parameters[1], &parameters[2], &parameters[3], &parameters[4], &parameters[5]) == 6) {
+			currentKI = new KIAutoScaleInit(true, parameters[0], parameters[1], parameters[2], parameters[3], true, parameters[4], parameters[5]);
+			currentKI->setPointers(this, &controller);
+			commandUnderstood = true;
+		}
+
+		else if(sscanf(command.c_str(), "autoScaleTakeover %f %f %f %f %f %f", &parameters[0], &parameters[1], &parameters[2], &parameters[3], &parameters[4], &parameters[5]) == 6) {
+			currentKI = new KIAutoScaleInit(true, parameters[0], parameters[1], parameters[2], parameters[3], false, parameters[4], parameters[5]);
+			currentKI->setPointers(this, &controller);
+			commandUnderstood = true;
+		}
+
+
 
 		// takeoff
 		else if(command == "takeoff")

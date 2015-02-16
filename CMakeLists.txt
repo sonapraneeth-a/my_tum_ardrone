@@ -155,6 +155,7 @@ set(AUTOPILOT_SOURCE_FILES
 	src/autopilot/KI/KILand.cpp
 	src/autopilot/KI/KIAutoInit.cpp
 	src/autopilot/KI/KIFlyTo.cpp
+  src/autopilot/KI/KIAutoScaleInit.cpp
 )
 set(AUTOPILOT_HEADER_FILES        
 	src/autopilot/ControlNode.h
@@ -163,6 +164,7 @@ set(AUTOPILOT_HEADER_FILES
 	src/autopilot/KI/KIAutoInit.h
 	src/autopilot/KI/KIFlyTo.h
 	src/autopilot/KI/KIProcedure.h
+  src/autopilot/KI/KIAutoScaleInit.h
 )
 
 # build!

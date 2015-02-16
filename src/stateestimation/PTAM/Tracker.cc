@@ -763,7 +763,7 @@ void Tracker::TrackMap()
       v6LastUpdate = v6Update;
     };
   
-  
+  // MAP POINTS RENDERED ONTO IMAGE
   if(mbDraw)
     {
       glPointSize(6);

@@ -77,6 +77,10 @@ private:
 	double targetSetAtClock;
 	ControlCommand hoverCommand;
 
+	/**
+	CHANGES MADE
+	*/
+	float controlCommandMultiplier;
 
 
 	// filled with info (on update)
@@ -99,6 +103,11 @@ public:
 	void clearTarget();
 	DronePosition getCurrentTarget();
 	ControlCommand getLastControl();
+
+	/**
+	CHANGES MADE
+	*/
+	void setControlCommandMultiplier(float num);
 
 	// gets last error
 	TooN::Vector<4> getLastErr();

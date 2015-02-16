@@ -35,6 +35,11 @@ DroneController::DroneController(void)
 	hoverCommand.gaz = hoverCommand.pitch = hoverCommand.roll = hoverCommand.yaw = 0;
 
 	node = NULL;
+
+	/**
+	CHANGES MADE
+	*/
+	controlCommandMultiplier = 0.5;
 }
 
 
@@ -243,4 +248,12 @@ TooN::Vector<4> DroneController::getLastErr()
 ControlCommand DroneController::getLastControl()
 {
 	return lastSentControl;
+}
+
+
+/**
+CHANGES MADE
+*/
+void DroneController::setControlCommandMultiplier (float num) {
+	controlCommandMultiplier = num;
 }

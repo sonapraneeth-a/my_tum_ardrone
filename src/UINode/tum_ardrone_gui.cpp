@@ -59,7 +59,13 @@ tum_ardrone_gui::tum_ardrone_gui(QWidget *parent)
 {
 	ui.setupUi(this);
 	rosThread = NULL;
-	sensGaz = sensYaw = sensRP = 1;
+	//sensGaz = sensYaw = sensRP = 1;
+	/**
+	CHANGES MADE
+	*/
+
+	sensGaz = sensYaw = sensRP = 0.5;
+
 	currentControlSource = CONTROL_NONE;
 	useHovering = true;
 
@@ -101,6 +107,8 @@ tum_ardrone_gui::tum_ardrone_gui(QWidget *parent)
     ui.comboBoxLoadFile->addItem(QString(""), QVariant());
     for(unsigned int i=0;i<files.size();i++)
     	ui.comboBoxLoadFile->addItem(QString(files[i].c_str()), QVariant());
+
+    //controlCommandMultiplier = 0.5;
 
 }
 

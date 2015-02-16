@@ -102,6 +102,7 @@ public:
     ControlSource currentControlSource;
     double sensGaz, sensYaw, sensRP;
     bool useHovering;
+    //float controlCommandMultiplier;
 
 protected:
 
