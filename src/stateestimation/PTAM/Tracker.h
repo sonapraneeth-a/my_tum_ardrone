@@ -27,6 +27,12 @@
 #include "Relocaliser.h"
 #include "../Predictor.h"
 
+// MY CHANGES
+// ros specific additions
+#include "ros/ros.h"
+#include "tum_ardrone/keypoint_coord.h"
+//
+
 #include <sstream>
 #include <vector>
 #include <list>
@@ -153,6 +159,13 @@ protected:
   static void GUICommandCallBack(void* ptr, std::string sCommand, std::string sParams);
   struct Command {std::string sCommand; std::string sParams; };
   std::vector<Command> mvQueuedCommands;
+
+
+  // MY CHANGES
+  // ros specific additions
+  ros::NodeHandle nh_;
+  ros::Publisher keypoint_coord_pub;
+  std::string output_channel;
 };
 
 #endif

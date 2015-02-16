@@ -20,6 +20,13 @@
 
 #include "settingsCustom.h"
 
+// MY CHANGES
+// ros specific additions
+#include "ros/ros.h"
+#include "tum_ardrone/keypoint_coord.h"
+//
+
+
 using namespace CVD;
 using namespace std;
 using namespace GVars3;
@@ -42,6 +49,11 @@ Tracker::Tracker(ImageRef irVideoSize, const ATANCamera &c, Map &m, MapMaker &mm
   mpSBILastFrame = NULL;
   mpSBIThisFrame = NULL;
   mnLastKeyFrameDroppedClock = 0;
+
+  // MY CHANGES
+  // ros specific additions
+  output_channel = nh_.resolveName("keypoint_coord");
+  keypoint_coord_pub = nh_.advertise<tum_ardrone::keypoint_coord>(output_channel, 1);
 
 
   // Most of the initialisation is done in Reset()
@@ -764,6 +776,11 @@ void Tracker::TrackMap()
     };
   
   // MAP POINTS RENDERED ONTO IMAGE
+    // MY CHANGES
+    // ros specific additions
+  tum_ardrone::keypoint_coord c;
+  c.header.stamp = ros::Time().now();
+  c.num = 0;
   if(mbDraw)
     {
       glPointSize(6);
@@ -779,10 +796,20 @@ void Tracker::TrackMap()
 	    continue;
 	  glColor(gavLevelColors[(*it)->nSearchLevel]);
 	  glVertex((*it)->v2Image);
+	  
+	  c.num++;
+	  c.x_img.push_back((float) (*it)->v2Image[0]);
+	  c.y_img.push_back((float) (*it)->v2Image[1]);
+	  c.x_w.push_back((float) (*it)->Point.v3WorldPos[0]);
+	  c.y_w.push_back((float) (*it)->Point.v3WorldPos[1]);
+	  c.z_w.push_back((float) (*it)->Point.v3WorldPos[2]);
 	}
+	  keypoint_coord_pub.publish(c);
       glEnd();
       glDisable(GL_BLEND);
     }
+
+
   /*
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
