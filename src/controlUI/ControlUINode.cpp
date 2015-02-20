@@ -22,6 +22,8 @@ ControlUINode::ControlUINode() {
 	tum_ardrone_sub = nh_.subscribe(command_channel, 50, &ControlUINode::comCb, this);
 
 	image_gui = new ImageView(this);
+
+	ransacVerbose = false;
 }
 
 ControlUINode::~ControlUINode() {
@@ -60,7 +62,7 @@ void ControlUINode::load3dPoints (std::vector<float> x_w, std::vector<float> y_w
 }
 
 void ControlUINode::fitPlane3d () {
-	_3d_plane = ransacPlaneFit(_3d_points);
+	_3d_plane = ransacPlaneFit(_3d_points, ransacVerbose);
 }
 
 void ControlUINode::Loop () {

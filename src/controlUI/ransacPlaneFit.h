@@ -38,4 +38,4 @@ bool ransac3Dplane_degenerate(
 	const CMatrixDouble &allData,
 	const mrpt::vector_size_t &useIndices );
 
-std::vector<float> ransacPlaneFit(std::vector<std::vector<float> > points);
+std::vector<float> ransacPlaneFit(std::vector<std::vector<float> > points, bool verbose);

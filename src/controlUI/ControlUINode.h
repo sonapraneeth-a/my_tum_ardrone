@@ -38,6 +38,8 @@ private:
 	std::string keypoint_channel;
 	std::string command_channel;
 
+	bool ransacVerbose;
+
 
 public:
 

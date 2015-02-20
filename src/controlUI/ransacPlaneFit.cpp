@@ -105,7 +105,7 @@ bool ransac3Dplane_degenerate(
 // ------------------------------------------------------
 //				TestRANSAC
 // ------------------------------------------------------
-std::vector<float> ransacPlaneFit(std::vector<std::vector<float> > points)
+std::vector<float> ransacPlaneFit(std::vector<std::vector<float> > points, bool verbose)
 {
 	randomGenerator.randomize();
 
@@ -165,11 +165,13 @@ std::vector<float> ransacPlaneFit(std::vector<std::vector<float> > points)
 			false   // Verbose
 			);
 
-	//cout << "Computation time: " << tictac.Tac()*1000.0/TIMES << " ms" << endl;
+	if(verbose) {
+		cout << "Computation time: " << tictac.Tac()*1000.0/TIMES << " ms" << endl;
+		cout << "RANSAC finished: Best model: " << best_model << endl;
+	}
 
 	ASSERT_(size(best_model,1)==1 && size(best_model,2)==4)
 
-	//cout << "RANSAC finished: Best model: " << best_model << endl;
 
 
 	std::vector<float> result;
