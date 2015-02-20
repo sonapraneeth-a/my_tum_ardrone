@@ -8,6 +8,7 @@ This node creates a GUI which would enable the user to control the drone
 
 #include "ros/ros.h"
 #include "ControlUINode.h"
+#include "ImageView.h"
 
 unsigned int ros_header_timestamp_base = 0;
 
@@ -19,7 +20,11 @@ int main(int argc, char **argv)
 
 	ControlUINode controlUI;
 
+	controlUI.image_gui->startSystem();
+
 	controlUI.Loop();
+
+	controlUI.image_gui->stopSystem();
 
 	return 0;
 }

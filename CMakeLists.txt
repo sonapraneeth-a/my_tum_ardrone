@@ -216,14 +216,21 @@ add_dependencies(drone_gui thirdparty ${PROJECT_NAME}_gencpp ${PROJECT_NAME}_gen
 set(CONTROLUI_SOURCE_FILES
     src/controlUI/main_controlUI.cpp
     src/controlUI/ControlUINode.cpp
-    src/controlUI/ransacPlaneFit.cpp)
+    src/controlUI/ransacPlaneFit.cpp
+    src/controlUI/GLWindow2.cc
+    src/controlUI/GLWindowMenu.cc
+    src/controlUI/ImageView.cpp)
 
 set(CONTROLUI_HEADER_FILES
     src/controlUI/ControlUINode.h
-    src/controlUI/ransacPlaneFit.h)
+    src/controlUI/ransacPlaneFit.h
+    src/controlUI/MouseKeyHandler.h
+    src/controlUI/GLWindow2.h
+    src/controlUI/GLWindowMenu.h
+    src/controlUI/ImageView.h)
 
 find_package(MRPT REQUIRED slam;vision;gui;topography)
 
 add_executable(drone_controlUI ${CONTROLUI_SOURCE_FILES} ${CONTROLUI_HEADER_FILES})
-target_link_libraries(drone_controlUI ${MRPT_LIBS} ${catkin_LIBRARIES})
+target_link_libraries(drone_controlUI ${MRPT_LIBS} ${PTAM_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(drone_controlUI thirdparty ${PROJECT_NAME}_gencpp ${PROJECT_NAME}_gencfg)

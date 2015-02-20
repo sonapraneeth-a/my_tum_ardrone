@@ -14,6 +14,7 @@ Author : Anirudh Vemula
 #include <vector>
 #include <string>
 
+class ImageView;
 
 class ControlUINode
 {
@@ -37,7 +38,10 @@ private:
 	std::string keypoint_channel;
 	std::string command_channel;
 
+
 public:
+
+	ImageView *image_gui;
 
 	ControlUINode ();
 	~ControlUINode ();

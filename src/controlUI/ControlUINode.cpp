@@ -7,6 +7,7 @@ Author : Anirudh Vemula
 #include "ros/ros.h"
 #include "tum_ardrone/keypoint_coord.h"
 #include "ransacPlaneFit.h"
+#include "ImageView.h"
 
 #include <string>
 
@@ -19,6 +20,8 @@ ControlUINode::ControlUINode() {
 	keypoint_coord_sub = nh_.subscribe(keypoint_channel, 10, &ControlUINode::keyPointDataCb, this);
 	tum_ardrone_pub = nh_.advertise<std_msgs::String>(command_channel, 50);
 	tum_ardrone_sub = nh_.subscribe(command_channel, 50, &ControlUINode::comCb, this);
+
+	image_gui = new ImageView(this);
 }
 
 ControlUINode::~ControlUINode() {

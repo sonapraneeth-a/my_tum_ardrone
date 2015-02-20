@@ -162,14 +162,14 @@ std::vector<float> ransacPlaneFit(std::vector<std::vector<float> > points)
 			3,  // Minimum set of points
 			best_inliers,
 			best_model,
-			iters==0   // Verbose
+			false   // Verbose
 			);
 
-	cout << "Computation time: " << tictac.Tac()*1000.0/TIMES << " ms" << endl;
+	//cout << "Computation time: " << tictac.Tac()*1000.0/TIMES << " ms" << endl;
 
 	ASSERT_(size(best_model,1)==1 && size(best_model,2)==4)
 
-	cout << "RANSAC finished: Best model: " << best_model << endl;
+	//cout << "RANSAC finished: Best model: " << best_model << endl;
 
 
 	std::vector<float> result;
