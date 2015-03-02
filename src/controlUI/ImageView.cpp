@@ -29,6 +29,9 @@ ImageView::ImageView(ControlUINode *cnode) {
 	tum_ardrone_pub = nh_.advertise<std_msgs::String>(command_channel, 50);
 
 	node = cnode;
+
+	numPointsClicked = 0;
+	numKeyPointsDetected = 0;
 }
 
 ImageView::~ImageView() {
@@ -155,7 +158,42 @@ void ImageView::renderFrame() {
 	myGLWindow->SetupVideoOrtho();
 	myGLWindow->SetupVideoRasterPosAndZoom();
 
+	// render image from drone camera
 	glDrawPixels(mimFrameBW_workingCopy);
+
+	// render clicked points
+	glPointSize(6);
+	glEnable(GL_BLEND);
+	glEnable(GL_POINT_SMOOTH);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	/*glColor3f(1.0,0,0);
+	glBegin(GL_POINTS);
+	for (int i = 0; i < numPointsClicked; ++i)
+	{
+		glVertex2i(pointsClicked[i][0], pointsClicked[i][1]);
+	}
+	glEnd();*/
+	
+	// render detected keyPoints
+	glColor3f(0, 0, 1.0);
+	glBegin(GL_POINTS);
+	for (int i = 0; i < numKeyPointsDetected; ++i)
+	{
+		//glVertex2i(keyPointsNearest[i][0], keyPointsNearest[i][1]);
+		std::vector<int> p;
+		bool found = node->get2DPoint(keyPointsNearest[i], p);
+		if(found) {
+			//ROS_INFO("Original 3d Point is %f, %f, %f", keyPointsNearest[i][0], keyPointsNearest[i][1], keyPointsNearest[i][2]);
+			ROS_INFO("Point is %d, %d", p[0], p[1]);
+			glVertex2i(p[0], p[1]);
+		}
+		else {
+			//printf("not found");
+			ROS_INFO("Point not found in frame");
+		}
+	}
+	glEnd();
+	glDisable(GL_BLEND);
 
 	myGLWindow->swap_buffers();
 	myGLWindow->HandlePendingEvents();
@@ -170,22 +208,38 @@ void ImageView::on_mouse_down(CVD::ImageRef where, int state, int button) {
 	//double x = 4*(where.x/(double)this->myGLWindow->size().x - 0.5);
 	//double y = -4*(where.y/(double)this->myGLWindow->size().y - 0.5);
 
-	double x;
-	double y;
+	int x;
+	int y;
 
 	if(this->myGLWindow->size().x==640) {
 		x = where.x;
 	}
 	else if(this->myGLWindow->size().x!=0){
-		x = (640.0*where.x)/(this->myGLWindow->size().x);
+		x = (int)((640.0*where.x)/(this->myGLWindow->size().x));
 	}
 
 	if(this->myGLWindow->size().y==360) {
 		y = where.y;
 	}
 	else if(this->myGLWindow->size().y!=0){
-		y = (360.0*where.y)/(this->myGLWindow->size().y);
+		y = (int)((360.0*where.y)/(this->myGLWindow->size().y));
 	}
 
-	printf("X and Y of point clicked : (%.3f, %.3f)\n", x, y);
+	printf("X and Y of point clicked : (%d, %d)\n", x, y);
+
+	numPointsClicked++;
+	std::vector<int> v;
+	v.push_back(x);
+	v.push_back(y);
+	pointsClicked.push_back(v);
+
+	search(v);
+}
+
+
+void ImageView::search(std::vector<int> pt) {
+	std::vector<float> kp = node->searchNearest(pt);
+
+	keyPointsNearest.push_back(kp);
+	numKeyPointsDetected++;
 }

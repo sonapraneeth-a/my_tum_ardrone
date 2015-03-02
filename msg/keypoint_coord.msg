@@ -16,3 +16,7 @@ float32[] y_img
 float32[] x_w
 float32[] y_w
 float32[] z_w
+
+# level
+
+int32[] levels

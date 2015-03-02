@@ -21,6 +21,7 @@ camera feed of the drone and recording mouse clicks
 #include "MouseKeyHandler.h"
 #include "boost/thread.hpp"
 #include "std_msgs/String.h"
+#include <vector>
 
 class ControlUINode;
 
@@ -73,6 +74,15 @@ private:
 	//ControlUINode
 	ControlUINode *node;
 
+	int numPointsClicked;
+	int numKeyPointsDetected;
+
+	// 2d image points clicked
+	std::vector<std::vector<int> > pointsClicked;
+
+	// the 3d keypoints of control node for nearest keypoints
+	std::vector<std::vector<float> > keyPointsNearest;
+
 public:
 	ImageView(ControlUINode* node);
 	~ImageView();
@@ -93,6 +103,9 @@ public:
 
 	//the main rendering function
 	void renderFrame();
+
+	// search function : given a 2d image point searches for the nearest 2d keypoint in the same frame
+	void search(std::vector<int> pt);
 
 };
 

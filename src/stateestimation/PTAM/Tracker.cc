@@ -803,6 +803,7 @@ void Tracker::TrackMap()
 	  c.x_w.push_back((float) (*it)->Point.v3WorldPos[0]);
 	  c.y_w.push_back((float) (*it)->Point.v3WorldPos[1]);
 	  c.z_w.push_back((float) (*it)->Point.v3WorldPos[2]);
+    c.levels.push_back((*it)->nSearchLevel);
 	}
 	  keypoint_coord_pub.publish(c);
       glEnd();

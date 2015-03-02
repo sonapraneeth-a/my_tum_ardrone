@@ -30,6 +30,7 @@ private:
 
 	std::vector<std::vector<float> > _3d_points;
 	std::vector<std::vector<float> > _2d_points;
+	std::vector<int> _levels;
 	int numPoints;
 
 	std::vector<float> _3d_plane; // stored as a 4 length vector with constants a,b,c,d
@@ -39,6 +40,12 @@ private:
 	std::string command_channel;
 
 	bool ransacVerbose;
+
+	// distance between two 2d points
+	float distance(std::vector<int> pt_int, std::vector<float> pt_float);
+
+	// distance between two 3d points
+	float distance3D(std::vector<float> p1, std::vector<float> p2);
 
 
 public:
@@ -65,10 +72,19 @@ public:
 					  std::vector<float> t_3dPoints_y,
 					  std::vector<float> t_3dPoints_z);
 
-
+	void loadLevels (std::vector<int> levels);
 
 	// Algorithmic functions
 	void fitPlane3d ();
+
+	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
+	std::vector<float> searchNearest(std::vector<int> pt);
+
+	// Get 2d position of a key point given its 3d position. Return empty vector if keypoint not found in the current frame
+	bool get2DPoint(std::vector<float> pt, std::vector<int> &p);
+
+	// Equality function for 3d keypoints. Does it need to be exact equality? Or some heuristic based distance threshold
+	bool equal(std::vector<float> p1, std::vector<float> p2);
 };
 
 
