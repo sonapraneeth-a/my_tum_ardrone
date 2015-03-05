@@ -20,7 +20,7 @@ Author: Anirudh Vemula
 ImageView::ImageView(ControlUINode *cnode) {
 	frameWidth = frameHeight = 0;
 
-	video_channel = nh_.resolveName("ardrone/image_raw");
+	video_channel = nh_.resolveName("ardrone/image_raw"); // Change this for undistorted image
 	command_channel = nh_.resolveName("tum_ardrone/com");
 
 	vid_sub = nh_.subscribe(video_channel, 10, &ImageView::vidCb, this);
@@ -33,7 +33,7 @@ ImageView::ImageView(ControlUINode *cnode) {
 	numPointsClicked = 0;
 	numKeyPointsDetected = 0;
 
-	considerAllLevels = true;
+	considerAllLevels = false;
 }
 
 ImageView::~ImageView() {
@@ -217,10 +217,14 @@ void ImageView::on_key_down(int key) {
 	{
 		// node->publishCommand("i delete");
 		// Need to delete the last point
-		numPointsClicked--;
-		numKeyPointsDetected--;
-		pointsClicked.pop_back();
-		keyPointsNearest.pop_back();	
+		if(numPointsClicked!=0) {
+			numPointsClicked--;
+			pointsClicked.pop_back();
+		}
+		if(numKeyPointsDetected!=0) {
+			numKeyPointsDetected--;
+			keyPointsNearest.pop_back();	
+		}
 	}
 	if(key == 32) // space
 	{
