@@ -47,6 +47,8 @@ private:
 	// distance between two 3d points
 	float distance3D(std::vector<float> p1, std::vector<float> p2);
 
+	static pthread_mutex_t keyPoint_CS;
+
 
 public:
 
@@ -78,13 +80,15 @@ public:
 	void fitPlane3d ();
 
 	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
-	std::vector<float> searchNearest(std::vector<int> pt);
+	std::vector<float> searchNearest(std::vector<int> pt, bool considerAllLevels);
 
 	// Get 2d position of a key point given its 3d position. Return empty vector if keypoint not found in the current frame
-	bool get2DPoint(std::vector<float> pt, std::vector<int> &p);
+	bool get2DPoint(std::vector<float> pt, std::vector<int> &p, bool considerAllLevels);
 
 	// Equality function for 3d keypoints. Does it need to be exact equality? Or some heuristic based distance threshold
 	bool equal(std::vector<float> p1, std::vector<float> p2);
+
+	int getNumKP(bool considerAllLevels);
 };
 
 

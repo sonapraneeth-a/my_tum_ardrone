@@ -32,6 +32,8 @@ ImageView::ImageView(ControlUINode *cnode) {
 
 	numPointsClicked = 0;
 	numKeyPointsDetected = 0;
+
+	considerAllLevels = true;
 }
 
 ImageView::~ImageView() {
@@ -181,15 +183,16 @@ void ImageView::renderFrame() {
 	{
 		//glVertex2i(keyPointsNearest[i][0], keyPointsNearest[i][1]);
 		std::vector<int> p;
-		bool found = node->get2DPoint(keyPointsNearest[i], p);
+		bool found = node->get2DPoint(keyPointsNearest[i], p, considerAllLevels);
+		// ROS_INFO("Number of keypoints : %d\n", node->getNumKP(considerAllLevels));
 		if(found) {
-			//ROS_INFO("Original 3d Point is %f, %f, %f", keyPointsNearest[i][0], keyPointsNearest[i][1], keyPointsNearest[i][2]);
-			ROS_INFO("Point is %d, %d", p[0], p[1]);
+			// ROS_INFO("Original 3d Point is %f, %f, %f", keyPointsNearest[i][0], keyPointsNearest[i][1], keyPointsNearest[i][2]);
+			// ROS_INFO("Point is %d, %d", p[0], p[1]);
 			glVertex2i(p[0], p[1]);
 		}
 		else {
 			//printf("not found");
-			ROS_INFO("Point not found in frame");
+			// ROS_INFO("Point not found in frame");
 		}
 	}
 	glEnd();
@@ -201,7 +204,29 @@ void ImageView::renderFrame() {
 
 // keyboard input
 void ImageView::on_key_down(int key) {
-
+	if(key == 114) // r
+	{
+		// node->publishCommand("i reset");
+		// Need to reset all the entire points to initial state
+		numPointsClicked = 0;
+		numKeyPointsDetected = 0;
+		pointsClicked.clear();
+		keyPointsNearest.clear();
+	}
+	if(key == 100) // d
+	{
+		// node->publishCommand("i delete");
+		// Need to delete the last point
+		numPointsClicked--;
+		numKeyPointsDetected--;
+		pointsClicked.pop_back();
+		keyPointsNearest.pop_back();	
+	}
+	if(key == 32) // space
+	{
+		// node->publishCommand("i run");
+		// Send control commands to drone. TODO need to implement
+	}
 }
 
 void ImageView::on_mouse_down(CVD::ImageRef where, int state, int button) {
@@ -238,8 +263,12 @@ void ImageView::on_mouse_down(CVD::ImageRef where, int state, int button) {
 
 
 void ImageView::search(std::vector<int> pt) {
-	std::vector<float> kp = node->searchNearest(pt);
+	std::vector<float> kp = node->searchNearest(pt, considerAllLevels);
 
 	keyPointsNearest.push_back(kp);
 	numKeyPointsDetected++;
 }
+
+/*bool ImageView::handleCommand(std::string s) {
+
+}*/

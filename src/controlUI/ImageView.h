@@ -83,6 +83,9 @@ private:
 	// the 3d keypoints of control node for nearest keypoints
 	std::vector<std::vector<float> > keyPointsNearest;
 
+	// Consider all levels or not
+	bool considerAllLevels;
+
 public:
 	ImageView(ControlUINode* node);
 	~ImageView();
