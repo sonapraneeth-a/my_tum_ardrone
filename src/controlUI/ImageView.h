@@ -18,6 +18,7 @@ camera feed of the drone and recording mouse clicks
 #include "cvd/thread.h"
 #include "cvd/image.h"
 #include "cvd/byte.h"
+#include "cvd/rgb.h"
 #include "MouseKeyHandler.h"
 #include "boost/thread.hpp"
 #include "std_msgs/String.h"
@@ -49,8 +50,8 @@ private:
 	// the associated thread's run function
 	void run();
 
-	CVD::Image<CVD::byte> mimFrameBW;
-	CVD::Image<CVD::byte> mimFrameBW_workingCopy;
+	CVD::Image<CVD::Rgb<CVD::byte> > mimFrameBW;
+	CVD::Image<CVD::Rgb<CVD::byte> > mimFrameBW_workingCopy;
 	int mimFrameTime;
 	int mimFrameTime_workingCopy;
 	unsigned int mimFrameSEQ;
@@ -85,6 +86,9 @@ private:
 
 	// Consider all levels or not
 	bool considerAllLevels;
+
+	// File number to be saved
+	int numFile;
 
 public:
 	ImageView(ControlUINode* node);

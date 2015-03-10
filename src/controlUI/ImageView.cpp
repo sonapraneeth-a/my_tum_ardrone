@@ -33,7 +33,9 @@ ImageView::ImageView(ControlUINode *cnode) {
 	numPointsClicked = 0;
 	numKeyPointsDetected = 0;
 
-	considerAllLevels = false;
+	considerAllLevels = true;
+
+	numFile = 0;
 }
 
 ImageView::~ImageView() {
@@ -67,7 +69,7 @@ void ImageView::ResetInternal() {
 
 
 void ImageView::newImage(sensor_msgs::ImageConstPtr img) {
-	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8);
+	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::RGB8);
 
 	boost::unique_lock<boost::mutex> lock(new_frame_signal_mutex);
 
@@ -87,7 +89,7 @@ void ImageView::newImage(sensor_msgs::ImageConstPtr img) {
 	if (mimFrameBW.size().x != img->width || mimFrameBW.size().y != img->height)
 		mimFrameBW.resize(CVD::ImageRef(img->width, img->height));
 
-	memcpy(mimFrameBW.data(), cv_ptr->image.data, img->width * img->height);
+	memcpy(mimFrameBW.data(), cv_ptr->image.data, img->width * img->height * 3);
 	newImageAvailable = true;
 
 	lock.unlock();
@@ -230,6 +232,12 @@ void ImageView::on_key_down(int key) {
 	{
 		// node->publishCommand("i run");
 		// Send control commands to drone. TODO need to implement
+	}
+	if(key == 115) // s
+	{
+		// save all the keypoint information
+		node->saveKeyPointInformation(numFile);
+		numFile++;
 	}
 }
 

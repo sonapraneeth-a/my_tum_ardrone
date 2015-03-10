@@ -89,6 +89,8 @@ public:
 	bool equal(std::vector<float> p1, std::vector<float> p2);
 
 	int getNumKP(bool considerAllLevels);
+
+	void saveKeyPointInformation(int numFile);
 };
 
 

@@ -10,6 +10,9 @@ Author : Anirudh Vemula
 #include "ImageView.h"
 
 #include <string>
+#include <fstream>
+#include <stdlib.h>
+#include <sstream>
 
 using namespace std;
 
@@ -243,4 +246,34 @@ int ControlUINode::getNumKP(bool considerAllLevels) {
 			c++;
 	}
 	return c;
+}
+
+void ControlUINode::saveKeyPointInformation (int numFile) {
+	pthread_mutex_lock(&keyPoint_CS);
+
+	//char * name = itoa(numFile);
+	stringstream ss;
+	ss << numFile;
+	string s = ss.str();
+
+	ofstream fp(s.c_str());
+
+	fp<<numPoints<<std::endl;
+	fp<<endl;
+	for(int i=0; i<_3d_points.size(); i++) {
+		fp<<_3d_points[i][0]<<","<<_3d_points[i][1]<<","<<_3d_points[i][2]<<","<<_levels[i]<<endl;
+	}
+	//fp<<endl;
+	/*for (int i = 0; i < _2d_points.size(); ++i)
+	{
+		fp<<_2d_points[i][0]<<","<<_2d_points[i][1]<<endl;
+	}
+	fp<<endl;
+	for(int i=0; i<_levels.size(); ++i)
+	{
+		fp<<_levels[i]<<endl;
+	}*/
+	fp.close();
+
+	pthread_mutex_unlock(&keyPoint_CS);
 }
