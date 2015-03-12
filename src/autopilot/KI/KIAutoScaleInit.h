@@ -13,7 +13,7 @@ Date : 12th Feb 2015
 class KIAutoScaleInit : public KIProcedure
 {
 private:
-	enum {NONE, STARTED, WAIT_FOR_FIRST, TOOK_FIRST, WAIT_FOR_SECOND, MOVE_UP, MOVE_DOWN, DONE} stage;
+	enum {NONE, STARTED, WAIT_FOR_FIRST, TOOK_FIRST, WAIT_FOR_SECOND, MOVE_UP, MOVE_DOWN, DONE, DONE_HOVER} stage;
 	int stageStarted;
 	bool nextUp;
 	bool resetMap;

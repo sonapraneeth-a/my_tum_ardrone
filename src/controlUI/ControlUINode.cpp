@@ -188,7 +188,7 @@ bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool
 	if(!considerAllLevels) {
 		for (int i = 0; i < _3d_points.size(); ++i)
 		{
-			if(_levels[i]==0) {
+			if(_levels[i]==0 && distance3D(pt, _3d_points[i]) < 0.05) {
 				float s = distance3D(pt, _3d_points[i]);
 				if(s<minDist) {
 					minDist = s;
@@ -200,15 +200,17 @@ bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool
 	else {
 		for (int i = 0; i < _3d_points.size(); ++i)
 		{
-			float s = distance3D(pt, _3d_points[i]);
-			if(s<minDist) {
-				minDist = s;
-				min = i;
+			if(distance3D(pt, _3d_points[i]) < 0.05) {
+				float s = distance3D(pt, _3d_points[i]);
+				if(s<minDist) {
+					minDist = s;
+					min = i;
+				}
 			}
 		}
 	}
 
-	if(min!=-1 && distance3D(pt, _3d_points[min]) < 0.001) {
+	if(min!=-1) {
 		found = true;
 		p.push_back((int)_2d_points[min][0]);
 		p.push_back((int)_2d_points[min][1]);

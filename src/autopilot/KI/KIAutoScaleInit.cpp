@@ -161,7 +161,13 @@ bool KIAutoScaleInit::update(const tum_ardrone::filter_stateConstPtr statePtr) {
 					node->sendControlToDrone(node->hoverCommand);
 					return false;
 				}
-				else {
+				else if(countTimes==numTimes && statePtr->scaleAccuracy!=1.0) {
+					stage = DONE_HOVER;
+					node->sendControlToDrone(node->hoverCommand);
+					stageStarted = getMS();
+					return true;
+				}
+				else{
 					controller->setTarget(DronePosition(
 									TooN::makeVector(statePtr->x,statePtr->y,statePtr->z),statePtr->yaw));
 					node->sendControlToDrone(controller->update(statePtr));
@@ -196,12 +202,18 @@ bool KIAutoScaleInit::update(const tum_ardrone::filter_stateConstPtr statePtr) {
 			}
 			else { // Reached extremum (top)
 				countTimes++;
-				if(countTimes==numTimes || statePtr->scaleAccuracy==1.0) { // count elapsed or accuracy reached
+				if(statePtr->scaleAccuracy==1.0) { // count elapsed or accuracy reached
 					controller->setTarget(DronePosition(
 									TooN::makeVector(statePtr->x,statePtr->y,statePtr->z),statePtr->yaw));
 					node->sendControlToDrone(controller->update(statePtr));
 					stageStarted = getMS();
 					stage = DONE;
+					return true;
+				}
+				else if(countTimes==numTimes && statePtr->scaleAccuracy!=1.0) {
+					stage = DONE_HOVER;
+					node->sendControlToDrone(node->hoverCommand);
+					stageStarted = getMS();
 					return true;
 				}
 				else { // count remaining and accuracy not reached
@@ -223,12 +235,18 @@ bool KIAutoScaleInit::update(const tum_ardrone::filter_stateConstPtr statePtr) {
 			}
 			else { // reached extremum (bottom)
 				countTimes++;
-				if(countTimes==numTimes || statePtr->scaleAccuracy==1.0) { // count elapsed or accuracy reached
+				if(statePtr->scaleAccuracy==1.0) { // count elapsed or accuracy reached
 					controller->setTarget(DronePosition(
 									TooN::makeVector(statePtr->x,statePtr->y,statePtr->z),statePtr->yaw));
 					node->sendControlToDrone(controller->update(statePtr));
 					stageStarted = getMS();
 					stage = DONE;
+					return true;
+				}
+				else if(countTimes==numTimes && statePtr->scaleAccuracy!=1.0) {
+					stage = DONE_HOVER;
+					node->sendControlToDrone(node->hoverCommand);
+					stageStarted = getMS();
 					return true;
 				}
 				else { //count remaining and accuracy not reached
@@ -245,6 +263,9 @@ bool KIAutoScaleInit::update(const tum_ardrone::filter_stateConstPtr statePtr) {
 			node->sendControlToDrone(controller->update(statePtr));
 			return true;
 
+		case DONE_HOVER:
+			node->sendControlToDrone(node->hoverCommand);
+			return true;
 
 		default:
 			return false;
