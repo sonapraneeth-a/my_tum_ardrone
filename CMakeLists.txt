@@ -227,9 +227,16 @@ set(CONTROLUI_HEADER_FILES
     src/controlUI/MouseKeyHandler.h
     src/controlUI/GLWindow2.h
     src/controlUI/GLWindowMenu.h
-    src/controlUI/ImageView.h)
+    src/controlUI/ImageView.h
+    src/controlUI/helperFunctions.h)
 
 find_package(MRPT REQUIRED slam;vision;gui;topography)
+#find_package(CGAL QUIET COMPONENTS Core)
+
+#if(CGAL_FOUND)
+#  include(${CGAL_USE_FILE})
+#  include(CGAL_CreateSingleSourceCGALProgram)
+#endif()
 
 add_executable(drone_controlUI ${CONTROLUI_SOURCE_FILES} ${CONTROLUI_HEADER_FILES})
 target_link_libraries(drone_controlUI ${MRPT_LIBS} ${PTAM_LIBRARIES} ${catkin_LIBRARIES})

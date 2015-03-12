@@ -10,6 +10,8 @@ Author : Anirudh Vemula
 #include "ros/ros.h"
 #include "tum_ardrone/keypoint_coord.h"
 #include "std_msgs/String.h"
+#include "helperFunctions.h"
+
 
 #include <vector>
 #include <string>
@@ -77,7 +79,7 @@ public:
 	void loadLevels (std::vector<int> levels);
 
 	// Algorithmic functions
-	void fitPlane3d ();
+	void fitPlane3d (std::vector<std::vector<int> > ccPoints);
 
 	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
 	std::vector<float> searchNearest(std::vector<int> pt, bool considerAllLevels);
@@ -88,8 +90,10 @@ public:
 	// Equality function for 3d keypoints. Does it need to be exact equality? Or some heuristic based distance threshold
 	bool equal(std::vector<float> p1, std::vector<float> p2);
 
+	// A helper function to get the number of key points in the current frame
 	int getNumKP(bool considerAllLevels);
 
+	// Saves the 3d coordinates of the keypoints as a CSV file for external processing
 	void saveKeyPointInformation(int numFile);
 };
 

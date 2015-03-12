@@ -18,6 +18,7 @@ using namespace std;
 
 pthread_mutex_t ControlUINode::keyPoint_CS = PTHREAD_MUTEX_INITIALIZER;
 
+
 ControlUINode::ControlUINode() {
 	command_channel = nh_.resolveName("ardrone/com");
 	keypoint_channel = nh_.resolveName("/keypoint_coord");
@@ -80,8 +81,23 @@ void ControlUINode::loadLevels (std::vector<int> levels) {
 	}
 }
 
-void ControlUINode::fitPlane3d () {
-	_3d_plane = ransacPlaneFit(_3d_points, ransacVerbose);
+void ControlUINode::fitPlane3d (std::vector<std::vector<int> > ccPoints) {
+
+	std::vector<std::vector<float> > _in_points;
+
+	pthread_mutex_lock(&keyPoint_CS);
+
+	for(int i=0; i<_2d_points.size(); i++) {
+		if(liesInside(ccPoints, _2d_points[i])) {
+			//printf("%f, %f, %f\n", _3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
+			_in_points.push_back(_3d_points[i]);
+		}
+	}
+
+	pthread_mutex_unlock(&keyPoint_CS);
+	//ROS_INFO("Number of keypoints inside %d", _in_points.size());
+	//ROS_INFO("Total number of keypoints %d", _3d_points.size());
+	_3d_plane = ransacPlaneFit(_in_points, ransacVerbose);
 }
 
 void ControlUINode::Loop () {
@@ -150,30 +166,6 @@ std::vector<float> ControlUINode::searchNearest (std::vector<int> pt, bool consi
 	return minPt;
 }
 
-/*bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p) {
-	//std::vector<int> ret;
-	bool found = false;
-	float minDist = 100000;
-	int min = -1;
-	for(int i=0; i<_3d_points.size(); i++) {
-		if(equal(pt, _3d_points[i])) {
-			float s = distance3D(pt, _3d_points[i]);
-			if(s < minDist) {
-				minDist = s;
-				min = i;
-			}
-		}
-	}
-
-	if(min!=-1) {
-		found = true;
-		p.push_back((int)_2d_points[min][0]);
-		p.push_back((int)_2d_points[min][1]);
-		//printf("Found")
-	}
-	return found;
-}*/
-
 bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool considerAllLevels) {
 
 	pthread_mutex_lock(&keyPoint_CS);
@@ -223,13 +215,6 @@ bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool
 }
 
 bool ControlUINode::equal(std::vector<float> p1, std::vector<float> p2) {
-	/*for(int i=0; i<p1.size(); i++) {
-		if(p1[i]==p2[i])
-			continue;
-		else
-			return false;
-	}
-	return true;*/
 	if(distance3D(p1, p2) < 0.001) {
 		return true;
 	}
@@ -265,16 +250,6 @@ void ControlUINode::saveKeyPointInformation (int numFile) {
 	for(int i=0; i<_3d_points.size(); i++) {
 		fp<<_3d_points[i][0]<<","<<_3d_points[i][1]<<","<<_3d_points[i][2]<<","<<_levels[i]<<endl;
 	}
-	//fp<<endl;
-	/*for (int i = 0; i < _2d_points.size(); ++i)
-	{
-		fp<<_2d_points[i][0]<<","<<_2d_points[i][1]<<endl;
-	}
-	fp<<endl;
-	for(int i=0; i<_levels.size(); ++i)
-	{
-		fp<<_levels[i]<<endl;
-	}*/
 	fp.close();
 
 	pthread_mutex_unlock(&keyPoint_CS);

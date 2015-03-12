@@ -17,6 +17,14 @@ Author: Anirudh Vemula
 #include "../HelperFunctions.h"
 #include "ControlUINode.h"
 
+/*typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Polyhedron_3<K> Polyhedron_3;
+typedef K::Segment_3 Segment_3;
+
+typedef K::Point_3 Point_3;
+typedef CGAL::Creator_uniform_3<double,Point_3> PointCreator;*/
+
+
 ImageView::ImageView(ControlUINode *cnode) {
 	frameWidth = frameHeight = 0;
 
@@ -34,6 +42,7 @@ ImageView::ImageView(ControlUINode *cnode) {
 	numKeyPointsDetected = 0;
 
 	considerAllLevels = true;
+	renderPoly = false;
 
 	numFile = 0;
 }
@@ -165,11 +174,14 @@ void ImageView::renderFrame() {
 	// render image from drone camera
 	glDrawPixels(mimFrameBW_workingCopy);
 
-	// render clicked points
 	glPointSize(6);
 	glEnable(GL_BLEND);
 	glEnable(GL_POINT_SMOOTH);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glLineWidth(5);
+
+	// Rendering clicked points
+
 	/*glColor3f(1.0,0,0);
 	glBegin(GL_POINTS);
 	for (int i = 0; i < numPointsClicked; ++i)
@@ -179,25 +191,31 @@ void ImageView::renderFrame() {
 	glEnd();*/
 	
 	// render detected keyPoints
-	glColor3f(0, 0, 1.0);
-	glBegin(GL_POINTS);
-	for (int i = 0; i < numKeyPointsDetected; ++i)
-	{
-		//glVertex2i(keyPointsNearest[i][0], keyPointsNearest[i][1]);
-		std::vector<int> p;
-		bool found = node->get2DPoint(keyPointsNearest[i], p, considerAllLevels);
-		// ROS_INFO("Number of keypoints : %d\n", node->getNumKP(considerAllLevels));
-		if(found) {
-			// ROS_INFO("Original 3d Point is %f, %f, %f", keyPointsNearest[i][0], keyPointsNearest[i][1], keyPointsNearest[i][2]);
-			// ROS_INFO("Point is %d, %d", p[0], p[1]);
-			glVertex2i(p[0], p[1]);
+	if(!renderPoly) {
+		glColor3f(0, 0, 1.0);
+		glBegin(GL_POINTS);
+		for (int i = 0; i < numKeyPointsDetected; ++i)
+		{
+			std::vector<int> p;
+			bool found = node->get2DPoint(keyPointsNearest[i], p, considerAllLevels);
+			if(found) {
+				glVertex2i(p[0], p[1]);
+			}
+			else {
+
+			}
 		}
-		else {
-			//printf("not found");
-			// ROS_INFO("Point not found in frame");
-		}
+		glEnd();
 	}
-	glEnd();
+	else {
+		// render convex hull polygon
+		glColor3f(0, 1.0, 0.0);
+		glBegin(GL_LINE_STRIP);
+		for(int i=0; i<ccPoints.size(); i++) {
+			glVertex2i(ccPoints[i][0], ccPoints[i][1]);
+		}
+		glEnd();
+	}
 	glDisable(GL_BLEND);
 
 	myGLWindow->swap_buffers();
@@ -239,6 +257,20 @@ void ImageView::on_key_down(int key) {
 		node->saveKeyPointInformation(numFile);
 		numFile++;
 	}
+	if(key == 116) // t
+	{
+		// renders the polygon
+
+		renderPoly = true;
+		extractBoundingPoly();
+	}
+	if(key == 101) // e
+	{
+		// Extract plane
+
+		extractBoundingPoly();
+		node->fitPlane3d (ccPoints);
+	}
 }
 
 void ImageView::on_mouse_down(CVD::ImageRef where, int state, int button) {
@@ -274,6 +306,7 @@ void ImageView::on_mouse_down(CVD::ImageRef where, int state, int button) {
 }
 
 
+
 void ImageView::search(std::vector<int> pt) {
 	std::vector<float> kp = node->searchNearest(pt, considerAllLevels);
 
@@ -281,6 +314,43 @@ void ImageView::search(std::vector<int> pt) {
 	numKeyPointsDetected++;
 }
 
-/*bool ImageView::handleCommand(std::string s) {
+void ImageView::extractBoundingPoly() {
+	// Check if the number of clicked points is exactly 4
+	//assert(pointsClicked.size()==4);
+	
+	//std::vector<std::vector<int> > ccPoints;
+	ccPoints.clear();
 
-}*/
+	std::vector<int> minXPoint;
+	float minX = -1;
+	for(int i=0; i<pointsClicked.size(); i++) {
+		if(minX==-1) {
+			minX = pointsClicked[i][0];
+			minXPoint = pointsClicked[i];
+		}
+		else if(pointsClicked[i][0]<minX) {
+			minX = pointsClicked[i][0];
+			minXPoint = pointsClicked[i];
+		}
+	}
+
+	//ccPoints.push_back(minXPoint);
+
+	std::vector<int> endPoint;
+	int i=0;
+	do{
+		ccPoints.push_back(minXPoint);
+		endPoint = pointsClicked[0];
+		for(int j=1;j<pointsClicked.size();j++) {
+			if((endPoint[0]==minXPoint[0] && endPoint[1]==minXPoint[1]) || onLeft(pointsClicked[j], minXPoint, endPoint))
+				endPoint = pointsClicked[j];
+		}
+		i = i+1;
+		minXPoint = endPoint;
+
+	} while(endPoint[0]!=ccPoints[0][0] || endPoint[1]!=ccPoints[0][1]);
+	ccPoints.push_back(endPoint);
+
+}
+
+

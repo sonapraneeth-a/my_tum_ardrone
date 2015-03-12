@@ -23,6 +23,15 @@ camera feed of the drone and recording mouse clicks
 #include "boost/thread.hpp"
 #include "std_msgs/String.h"
 #include <vector>
+#include "helperFunctions.h"
+
+
+// CGAL specific
+/*#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/point_generators_3.h>
+#include <CGAL/algorithm.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/convex_hull_3.h>*/
 
 class ControlUINode;
 
@@ -84,11 +93,17 @@ private:
 	// the 3d keypoints of control node for nearest keypoints
 	std::vector<std::vector<float> > keyPointsNearest;
 
+	// points on the convex hull
+	std::vector<std::vector<int> > ccPoints;
+
 	// Consider all levels or not
 	bool considerAllLevels;
 
 	// File number to be saved
 	int numFile;
+
+	// Render quadrilateral or not
+	bool renderPoly;
 
 public:
 	ImageView(ControlUINode* node);
@@ -113,6 +128,9 @@ public:
 
 	// search function : given a 2d image point searches for the nearest 2d keypoint in the same frame
 	void search(std::vector<int> pt);
+
+	// Extracts bounding quadrilateral out of the clicked 4 points
+	void extractBoundingPoly();
 
 };
 

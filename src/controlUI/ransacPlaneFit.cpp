@@ -165,6 +165,13 @@ std::vector<float> ransacPlaneFit(std::vector<std::vector<float> > points, bool 
 			false   // Verbose
 			);
 
+	if(best_model(0,3)!=0) {
+		best_model(0,0)/=best_model(0,3);
+		best_model(0,1)/=best_model(0,3);
+		best_model(0,2)/=best_model(0,3);
+		best_model(0,3) = 1;
+	}
+
 	if(verbose) {
 		cout << "Computation time: " << tictac.Tac()*1000.0/TIMES << " ms" << endl;
 		cout << "RANSAC finished: Best model: " << best_model << endl;
