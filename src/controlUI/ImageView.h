@@ -94,7 +94,7 @@ private:
 	std::vector<std::vector<float> > keyPointsNearest;
 
 	// points on the convex hull
-	std::vector<std::vector<int> > ccPoints;
+	std::vector<int> ccPoints;
 
 	// Consider all levels or not
 	bool considerAllLevels;
@@ -104,6 +104,9 @@ private:
 
 	// Render quadrilateral or not
 	bool renderPoly;
+
+	// Distance by which the extracted plane should be translated
+	float translateDistance;
 
 public:
 	ImageView(ControlUINode* node);

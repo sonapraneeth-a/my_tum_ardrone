@@ -29,7 +29,7 @@ ControlUINode::ControlUINode() {
 
 	image_gui = new ImageView(this);
 
-	ransacVerbose = false;
+	ransacVerbose = true;
 }
 
 ControlUINode::~ControlUINode() {
@@ -81,14 +81,19 @@ void ControlUINode::loadLevels (std::vector<int> levels) {
 	}
 }
 
-void ControlUINode::fitPlane3d (std::vector<std::vector<int> > ccPoints) {
+void ControlUINode::fitPlane3d (std::vector<int> ccPoints, std::vector<std::vector<int> > pointsClicked) {
 
 	std::vector<std::vector<float> > _in_points;
+
+	std::vector<std::vector<int> > points;
+	for(int i=0; i<ccPoints.size(); i++) {
+		points.push_back(pointsClicked[ccPoints[i]]);
+	}
 
 	pthread_mutex_lock(&keyPoint_CS);
 
 	for(int i=0; i<_2d_points.size(); i++) {
-		if(liesInside(ccPoints, _2d_points[i])) {
+		if(liesInside(points, _2d_points[i])) {
 			//printf("%f, %f, %f\n", _3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
 			_in_points.push_back(_3d_points[i]);
 		}
@@ -253,4 +258,17 @@ void ControlUINode::saveKeyPointInformation (int numFile) {
 	fp.close();
 
 	pthread_mutex_unlock(&keyPoint_CS);
+}
+
+void ControlUINode::translatePlane (float translateDistance) {
+	float a = _3d_plane[0];
+	float b = _3d_plane[1];
+	float c = _3d_plane[2];
+
+	float norm = sqrt(a*a + b*b + c*c);
+	a /= norm;
+	b /= norm;
+	c /= norm;
+
+	std::vector<float> translatedPlane;
 }

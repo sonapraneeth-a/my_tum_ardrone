@@ -8,7 +8,7 @@
 
 #include <math.h>
 
-
+/* A simple sign function */
 inline static int signD(float x) {
 	return (x>0)-(x<0);
 }

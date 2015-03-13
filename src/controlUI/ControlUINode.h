@@ -36,7 +36,7 @@ private:
 	int numPoints;
 
 	std::vector<float> _3d_plane; // stored as a 4 length vector with constants a,b,c,d
-								 // corresponding to ax+by+cz+d = 0
+								 // corresponding to ax+by+cz+d = 0. Enforcing the constraint that d = 1 for uniformity (except when d = 0)
 
 	std::string keypoint_channel;
 	std::string command_channel;
@@ -79,7 +79,7 @@ public:
 	void loadLevels (std::vector<int> levels);
 
 	// Algorithmic functions
-	void fitPlane3d (std::vector<std::vector<int> > ccPoints);
+	void fitPlane3d (std::vector<int> ccPoints, std::vector<std::vector<int> > pointsClicked);
 
 	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
 	std::vector<float> searchNearest(std::vector<int> pt, bool considerAllLevels);
@@ -95,6 +95,9 @@ public:
 
 	// Saves the 3d coordinates of the keypoints as a CSV file for external processing
 	void saveKeyPointInformation(int numFile);
+
+	// Translates the fitted plane by the given distance along its normal toward origin
+	void translatePlane (float translateDistance);
 };
 
 

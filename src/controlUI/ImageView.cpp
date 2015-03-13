@@ -45,6 +45,7 @@ ImageView::ImageView(ControlUINode *cnode) {
 	renderPoly = false;
 
 	numFile = 0;
+	translateDistance = 0.5;
 }
 
 ImageView::~ImageView() {
@@ -209,10 +210,34 @@ void ImageView::renderFrame() {
 	}
 	else {
 		// render convex hull polygon
+
+		/*glColor3f(0, 0, 1.0);
+		glBegin(GL_POINTS);
+		for (int i = 0; i < numKeyPointsDetected; ++i)
+		{
+			std::vector<int> p;
+			bool found = node->get2DPoint(keyPointsNearest[i], p, considerAllLevels);
+			if(found) {
+				glVertex2i(p[0], p[1]);
+			}
+			else {
+
+			}
+		}
+		glEnd();*/
+
+
 		glColor3f(0, 1.0, 0.0);
 		glBegin(GL_LINE_STRIP);
 		for(int i=0; i<ccPoints.size(); i++) {
-			glVertex2i(ccPoints[i][0], ccPoints[i][1]);
+			std::vector<int> p;
+			bool found = node->get2DPoint(keyPointsNearest[ccPoints[i]], p, considerAllLevels);
+			if(found) {
+				glVertex2i(p[0], p[1]);
+			}
+			else {
+
+			}
 		}
 		glEnd();
 	}
@@ -261,7 +286,7 @@ void ImageView::on_key_down(int key) {
 	{
 		// renders the polygon
 
-		renderPoly = true;
+		renderPoly = !renderPoly;
 		extractBoundingPoly();
 	}
 	if(key == 101) // e
@@ -269,7 +294,8 @@ void ImageView::on_key_down(int key) {
 		// Extract plane
 
 		extractBoundingPoly();
-		node->fitPlane3d (ccPoints);
+		node->fitPlane3d (ccPoints, pointsClicked);
+		//node->translatePlane (translateDistance);
 	}
 }
 
@@ -323,33 +349,41 @@ void ImageView::extractBoundingPoly() {
 
 	std::vector<int> minXPoint;
 	float minX = -1;
+	int minXIndex = -1;
 	for(int i=0; i<pointsClicked.size(); i++) {
 		if(minX==-1) {
 			minX = pointsClicked[i][0];
 			minXPoint = pointsClicked[i];
+			minXIndex = i;
 		}
 		else if(pointsClicked[i][0]<minX) {
 			minX = pointsClicked[i][0];
 			minXPoint = pointsClicked[i];
+			minXIndex = i;
 		}
 	}
 
 	//ccPoints.push_back(minXPoint);
 
 	std::vector<int> endPoint;
+	int endIndex;
 	int i=0;
 	do{
-		ccPoints.push_back(minXPoint);
+		ccPoints.push_back(minXIndex);
 		endPoint = pointsClicked[0];
+		endIndex = 0;
 		for(int j=1;j<pointsClicked.size();j++) {
-			if((endPoint[0]==minXPoint[0] && endPoint[1]==minXPoint[1]) || onLeft(pointsClicked[j], minXPoint, endPoint))
+			if((endPoint[0]==minXPoint[0] && endPoint[1]==minXPoint[1]) || onLeft(pointsClicked[j], minXPoint, endPoint)) {
 				endPoint = pointsClicked[j];
+				endIndex = j;
+			}
 		}
 		i = i+1;
 		minXPoint = endPoint;
+		minXIndex = endIndex;
 
-	} while(endPoint[0]!=ccPoints[0][0] || endPoint[1]!=ccPoints[0][1]);
-	ccPoints.push_back(endPoint);
+	} while(endPoint[0]!=pointsClicked[ccPoints[0]][0] || endPoint[1]!=pointsClicked[ccPoints[0]][1]);
+	ccPoints.push_back(endIndex);
 
 }
 
