@@ -93,8 +93,11 @@ private:
 	// the 3d keypoints of control node for nearest keypoints
 	std::vector<std::vector<float> > keyPointsNearest;
 
-	// points on the convex hull
+	// corners of the convex hull
 	std::vector<int> ccPoints;
+
+	// corners of the bounding rectangle
+	std::vector<int> bPoints;
 
 	// Consider all levels or not
 	bool considerAllLevels;
@@ -102,11 +105,16 @@ private:
 	// File number to be saved
 	int numFile;
 
-	// Render quadrilateral or not
+	// Render convex hull or not
 	bool renderPoly;
+
+	// Render bounding rectangle or not
+	bool renderRect;
 
 	// Distance by which the extracted plane should be translated
 	float translateDistance;
+
+	std::vector<std::vector<float> > projectedPoints;
 
 public:
 	ImageView(ControlUINode* node);
@@ -132,8 +140,11 @@ public:
 	// search function : given a 2d image point searches for the nearest 2d keypoint in the same frame
 	void search(std::vector<int> pt);
 
-	// Extracts bounding quadrilateral out of the clicked 4 points
+	// Extracts convex hull of the clicked points
 	void extractBoundingPoly();
+
+	// Extracts bounding rectangle of the clicked points
+	void extractBoundingRect();
 
 };
 

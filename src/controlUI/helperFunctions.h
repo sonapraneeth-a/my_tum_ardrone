@@ -52,4 +52,14 @@ inline static bool liesInside(std::vector<std::vector<int> > ccPoints, std::vect
 	return true;
 }
 
+inline static float innerProduct(std::vector<float> v1, std::vector<float> v2) {
+	assert(v1.size()==v2.size());
+	float sum = 0;
+	for(int i=0; i<v1.size(); i++) {
+		sum += v1[i]*v2[i];
+	}
+
+	return sum;
+}
+
 #endif

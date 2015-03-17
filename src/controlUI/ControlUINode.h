@@ -84,8 +84,11 @@ public:
 	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
 	std::vector<float> searchNearest(std::vector<int> pt, bool considerAllLevels);
 
-	// Get 2d position of a key point given its 3d position. Return empty vector if keypoint not found in the current frame
+	// Get 2d position (with a threshold) of a key point given its 3d position. Return empty vector if keypoint not found in the current frame (within the threshold)
 	bool get2DPoint(std::vector<float> pt, std::vector<int> &p, bool considerAllLevels);
+
+	// Get 2d position of the nearest key point given a 3d position
+	bool get2DPointNearest(std::vector<float> pt, std::vector<int> &p, bool considerAllLevels);
 
 	// Equality function for 3d keypoints. Does it need to be exact equality? Or some heuristic based distance threshold
 	bool equal(std::vector<float> p1, std::vector<float> p2);
@@ -97,7 +100,7 @@ public:
 	void saveKeyPointInformation(int numFile);
 
 	// Translates the fitted plane by the given distance along its normal toward origin
-	void translatePlane (float translateDistance);
+	std::vector<float> translatePlane (float translateDistance);
 };
 
 

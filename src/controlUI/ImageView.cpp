@@ -43,6 +43,7 @@ ImageView::ImageView(ControlUINode *cnode) {
 
 	considerAllLevels = true;
 	renderPoly = false;
+	renderRect = false;
 
 	numFile = 0;
 	translateDistance = 0.5;
@@ -192,7 +193,7 @@ void ImageView::renderFrame() {
 	glEnd();*/
 	
 	// render detected keyPoints
-	if(!renderPoly) {
+	if(!renderPoly && !renderRect) {
 		glColor3f(0, 0, 1.0);
 		glBegin(GL_POINTS);
 		for (int i = 0; i < numKeyPointsDetected; ++i)
@@ -208,7 +209,7 @@ void ImageView::renderFrame() {
 		}
 		glEnd();
 	}
-	else {
+	else if(renderPoly) {
 		// render convex hull polygon
 
 		/*glColor3f(0, 0, 1.0);
@@ -239,6 +240,62 @@ void ImageView::renderFrame() {
 
 			}
 		}
+		glEnd();
+	}
+	else {
+		// render bounding rectangle
+
+		glColor3f(1.0, 0.0, 0.0);
+		glBegin(GL_LINE_STRIP);
+		
+			std::vector<int> p;
+			std::vector<float> q;
+			q.push_back(keyPointsNearest[bPoints[0]][0]);
+			q.push_back(keyPointsNearest[bPoints[1]][1]);
+			bool found = node->get2DPointNearest(q, p, considerAllLevels);
+			if(found) {
+				glVertex2i(p[0], p[1]);
+			}
+			else {
+				ROS_INFO("1 not found");
+			}
+			q.clear();
+			p.clear();
+			q.push_back(keyPointsNearest[bPoints[0]][0]);
+			q.push_back(keyPointsNearest[bPoints[3]][1]);
+			found = node->get2DPointNearest(q, p, considerAllLevels);
+			if(found) {
+				glVertex2i(p[0], p[1]);
+			}
+			else {
+				ROS_INFO("2 not found");
+
+			}
+			q.clear();
+			p.clear();
+			q.push_back(keyPointsNearest[bPoints[2]][0]);
+			q.push_back(keyPointsNearest[bPoints[3]][1]);
+			found = node->get2DPointNearest(q, p, considerAllLevels);
+			if(found) {
+				glVertex2i(p[0], p[1]);
+			}
+			else {
+				ROS_INFO("3 not found");
+
+			}
+			q.clear();
+			p.clear();
+			q.push_back(keyPointsNearest[bPoints[2]][0]);
+			q.push_back(keyPointsNearest[bPoints[1]][1]);
+			found = node->get2DPointNearest(q, p, considerAllLevels);
+			if(found) {
+				glVertex2i(p[0], p[1]);
+			}
+			else {
+				ROS_INFO("4 not found");
+
+			}
+		
 		glEnd();
 	}
 	glDisable(GL_BLEND);
@@ -285,9 +342,16 @@ void ImageView::on_key_down(int key) {
 	if(key == 116) // t
 	{
 		// renders the polygon
-
+		renderRect = false;
 		renderPoly = !renderPoly;
 		extractBoundingPoly();
+	}
+	if(key == 98) // b
+	{
+		// renders the bounding rectangle
+		renderPoly = false;
+		renderRect = !renderRect;
+		extractBoundingRect();
 	}
 	if(key == 101) // e
 	{
@@ -295,7 +359,8 @@ void ImageView::on_key_down(int key) {
 
 		extractBoundingPoly();
 		node->fitPlane3d (ccPoints, pointsClicked);
-		//node->translatePlane (translateDistance);
+		std::vector<float> translatedPlane = node->translatePlane (translateDistance);
+		
 	}
 }
 
@@ -387,4 +452,34 @@ void ImageView::extractBoundingPoly() {
 
 }
 
+void ImageView::extractBoundingRect() {
 
+	bPoints.clear();
+
+	int minX = pointsClicked[0][0], minY = pointsClicked[0][1], maxX = pointsClicked[0][0], maxY = pointsClicked[0][1];
+	int minXIndex = 0, minYIndex =0, maxXIndex = 0, maxYIndex = 0;
+
+	for(int i=0; i<pointsClicked.size(); i++) {
+		if(pointsClicked[i][0] < minX) {
+			minX = pointsClicked[i][0];
+			minXIndex = i;
+		}
+		if(pointsClicked[i][0] > maxX) {
+			maxX = pointsClicked[i][0];
+			maxXIndex = i;
+		}
+		if(pointsClicked[i][1] < minY) {
+			minY = pointsClicked[i][1];
+			minYIndex = i;
+		}
+		if(pointsClicked[i][1] > maxY) {
+			maxY = pointsClicked[i][1];
+			maxYIndex = i;
+		}
+	}
+
+	bPoints.push_back(minXIndex);
+	bPoints.push_back(minYIndex);
+	bPoints.push_back(maxXIndex);
+	bPoints.push_back(maxYIndex);
+}

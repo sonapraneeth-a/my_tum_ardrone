@@ -219,6 +219,53 @@ bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool
 	return found;
 }
 
+bool ControlUINode::get2DPointNearest (std::vector<float> pt, std::vector<int> &p, bool considerAllLevels) {
+	pthread_mutex_lock(&keyPoint_CS);
+
+	// ROS_INFO("Total num %d\n", numPoints);
+
+	bool found = false;
+
+	float minDist = 10000000.0;
+	int min = -1;
+
+	if(!considerAllLevels) {
+		for (int i = 0; i < _3d_points.size(); ++i)
+		{
+			if(_levels[i]==0) {
+				float s = distance3D(pt, _3d_points[i]);
+				if(s<minDist) {
+					minDist = s;
+					min = i;
+				}
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < _3d_points.size(); ++i)
+		{
+			//if(distance3D(pt, _3d_points[i]) < 0.05) {
+				float s = distance3D(pt, _3d_points[i]);
+				if(s<minDist) {
+					minDist = s;
+					min = i;
+				}
+			//}
+		}
+	}
+
+	if(min!=-1) {
+		found = true;
+		p.push_back((int)_2d_points[min][0]);
+		p.push_back((int)_2d_points[min][1]);
+		//ROS_INFO("The minimum distance is %f", minDist);
+	}
+
+	pthread_mutex_unlock(&keyPoint_CS);
+
+	return found;
+}
+
 bool ControlUINode::equal(std::vector<float> p1, std::vector<float> p2) {
 	if(distance3D(p1, p2) < 0.001) {
 		return true;
@@ -260,15 +307,74 @@ void ControlUINode::saveKeyPointInformation (int numFile) {
 	pthread_mutex_unlock(&keyPoint_CS);
 }
 
-void ControlUINode::translatePlane (float translateDistance) {
+std::vector<float> ControlUINode::translatePlane (float translateDistance) {
+	
+	std::vector<float> translatedPlane;
+
 	float a = _3d_plane[0];
 	float b = _3d_plane[1];
 	float c = _3d_plane[2];
 
 	float norm = sqrt(a*a + b*b + c*c);
-	a /= norm;
-	b /= norm;
-	c /= norm;
 
-	std::vector<float> translatedPlane;
+	std::vector<float> unitNorm;
+	unitNorm.push_back(a/norm);
+	unitNorm.push_back(b/norm);
+	unitNorm.push_back(c/norm);
+
+	std::vector<float> pointLyingOnPlane;
+	if(b!=0) {
+		pointLyingOnPlane.push_back(0);
+		pointLyingOnPlane.push_back(-1/b);
+		pointLyingOnPlane.push_back(0);
+	}
+	else if(a!=0) {
+		pointLyingOnPlane.push_back(-1/a);
+		pointLyingOnPlane.push_back(0);
+		pointLyingOnPlane.push_back(0);
+	}
+	else if(c!=0) {
+		pointLyingOnPlane.push_back(0);
+		pointLyingOnPlane.push_back(0);
+		pointLyingOnPlane.push_back(-1/c);
+	}
+	else {
+		ROS_INFO("Invalid Plane");
+	}
+
+	std::vector<float> vectorConnectingOriginToPoint;
+	vectorConnectingOriginToPoint.push_back(-pointLyingOnPlane[0]);
+	vectorConnectingOriginToPoint.push_back(-pointLyingOnPlane[1]);
+	vectorConnectingOriginToPoint.push_back(-pointLyingOnPlane[2]);
+
+	int dir = sign(innerProduct(vectorConnectingOriginToPoint, unitNorm));
+	if(dir==1) {
+		//correct side
+		translatedPlane.push_back(a);
+		translatedPlane.push_back(b);
+		translatedPlane.push_back(c);
+		translatedPlane.push_back(1 - translateDistance);
+	}
+	else if(dir==-1){
+		//opposite side
+		/*unitNorm[0] = -unitNorm[0];
+		unitNorm[1] = -unitNorm[1];
+		unitNorm[2] = -unitNorm[2];*/
+		translatedPlane.push_back(a);
+		translatedPlane.push_back(b);
+		translatedPlane.push_back(c);
+		translatedPlane.push_back(1 + translateDistance);
+
+	}
+	else {
+		// origin lies on the plane
+		ROS_INFO("Origin lies on the plane");
+		translatedPlane.push_back(a);
+		translatedPlane.push_back(b);
+		translatedPlane.push_back(c);
+		translatedPlane.push_back(1);
+	}
+
+	return translatedPlane;
+
 }
