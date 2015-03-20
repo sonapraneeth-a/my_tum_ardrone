@@ -9,6 +9,8 @@ Author : Anirudh Vemula
 #include "ransacPlaneFit.h"
 #include "ImageView.h"
 
+// OpenCV related stuff
+
 #include <string>
 #include <fstream>
 #include <stdlib.h>
@@ -81,18 +83,18 @@ void ControlUINode::loadLevels (std::vector<int> levels) {
 	}
 }
 
-void ControlUINode::fitPlane3d (std::vector<int> ccPoints, std::vector<std::vector<int> > pointsClicked) {
+std::vector<float> ControlUINode::fitPlane3d (std::vector<int> ccPoints, std::vector<std::vector<int> > pointsClicked) {
 
 	std::vector<std::vector<float> > _in_points;
 
 	std::vector<std::vector<int> > points;
-	for(int i=0; i<ccPoints.size(); i++) {
+	for(unsigned int i=0; i<ccPoints.size(); i++) {
 		points.push_back(pointsClicked[ccPoints[i]]);
 	}
 
 	pthread_mutex_lock(&keyPoint_CS);
 
-	for(int i=0; i<_2d_points.size(); i++) {
+	for(unsigned int i=0; i<_2d_points.size(); i++) {
 		if(liesInside(points, _2d_points[i])) {
 			//printf("%f, %f, %f\n", _3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
 			_in_points.push_back(_3d_points[i]);
@@ -103,6 +105,8 @@ void ControlUINode::fitPlane3d (std::vector<int> ccPoints, std::vector<std::vect
 	//ROS_INFO("Number of keypoints inside %d", _in_points.size());
 	//ROS_INFO("Total number of keypoints %d", _3d_points.size());
 	_3d_plane = ransacPlaneFit(_in_points, ransacVerbose);
+
+	return _3d_plane;
 }
 
 void ControlUINode::Loop () {
@@ -131,7 +135,7 @@ std::vector<float> ControlUINode::searchNearest (std::vector<int> pt, bool consi
 	std::vector<float> minPt;
 
 	if(!considerAllLevels) {
-		for (int i=0; i<_2d_points.size(); i++)
+		for (unsigned int i=0; i<_2d_points.size(); i++)
 		{
 			if(_levels[i]==0) {
 				if(min==-1) {
@@ -149,7 +153,7 @@ std::vector<float> ControlUINode::searchNearest (std::vector<int> pt, bool consi
 		}
 	}
 	else {
-		for (int i=0; i<_2d_points.size(); i++)
+		for (unsigned int i=0; i<_2d_points.size(); i++)
 		{
 			if(min==-1) {
 				min = distance(pt, _2d_points[i]);
@@ -183,7 +187,7 @@ bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool
 	int min = -1;
 
 	if(!considerAllLevels) {
-		for (int i = 0; i < _3d_points.size(); ++i)
+		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
 			if(_levels[i]==0 && distance3D(pt, _3d_points[i]) < 0.05) {
 				float s = distance3D(pt, _3d_points[i]);
@@ -195,7 +199,7 @@ bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool
 		}
 	}
 	else {
-		for (int i = 0; i < _3d_points.size(); ++i)
+		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
 			if(distance3D(pt, _3d_points[i]) < 0.05) {
 				float s = distance3D(pt, _3d_points[i]);
@@ -230,7 +234,7 @@ bool ControlUINode::get2DPointNearest (std::vector<float> pt, std::vector<int> &
 	int min = -1;
 
 	if(!considerAllLevels) {
-		for (int i = 0; i < _3d_points.size(); ++i)
+		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
 			if(_levels[i]==0) {
 				float s = distance3D(pt, _3d_points[i]);
@@ -242,7 +246,7 @@ bool ControlUINode::get2DPointNearest (std::vector<float> pt, std::vector<int> &
 		}
 	}
 	else {
-		for (int i = 0; i < _3d_points.size(); ++i)
+		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
 			//if(distance3D(pt, _3d_points[i]) < 0.05) {
 				float s = distance3D(pt, _3d_points[i]);
@@ -299,7 +303,7 @@ void ControlUINode::saveKeyPointInformation (int numFile) {
 
 	fp<<numPoints<<std::endl;
 	fp<<endl;
-	for(int i=0; i<_3d_points.size(); i++) {
+	for(unsigned int i=0; i<_3d_points.size(); i++) {
 		fp<<_3d_points[i][0]<<","<<_3d_points[i][1]<<","<<_3d_points[i][2]<<","<<_levels[i]<<endl;
 	}
 	fp.close();
@@ -377,4 +381,35 @@ std::vector<float> ControlUINode::translatePlane (float translateDistance) {
 
 	return translatedPlane;
 
+}
+
+std::vector<std::vector<float> > ControlUINode::projectPoints (std::vector<int> ccPoints, std::vector<std::vector<float> > keyPoints) {
+	std::vector<std::vector<float> > pPoints;
+	for(unsigned int i=0; i<ccPoints.size(); i++) {
+		std::vector<float> v = projectPoint(_3d_plane, keyPoints[ccPoints[i]]);
+		pPoints.push_back(v);
+	}
+	return pPoints;
+}
+
+grid ControlUINode::buildGrid (std::vector<std::vector<float> > pPoints) {
+	std::vector<float> lu;
+	float width, height;
+
+	float squareWidth = 0.3, squareHeight = 0.3, overlap = 0.5;
+
+	// Assuming that the plane is always parallel to XZ plane - ? Gotta change this
+	getDimensions(pPoints, lu, width, height);
+
+	grid g(lu[0], lu[1]-height, lu[0]+width, lu[1], squareWidth, squareHeight, overlap);
+	gridSquare gs(lu, squareWidth, squareHeight);
+	g.add(gs);
+	gs.debugPrint();
+	while(g.translate(gs)) {
+		gs = g.getLatest();
+		gs.debugPrint();
+
+	}
+
+	return g;
 }

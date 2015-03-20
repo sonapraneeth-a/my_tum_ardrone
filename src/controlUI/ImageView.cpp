@@ -97,7 +97,7 @@ void ImageView::newImage(sensor_msgs::ImageConstPtr img) {
 	mimFrameSEQ = img->header.seq;
 
 	//copy to mimFrame
-	if (mimFrameBW.size().x != img->width || mimFrameBW.size().y != img->height)
+	if (mimFrameBW.size().x != (int)img->width || mimFrameBW.size().y != (int)img->height)
 		mimFrameBW.resize(CVD::ImageRef(img->width, img->height));
 
 	memcpy(mimFrameBW.data(), cv_ptr->image.data, img->width * img->height * 3);
@@ -193,7 +193,7 @@ void ImageView::renderFrame() {
 	glEnd();*/
 	
 	// render detected keyPoints
-	if(!renderPoly && !renderRect) {
+	if(!renderPoly) {
 		glColor3f(0, 0, 1.0);
 		glBegin(GL_POINTS);
 		for (int i = 0; i < numKeyPointsDetected; ++i)
@@ -230,7 +230,7 @@ void ImageView::renderFrame() {
 
 		glColor3f(0, 1.0, 0.0);
 		glBegin(GL_LINE_STRIP);
-		for(int i=0; i<ccPoints.size(); i++) {
+		for(unsigned int i=0; i<ccPoints.size(); i++) {
 			std::vector<int> p;
 			bool found = node->get2DPoint(keyPointsNearest[ccPoints[i]], p, considerAllLevels);
 			if(found) {
@@ -240,62 +240,6 @@ void ImageView::renderFrame() {
 
 			}
 		}
-		glEnd();
-	}
-	else {
-		// render bounding rectangle
-
-		glColor3f(1.0, 0.0, 0.0);
-		glBegin(GL_LINE_STRIP);
-		
-			std::vector<int> p;
-			std::vector<float> q;
-			q.push_back(keyPointsNearest[bPoints[0]][0]);
-			q.push_back(keyPointsNearest[bPoints[1]][1]);
-			bool found = node->get2DPointNearest(q, p, considerAllLevels);
-			if(found) {
-				glVertex2i(p[0], p[1]);
-			}
-			else {
-				ROS_INFO("1 not found");
-			}
-			q.clear();
-			p.clear();
-			q.push_back(keyPointsNearest[bPoints[0]][0]);
-			q.push_back(keyPointsNearest[bPoints[3]][1]);
-			found = node->get2DPointNearest(q, p, considerAllLevels);
-			if(found) {
-				glVertex2i(p[0], p[1]);
-			}
-			else {
-				ROS_INFO("2 not found");
-
-			}
-			q.clear();
-			p.clear();
-			q.push_back(keyPointsNearest[bPoints[2]][0]);
-			q.push_back(keyPointsNearest[bPoints[3]][1]);
-			found = node->get2DPointNearest(q, p, considerAllLevels);
-			if(found) {
-				glVertex2i(p[0], p[1]);
-			}
-			else {
-				ROS_INFO("3 not found");
-
-			}
-			q.clear();
-			p.clear();
-			q.push_back(keyPointsNearest[bPoints[2]][0]);
-			q.push_back(keyPointsNearest[bPoints[1]][1]);
-			found = node->get2DPointNearest(q, p, considerAllLevels);
-			if(found) {
-				glVertex2i(p[0], p[1]);
-			}
-			else {
-				ROS_INFO("4 not found");
-
-			}
-		
 		glEnd();
 	}
 	glDisable(GL_BLEND);
@@ -342,15 +286,15 @@ void ImageView::on_key_down(int key) {
 	if(key == 116) // t
 	{
 		// renders the polygon
-		renderRect = false;
+		//renderRect = false;
 		renderPoly = !renderPoly;
 		extractBoundingPoly();
 	}
 	if(key == 98) // b
 	{
 		// renders the bounding rectangle
-		renderPoly = false;
-		renderRect = !renderRect;
+		//renderPoly = false;
+		//renderRect = !renderRect;
 		extractBoundingRect();
 	}
 	if(key == 101) // e
@@ -358,8 +302,11 @@ void ImageView::on_key_down(int key) {
 		// Extract plane
 
 		extractBoundingPoly();
-		node->fitPlane3d (ccPoints, pointsClicked);
-		std::vector<float> translatedPlane = node->translatePlane (translateDistance);
+		std::vector<float> plane = node->fitPlane3d (ccPoints, pointsClicked);
+		std::vector<std::vector<float> > pPoints =  node->projectPoints (ccPoints, keyPointsNearest);
+		grid g = node->buildGrid(pPoints);
+		vector<vector<float> > tPoints =  node->getTargetPoints(g, plane);
+		//std::vector<float> translatedPlane = node->translatePlane (translateDistance);
 		
 	}
 }
@@ -415,7 +362,7 @@ void ImageView::extractBoundingPoly() {
 	std::vector<int> minXPoint;
 	float minX = -1;
 	int minXIndex = -1;
-	for(int i=0; i<pointsClicked.size(); i++) {
+	for(unsigned int i=0; i<pointsClicked.size(); i++) {
 		if(minX==-1) {
 			minX = pointsClicked[i][0];
 			minXPoint = pointsClicked[i];
@@ -437,7 +384,7 @@ void ImageView::extractBoundingPoly() {
 		ccPoints.push_back(minXIndex);
 		endPoint = pointsClicked[0];
 		endIndex = 0;
-		for(int j=1;j<pointsClicked.size();j++) {
+		for(unsigned int j=1;j<pointsClicked.size();j++) {
 			if((endPoint[0]==minXPoint[0] && endPoint[1]==minXPoint[1]) || onLeft(pointsClicked[j], minXPoint, endPoint)) {
 				endPoint = pointsClicked[j];
 				endIndex = j;
@@ -459,7 +406,7 @@ void ImageView::extractBoundingRect() {
 	int minX = pointsClicked[0][0], minY = pointsClicked[0][1], maxX = pointsClicked[0][0], maxY = pointsClicked[0][1];
 	int minXIndex = 0, minYIndex =0, maxXIndex = 0, maxYIndex = 0;
 
-	for(int i=0; i<pointsClicked.size(); i++) {
+	for(unsigned int i=0; i<pointsClicked.size(); i++) {
 		if(pointsClicked[i][0] < minX) {
 			minX = pointsClicked[i][0];
 			minXIndex = i;

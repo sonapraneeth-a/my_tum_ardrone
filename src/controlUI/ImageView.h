@@ -34,6 +34,8 @@ camera feed of the drone and recording mouse clicks
 #include <CGAL/convex_hull_3.h>*/
 
 class ControlUINode;
+struct grid;
+struct gridSquare;
 
 class ImageView : private CVD::Thread, private MouseKeyHandler {
 

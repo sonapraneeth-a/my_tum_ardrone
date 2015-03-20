@@ -18,6 +18,100 @@ Author : Anirudh Vemula
 
 class ImageView;
 
+
+struct gridSquare {
+public:
+	float u, v; // left upper point
+	float width, height; // width and height of the gridSquare
+	gridSquare(std::vector<float> lu, float width, float height) {
+		this->width = width;
+		this->height = height;
+		u = lu[0];
+		v = lu[1];
+	}
+	gridSquare(float u, float v, float width, float height) {
+		this->width = width;
+		this->height = height;
+		this->u = u;
+		this->v = v;
+	}
+	void debugPrint() {
+		ROS_INFO("Square created at (%f, %f) with width %f and height %f", u, v, width, height);
+	}
+};
+
+struct grid {
+public:
+	// bounds
+	float minU, minV, maxU, maxV, width, height, overlap;
+	int row;
+	std::vector<std::vector<gridSquare> > rowSquares;
+	grid(float mU, float mV, float maU, float maV, float width, float height, float overlap) {
+		minU = mU;
+		minV = mV;
+		maxU = maU;
+		maxV = maV;
+		this->width = width;
+		this->height = height;
+		this->overlap = overlap;
+		std::vector<gridSquare> v;
+		rowSquares.push_back(v);
+		row = 0;
+	}
+	void add(gridSquare square) {
+		rowSquares[row].push_back(square);
+	}
+	bool translate(gridSquare g) {
+
+		// Whenever row empty. Check v bounds too.
+		if(rowSquares[row].empty()) {
+			float unew = minU;
+			float vnew = g.v - (1-overlap)*height;
+			if(vnew-height >= minV) {
+				// Clean down shift
+				gridSquare gnew(unew, vnew, width, height);
+				add(gnew);
+			}
+			else if(vnew - height < minV) {
+				// grid with less height
+				gridSquare gnew(unew, vnew, width, vnew - minV);
+				if(gnew.height > 0)
+					add(gnew);
+				else
+					return false;
+
+			}
+		}
+		else {
+			float unew = g.u + (1-overlap)*width;
+			// Only right translation
+			if(unew+width <= maxU) {
+				// Clean right shift
+				gridSquare gnew(unew, g.v, width, g.height);
+				add(gnew);
+			}
+			else if(unew+width > maxU) {
+				// grid with less width - ?
+				gridSquare gnew(unew, g.v, maxU - unew, g.height);
+				if(gnew.width > 0) // lower bound on the width of the square - ?
+					add(gnew);
+				// Row completed
+				row++;
+				std::vector<gridSquare> v;
+				rowSquares.push_back(v);
+			}
+
+		}
+		return true;
+	}
+	gridSquare getLatest() {
+		if(rowSquares[row].empty())
+			return rowSquares[row-1].back();
+		else
+			return rowSquares[row].back();
+	}
+};
+
 class ControlUINode
 {
 private:
@@ -79,7 +173,7 @@ public:
 	void loadLevels (std::vector<int> levels);
 
 	// Algorithmic functions
-	void fitPlane3d (std::vector<int> ccPoints, std::vector<std::vector<int> > pointsClicked);
+	std::vector<float> fitPlane3d (std::vector<int> ccPoints, std::vector<std::vector<int> > pointsClicked);
 
 	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
 	std::vector<float> searchNearest(std::vector<int> pt, bool considerAllLevels);
@@ -101,6 +195,12 @@ public:
 
 	// Translates the fitted plane by the given distance along its normal toward origin
 	std::vector<float> translatePlane (float translateDistance);
+
+	// Projects the 3d points onto the extracted plane
+	std::vector<std::vector<float> >  projectPoints (std::vector<int> ccPoints, std::vector<std::vector<float> > keyPoints);
+
+	// Builds the grid
+	grid buildGrid (std::vector<std::vector<float> > pPoints);
 };
 
 
