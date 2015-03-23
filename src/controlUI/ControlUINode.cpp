@@ -10,6 +10,10 @@ Author : Anirudh Vemula
 #include "ImageView.h"
 
 // OpenCV related stuff
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/highgui/highgui.hpp"
 
 #include <string>
 #include <fstream>
@@ -396,7 +400,7 @@ grid ControlUINode::buildGrid (std::vector<std::vector<float> > pPoints) {
 	std::vector<float> lu;
 	float width, height;
 
-	float squareWidth = 0.3, squareHeight = 0.3, overlap = 0.5;
+	float squareWidth = 0.4, squareHeight = 0.4, overlap = 0.5;
 
 	// Assuming that the plane is always parallel to XZ plane - ? Gotta change this
 	getDimensions(pPoints, lu, width, height);
@@ -411,5 +415,149 @@ grid ControlUINode::buildGrid (std::vector<std::vector<float> > pPoints) {
 
 	}
 
+	ROS_INFO("Number of rows in grid : %d", g.row+1);
+
 	return g;
+}
+
+std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::vector<float> plane) {
+	std::vector<std::vector<double> > tPoints;
+
+	std::vector<cv::Point2f> imgPoints;
+	imgPoints.push_back(cv::Point2f(0,0));
+	imgPoints.push_back(cv::Point2f(640,0));
+	imgPoints.push_back(cv::Point2f(640,360));
+	imgPoints.push_back(cv::Point2f(0,360));
+
+	cv::Mat cameraMatrix(3,3,cv::DataType<double>::type);
+	// Setting camera matrix for vga quality
+	cameraMatrix.at<double>(0,0) = 565.710890694431;
+	cameraMatrix.at<double>(0,1) = 0;
+	cameraMatrix.at<double>(0,2) = 329.70046366652;
+	cameraMatrix.at<double>(1,0) = 0;
+	cameraMatrix.at<double>(1,1) = 565.110297594854;
+	cameraMatrix.at<double>(1,2) = 169.873085097623;
+	cameraMatrix.at<double>(2,0) = 0;
+	cameraMatrix.at<double>(2,1) = 0;
+	cameraMatrix.at<double>(2,2) = 1;
+
+	cv::Mat distCoeffs(5,1,cv::DataType<double>::type);
+	// Setting distortion coefficients
+	distCoeffs.at<double>(0) = -0.516089772391501;
+	distCoeffs.at<double>(1) = 0.285181914111246;
+	distCoeffs.at<double>(2) = -0.000466469917823537;
+	distCoeffs.at<double>(3) = 0.000864792975814983;
+	distCoeffs.at<double>(4) = 0;
+
+	cv::Mat rvec(3,1,cv::DataType<double>::type);
+	cv::Mat tvec(3,1,cv::DataType<double>::type);
+
+
+
+	std::vector<cv::Point3f> objPoints;
+
+
+	bool forward = true; // Need to iterate forward or backward
+	for(unsigned int i=0; i < g.rowSquares.size()-1; i++) {
+
+
+		/** In drone coordinate system,
+
+			(gs.u, getY(gs.u, gs.v, plane), gs.v) --------------- (gs.u + gs.width, getY(gs.u+gs.width,gs.v, plane), gs.v)
+						|																|
+						|																|
+						|																|
+						|																|
+			(gs.u, getY(gs.u, gs.v - gs.height, gs.v), gs.v - gs.height) ------------ (gs.u + gs.width, getY(gs.u+gs.width, gs.v-gs.height, plane), gs.v-gs.height)
+		*/
+
+
+		// Iterating across rows
+		ROS_INFO("Starting %dth row", i);
+		ROS_INFO("Size of %dth row is %d", i, g.rowSquares[i].size());
+		if(forward) {
+			for(unsigned int j=0; j < g.rowSquares[i].size(); j++) {
+				ROS_INFO("Accessing %dth square of %dth row", j, i);
+				objPoints.clear();
+				gridSquare gs = g.rowSquares[i][j];
+				// objPoints.push_back(cv::Point3f(gs.u, getY(gs.u, gs.v, plane), gs.v));
+				objPoints.push_back(cv::Point3f(gs.u, - gs.v, getY(gs.u, gs.v, plane)));
+				// objPoints.push_back(cv::Point3f(gs.u + gs.width, getY(gs.u + gs.width, gs.v, plane), gs.v));
+				objPoints.push_back(cv::Point3f(gs.u + gs.width, - gs.v, getY(gs.u + gs.width, gs.v, plane)));
+				// objPoints.push_back(cv::Point3f(gs.u + gs.width, getY(gs.u + gs.width, gs.v - gs.height, plane), gs.v - gs.height));
+				objPoints.push_back(cv::Point3f(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane)));
+				// objPoints.push_back(cv::Point3f(gs.u, getY(gs.u, gs.v - gs.height, plane), gs.v - gs.height));
+				objPoints.push_back(cv::Point3f(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
+
+				//gs.printCoord();
+				std::cout<<objPoints<<std::endl;
+
+				cv::solvePnP(objPoints, imgPoints, cameraMatrix, distCoeffs, rvec, tvec);
+		
+				// std::cout<<"rvec : "<<rvec<<std::endl;
+				// std::cout<<"tvec : "<<tvec<<std::endl;
+
+				cv::Mat rot(3,3, cv::DataType<double>::type);
+				cv::Rodrigues(rvec, rot);
+
+				cv::Mat rotinv;
+				transpose(rot, rotinv);
+
+				tvec = -rotinv * tvec;
+
+				std::cout<<"rotated tvec : "<<tvec<<std::endl;
+
+				std::vector<double> pt;
+				pt.push_back(tvec.at<double>(0));
+				pt.push_back(tvec.at<double>(2));
+				pt.push_back(-tvec.at<double>(1));
+				tPoints.push_back(pt);
+			}
+		}
+		else {
+			for(int j = g.rowSquares[i].size()-1; j>=0 ; j--) {
+				ROS_INFO("Accessing %dth square of %dth row", j, i);
+				objPoints.clear();
+				gridSquare gs = g.rowSquares[i][j];
+				// objPoints.push_back(cv::Point3f(gs.u, getY(gs.u, gs.v, plane), gs.v));
+				objPoints.push_back(cv::Point3f(gs.u, -gs.v, getY(gs.u, gs.v, plane)));
+				// objPoints.push_back(cv::Point3f(gs.u + gs.width, getY(gs.u + gs.width, gs.v, plane), gs.v));
+				objPoints.push_back(cv::Point3f(gs.u + gs.width, -gs.v, getY(gs.u + gs.width, gs.v, plane)));
+				// objPoints.push_back(cv::Point3f(gs.u + gs.width, getY(gs.u + gs.width, gs.v - gs.height, plane), gs.v - gs.height));
+				objPoints.push_back(cv::Point3f(gs.u + gs.width, -(gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane)));
+				// objPoints.push_back(cv::Point3f(gs.u, getY(gs.u, gs.v - gs.height, plane), gs.v - gs.height));
+				objPoints.push_back(cv::Point3f(gs.u, -(gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
+
+				//gs.printCoord();
+				std::cout<<objPoints<<std::endl;
+				
+				cv::solvePnP(objPoints, imgPoints, cameraMatrix, distCoeffs, rvec, tvec);
+
+				// std::cout<<"rvec : "<<rvec<<std::endl;
+				// std::cout<<"tvec : "<<tvec<<std::endl;
+
+				cv::Mat rot(3,3, cv::DataType<double>::type);
+				cv::Rodrigues(rvec, rot);
+
+				cv::Mat rotinv;
+				transpose(rot, rotinv);
+
+				tvec = -rotinv * tvec;
+
+				std::cout<<"rotated tvec : "<<tvec<<std::endl;
+
+				std::vector<double> pt;
+				pt.push_back(tvec.at<double>(0));
+				pt.push_back(tvec.at<double>(2));
+				pt.push_back(-tvec.at<double>(1));
+				tPoints.push_back(pt);
+			}
+		}
+
+		forward = !forward;
+	}
+
+	print3dPoints(tPoints);
+
+	return tPoints;
 }

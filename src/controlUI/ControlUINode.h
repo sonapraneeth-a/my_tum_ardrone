@@ -38,6 +38,14 @@ public:
 	void debugPrint() {
 		ROS_INFO("Square created at (%f, %f) with width %f and height %f", u, v, width, height);
 	}
+	void printCoord() {
+		std::cout<<std::endl;
+		std::cout<<u<<","<<v<<std::endl;
+		std::cout<<u+width<<","<<v<<std::endl;
+		std::cout<<u+width<<","<<v-height<<std::endl;
+		std::cout<<u<<","<<v-height<<std::endl;
+		std::cout<<std::endl;
+	}
 };
 
 struct grid {
@@ -73,9 +81,9 @@ public:
 				add(gnew);
 			}
 			else if(vnew - height < minV) {
-				// grid with less height
-				gridSquare gnew(unew, vnew, width, vnew - minV);
-				if(gnew.height > 0)
+				// grid with less height - ? No. grid square must always have a fixed height
+				gridSquare gnew(unew, vnew, width, height);
+				if(vnew - minV > 0)
 					add(gnew);
 				else
 					return false;
@@ -91,9 +99,9 @@ public:
 				add(gnew);
 			}
 			else if(unew+width > maxU) {
-				// grid with less width - ?
-				gridSquare gnew(unew, g.v, maxU - unew, g.height);
-				if(gnew.width > 0) // lower bound on the width of the square - ?
+				// grid with less width - ? No. grid square must always have a fixed width
+				gridSquare gnew(unew, g.v, width, g.height);
+				if(maxU - unew > 0) // lower bound on the width of the square - ?
 					add(gnew);
 				// Row completed
 				row++;
@@ -201,6 +209,9 @@ public:
 
 	// Builds the grid
 	grid buildGrid (std::vector<std::vector<float> > pPoints);
+
+	// Gets the target points given the grid and plane
+	std::vector<std::vector<double> > getTargetPoints (grid g, std::vector<float> plane);
 };
 
 

@@ -305,7 +305,7 @@ void ImageView::on_key_down(int key) {
 		std::vector<float> plane = node->fitPlane3d (ccPoints, pointsClicked);
 		std::vector<std::vector<float> > pPoints =  node->projectPoints (ccPoints, keyPointsNearest);
 		grid g = node->buildGrid(pPoints);
-		vector<vector<float> > tPoints =  node->getTargetPoints(g, plane);
+		std::vector<std::vector<double> > tPoints =  node->getTargetPoints(g, plane);
 		//std::vector<float> translatedPlane = node->translatePlane (translateDistance);
 		
 	}
@@ -350,6 +350,7 @@ void ImageView::search(std::vector<int> pt) {
 
 	keyPointsNearest.push_back(kp);
 	numKeyPointsDetected++;
+	printf("X, Y and Z of nearest keypoint : (%f, %f, %f)\n", kp[0], kp[1], kp[2]);
 }
 
 void ImageView::extractBoundingPoly() {
