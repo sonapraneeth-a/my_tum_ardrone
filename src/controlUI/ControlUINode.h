@@ -9,6 +9,7 @@ Author : Anirudh Vemula
 
 #include "ros/ros.h"
 #include "tum_ardrone/keypoint_coord.h"
+#include "tum_ardrone/filter_state.h"
 #include "std_msgs/String.h"
 #include "helperFunctions.h"
 
@@ -125,6 +126,7 @@ class ControlUINode
 private:
 
 	ros::Subscriber keypoint_coord_sub;
+	ros::Subscriber pose_sub;
 	ros::Time lastKeyStamp;
 	static pthread_mutex_t tum_ardrone_CS;
 	ros::Subscriber tum_ardrone_sub;
@@ -136,14 +138,20 @@ private:
 	std::vector<std::vector<float> > _2d_points;
 	std::vector<int> _levels;
 	int numPoints;
+	float scale;
+	float scale_z;
+	float x_offset, y_offset, z_offset;
 
 	std::vector<float> _3d_plane; // stored as a 4 length vector with constants a,b,c,d
 								 // corresponding to ax+by+cz+d = 0. Enforcing the constraint that d = 1 for uniformity (except when d = 0)
 
 	std::string keypoint_channel;
 	std::string command_channel;
+	std::string pose_channel;
 
 	bool ransacVerbose;
+	bool useScaleFactor;
+	float threshold;
 
 	// distance between two 2d points
 	float distance(std::vector<int> pt_int, std::vector<float> pt_float);
@@ -152,6 +160,7 @@ private:
 	float distance3D(std::vector<float> p1, std::vector<float> p2);
 
 	static pthread_mutex_t keyPoint_CS;
+	static pthread_mutex_t pose_CS;
 
 
 public:
@@ -163,6 +172,7 @@ public:
 
 	// ROS message callbacks
 	void keyPointDataCb (const tum_ardrone::keypoint_coordConstPtr coordPtr);
+	void poseCb (const tum_ardrone::filter_stateConstPtr statePtr);
 	void comCb (const std_msgs::StringConstPtr str);
 
 	// main loop

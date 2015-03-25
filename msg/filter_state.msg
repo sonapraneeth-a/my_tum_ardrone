@@ -26,6 +26,10 @@ float32     dyaw
 
 # --------------------- other values ---------------------------
 float32     scale         # ptam scale factor (PTAMpos * scale = WORLDpos).
+float32     scale_z
+float32     x_offset
+float32     y_offset
+float32     z_offset
 uint32      ptamState
 float32     scaleAccuracy # if scale is very inaccurate, this is about 0.5, and grows up to 1 (=very accurate).
 

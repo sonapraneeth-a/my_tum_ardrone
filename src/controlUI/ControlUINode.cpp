@@ -6,6 +6,7 @@ Author : Anirudh Vemula
 #include "ControlUINode.h"
 #include "ros/ros.h"
 #include "tum_ardrone/keypoint_coord.h"
+#include "tum_ardrone/filter_state.h"
 #include "ransacPlaneFit.h"
 #include "ImageView.h"
 
@@ -23,19 +24,25 @@ Author : Anirudh Vemula
 using namespace std;
 
 pthread_mutex_t ControlUINode::keyPoint_CS = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t ControlUINode::pose_CS = PTHREAD_MUTEX_INITIALIZER;
 
 
 ControlUINode::ControlUINode() {
 	command_channel = nh_.resolveName("ardrone/com");
 	keypoint_channel = nh_.resolveName("/keypoint_coord");
+	pose_channel = nh_.resolveName("ardrone/predictedPose");
 
 	keypoint_coord_sub = nh_.subscribe(keypoint_channel, 10, &ControlUINode::keyPointDataCb, this);
+	pose_sub = nh_.subscribe(pose_channel, 10, &ControlUINode::poseCb, this);
+
 	tum_ardrone_pub = nh_.advertise<std_msgs::String>(command_channel, 50);
 	tum_ardrone_sub = nh_.subscribe(command_channel, 50, &ControlUINode::comCb, this);
 
 	image_gui = new ImageView(this);
 
 	ransacVerbose = true;
+	useScaleFactor = true;
+	threshold = 0.05;
 }
 
 ControlUINode::~ControlUINode() {
@@ -55,6 +62,18 @@ void ControlUINode::keyPointDataCb (const tum_ardrone::keypoint_coordConstPtr co
 	//fitPlane3d();
 }
 
+void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
+	pthread_mutex_lock(&pose_CS);
+
+	scale = statePtr->scale;
+	scale_z = statePtr->scale_z;
+	x_offset = statePtr->x_offset;
+	y_offset = statePtr->y_offset;
+	z_offset = statePtr->z_offset;
+
+	pthread_mutex_unlock(&pose_CS);
+}
+
 void ControlUINode::load2dPoints (std::vector<float> x_img, std::vector<float> y_img) {
 	_2d_points.clear();
 	for (int i = 0; i < numPoints; ++i)
@@ -67,15 +86,26 @@ void ControlUINode::load2dPoints (std::vector<float> x_img, std::vector<float> y
 }
 
 void ControlUINode::load3dPoints (std::vector<float> x_w, std::vector<float> y_w, std::vector<float> z_w) {
+	pthread_mutex_lock(&pose_CS);
+
 	_3d_points.clear();
 	for (int i = 0; i < numPoints; ++i)
 	{
 		std::vector<float> p;
-		p.push_back(x_w[i]);
-		p.push_back(y_w[i]);
-		p.push_back(z_w[i]);
+		if(!useScaleFactor) {
+			p.push_back(x_w[i]);
+			p.push_back(y_w[i]);
+			p.push_back(z_w[i]);
+		}
+		else {
+			p.push_back(x_w[i]*scale + x_offset);
+			p.push_back(y_w[i]*scale + y_offset);
+			p.push_back(z_w[i]*scale_z + z_offset);
+		}
 		_3d_points.push_back(p);
 	}
+
+	pthread_mutex_unlock(&pose_CS);
 	//printf("Size of 3d points : %d\n", _3d_points.size());
 }
 
@@ -193,7 +223,7 @@ bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool
 	if(!considerAllLevels) {
 		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
-			if(_levels[i]==0 && distance3D(pt, _3d_points[i]) < 0.05) {
+			if(_levels[i]==0 && distance3D(pt, _3d_points[i]) < threshold) {
 				float s = distance3D(pt, _3d_points[i]);
 				if(s<minDist) {
 					minDist = s;
@@ -205,7 +235,7 @@ bool ControlUINode::get2DPoint (std::vector<float> pt, std::vector<int> &p, bool
 	else {
 		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
-			if(distance3D(pt, _3d_points[i]) < 0.05) {
+			if(distance3D(pt, _3d_points[i]) < threshold) {
 				float s = distance3D(pt, _3d_points[i]);
 				if(s<minDist) {
 					minDist = s;
@@ -422,6 +452,7 @@ grid ControlUINode::buildGrid (std::vector<std::vector<float> > pPoints) {
 
 std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::vector<float> plane) {
 	std::vector<std::vector<double> > tPoints;
+	std::vector<std::vector<double> > tPoints_z;
 
 	std::vector<cv::Point2f> imgPoints;
 	imgPoints.push_back(cv::Point2f(0,0));
@@ -431,22 +462,22 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 
 	cv::Mat cameraMatrix(3,3,cv::DataType<double>::type);
 	// Setting camera matrix for vga quality
-	cameraMatrix.at<double>(0,0) = 565.710890694431;
+	cameraMatrix.at<double>(0,0) = 569.883158064802;
 	cameraMatrix.at<double>(0,1) = 0;
-	cameraMatrix.at<double>(0,2) = 329.70046366652;
+	cameraMatrix.at<double>(0,2) = 331.403348466206;
 	cameraMatrix.at<double>(1,0) = 0;
-	cameraMatrix.at<double>(1,1) = 565.110297594854;
-	cameraMatrix.at<double>(1,2) = 169.873085097623;
+	cameraMatrix.at<double>(1,1) = 568.007065238522;
+	cameraMatrix.at<double>(1,2) = 135.879365106014;
 	cameraMatrix.at<double>(2,0) = 0;
 	cameraMatrix.at<double>(2,1) = 0;
 	cameraMatrix.at<double>(2,2) = 1;
 
 	cv::Mat distCoeffs(5,1,cv::DataType<double>::type);
 	// Setting distortion coefficients
-	distCoeffs.at<double>(0) = -0.516089772391501;
-	distCoeffs.at<double>(1) = 0.285181914111246;
-	distCoeffs.at<double>(2) = -0.000466469917823537;
-	distCoeffs.at<double>(3) = 0.000864792975814983;
+	distCoeffs.at<double>(0) = -0.526629354780687;
+	distCoeffs.at<double>(1) = 0.274357114262035;
+	distCoeffs.at<double>(2) = 0.0211426202132638;
+	distCoeffs.at<double>(3) = -0.0063942451330052;
 	distCoeffs.at<double>(4) = 0;
 
 	cv::Mat rvec(3,1,cv::DataType<double>::type);
@@ -474,7 +505,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 
 		// Iterating across rows
 		ROS_INFO("Starting %dth row", i);
-		ROS_INFO("Size of %dth row is %d", i, g.rowSquares[i].size());
+		//ROS_INFO("Size of %dth row is %d", i, g.rowSquares[i].size());
 		if(forward) {
 			for(unsigned int j=0; j < g.rowSquares[i].size(); j++) {
 				ROS_INFO("Accessing %dth square of %dth row", j, i);
@@ -512,6 +543,12 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				pt.push_back(tvec.at<double>(2));
 				pt.push_back(-tvec.at<double>(1));
 				tPoints.push_back(pt);
+
+				pt.clear();
+				pt.push_back(gs.u + (gs.width/2));
+				pt.push_back(tvec.at<double>(2));
+				pt.push_back(gs.v - (gs.height/2));
+				tPoints_z.push_back(pt);
 			}
 		}
 		else {
@@ -551,6 +588,12 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				pt.push_back(tvec.at<double>(2));
 				pt.push_back(-tvec.at<double>(1));
 				tPoints.push_back(pt);
+
+				pt.clear();
+				pt.push_back(gs.u + (gs.width/2));
+				pt.push_back(tvec.at<double>(2));
+				pt.push_back(gs.v - (gs.height/2));
+				tPoints_z.push_back(pt);
 			}
 		}
 
@@ -558,6 +601,8 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 	}
 
 	print3dPoints(tPoints);
+	printf("Points with X and Z just midpoints\n");
+	print3dPoints(tPoints_z);
 
 	return tPoints;
 }

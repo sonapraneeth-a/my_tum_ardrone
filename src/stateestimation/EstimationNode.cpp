@@ -273,6 +273,10 @@ void EstimationNode::Loop()
 		  // fill metadata
 		  s.header.stamp = ros::Time().now();
 		  s.scale = filter->getCurrentScales()[0];
+		  s.scale_z = filter->getCurrentScales()[2];
+		  s.x_offset = filter->getCurrentOffsets()[0];
+		  s.y_offset = filter->getCurrentOffsets()[1];
+		  s.z_offset = filter->getCurrentOffsets()[2];
 		  s.scaleAccuracy = filter->getScaleAccuracy();
 		  s.ptamState = ptamWrapper->PTAMStatus;
 		  s.droneState = lastNavdataReceived.state;
