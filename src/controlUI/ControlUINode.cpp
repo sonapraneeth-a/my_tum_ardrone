@@ -454,14 +454,30 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 	std::vector<std::vector<double> > tPoints;
 	std::vector<std::vector<double> > tPoints_z;
 
-	std::vector<cv::Point2f> imgPoints;
-	imgPoints.push_back(cv::Point2f(0,0));
-	imgPoints.push_back(cv::Point2f(640,0));
-	imgPoints.push_back(cv::Point2f(640,360));
-	imgPoints.push_back(cv::Point2f(0,360));
+	std::vector<cv::Point2d> imgPoints;
+	imgPoints.push_back(cv::Point2d(0,0));
+	imgPoints.push_back(cv::Point2d(640,0));
+	imgPoints.push_back(cv::Point2d(640,360));
+	imgPoints.push_back(cv::Point2d(0,360));
+	cv::Mat imgPoints_mat(4,1, CV_64FC2);
+	for(int i=0; i<4; i++)
+		imgPoints_mat.at<cv::Point2d>(i,0) = imgPoints[i];
+	
 
 	cv::Mat cameraMatrix(3,3,cv::DataType<double>::type);
 	// Setting camera matrix for vga quality
+	//From calibration done on our drone
+	cameraMatrix.at<double>(0,0) = 565.710890694431;
+	cameraMatrix.at<double>(0,1) = 0;
+	cameraMatrix.at<double>(0,2) = 329.70046366652;
+	cameraMatrix.at<double>(1,0) = 0;
+	cameraMatrix.at<double>(1,1) = 565.110297594854;
+	cameraMatrix.at<double>(1,2) = 169.873085097623;
+	cameraMatrix.at<double>(2,0) = 0;
+	cameraMatrix.at<double>(2,1) = 0;
+	cameraMatrix.at<double>(2,2) = 1;
+	
+	/* From ARDRone package
 	cameraMatrix.at<double>(0,0) = 569.883158064802;
 	cameraMatrix.at<double>(0,1) = 0;
 	cameraMatrix.at<double>(0,2) = 331.403348466206;
@@ -471,21 +487,30 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 	cameraMatrix.at<double>(2,0) = 0;
 	cameraMatrix.at<double>(2,1) = 0;
 	cameraMatrix.at<double>(2,2) = 1;
+	*/
 
 	cv::Mat distCoeffs(5,1,cv::DataType<double>::type);
 	// Setting distortion coefficients
+	//From calibration done on our drone
+	distCoeffs.at<double>(0) = -0.516089772391501;
+	distCoeffs.at<double>(1) = 0.285181914111246;
+	distCoeffs.at<double>(2) = -0.000466469917823537;
+	distCoeffs.at<double>(3) = 0.000864792975814983;
+	distCoeffs.at<double>(4) = 0;
+
+	/* From ARDrone package
 	distCoeffs.at<double>(0) = -0.526629354780687;
 	distCoeffs.at<double>(1) = 0.274357114262035;
 	distCoeffs.at<double>(2) = 0.0211426202132638;
 	distCoeffs.at<double>(3) = -0.0063942451330052;
 	distCoeffs.at<double>(4) = 0;
-
+	*/
 	cv::Mat rvec(3,1,cv::DataType<double>::type);
 	cv::Mat tvec(3,1,cv::DataType<double>::type);
 
 
 
-	std::vector<cv::Point3f> objPoints;
+	std::vector<cv::Point3d> objPoints;
 
 
 	bool forward = true; // Need to iterate forward or backward
@@ -511,19 +536,27 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				gridSquare gs = g.rowSquares[i][j];
-				// objPoints.push_back(cv::Point3f(gs.u, getY(gs.u, gs.v, plane), gs.v));
-				objPoints.push_back(cv::Point3f(gs.u, - gs.v, getY(gs.u, gs.v, plane)));
-				// objPoints.push_back(cv::Point3f(gs.u + gs.width, getY(gs.u + gs.width, gs.v, plane), gs.v));
-				objPoints.push_back(cv::Point3f(gs.u + gs.width, - gs.v, getY(gs.u + gs.width, gs.v, plane)));
-				// objPoints.push_back(cv::Point3f(gs.u + gs.width, getY(gs.u + gs.width, gs.v - gs.height, plane), gs.v - gs.height));
-				objPoints.push_back(cv::Point3f(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane)));
-				// objPoints.push_back(cv::Point3f(gs.u, getY(gs.u, gs.v - gs.height, plane), gs.v - gs.height));
-				objPoints.push_back(cv::Point3f(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
+				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v, plane), gs.v));
+				objPoints.push_back(cv::Point3d(gs.u, - gs.v, getY(gs.u, gs.v, plane)));
+				// objPoints.push_back(cv::Point3d(gs.u + gs.width, getY(gs.u + gs.width, gs.v, plane), gs.v));
+				objPoints.push_back(cv::Point3d(gs.u + gs.width, - gs.v, getY(gs.u + gs.width, gs.v, plane)));
+				// objPoints.push_back(cv::Point3d(gs.u + gs.width, getY(gs.u + gs.width, gs.v - gs.height, plane), gs.v - gs.height));
+				objPoints.push_back(cv::Point3d(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane)));
+				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v - gs.height, plane), gs.v - gs.height));
+				objPoints.push_back(cv::Point3d(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
 
 				//gs.printCoord();
 				std::cout<<objPoints<<std::endl;
+				
+				cv::Mat objPoints_mat(4,1, CV_64FC3);				
+				for(int i=0; i<4; i++)
+					objPoints_mat.at<cv::Point3d>(i,0) = objPoints[i];
 
-				cv::solvePnP(objPoints, imgPoints, cameraMatrix, distCoeffs, rvec, tvec);
+				//[MGP]Dont know but we have to call undistortPoints as a dummy call
+				//Something to do with older version of opencv which gets linked by mrpt
+				cv::Mat dummy;
+				cv::undistortPoints(imgPoints_mat, dummy, cameraMatrix, distCoeffs);
+				cv::solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, false, CV_EPNP);
 		
 				// std::cout<<"rvec : "<<rvec<<std::endl;
 				// std::cout<<"tvec : "<<tvec<<std::endl;
@@ -556,19 +589,28 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				gridSquare gs = g.rowSquares[i][j];
-				// objPoints.push_back(cv::Point3f(gs.u, getY(gs.u, gs.v, plane), gs.v));
-				objPoints.push_back(cv::Point3f(gs.u, -gs.v, getY(gs.u, gs.v, plane)));
-				// objPoints.push_back(cv::Point3f(gs.u + gs.width, getY(gs.u + gs.width, gs.v, plane), gs.v));
-				objPoints.push_back(cv::Point3f(gs.u + gs.width, -gs.v, getY(gs.u + gs.width, gs.v, plane)));
-				// objPoints.push_back(cv::Point3f(gs.u + gs.width, getY(gs.u + gs.width, gs.v - gs.height, plane), gs.v - gs.height));
-				objPoints.push_back(cv::Point3f(gs.u + gs.width, -(gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane)));
-				// objPoints.push_back(cv::Point3f(gs.u, getY(gs.u, gs.v - gs.height, plane), gs.v - gs.height));
-				objPoints.push_back(cv::Point3f(gs.u, -(gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
+				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v, plane), gs.v));
+				objPoints.push_back(cv::Point3d(gs.u, -gs.v, getY(gs.u, gs.v, plane)));
+				// objPoints.push_back(cv::Point3d(gs.u + gs.width, getY(gs.u + gs.width, gs.v, plane), gs.v));
+				objPoints.push_back(cv::Point3d(gs.u + gs.width, -gs.v, getY(gs.u + gs.width, gs.v, plane)));
+				// objPoints.push_back(cv::Point3d(gs.u + gs.width, getY(gs.u + gs.width, gs.v - gs.height, plane), gs.v - gs.height));
+				objPoints.push_back(cv::Point3d(gs.u + gs.width, -(gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane)));
+				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v - gs.height, plane), gs.v - gs.height));
+				objPoints.push_back(cv::Point3d(gs.u, -(gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
 
 				//gs.printCoord();
 				std::cout<<objPoints<<std::endl;
-				
-				cv::solvePnP(objPoints, imgPoints, cameraMatrix, distCoeffs, rvec, tvec);
+
+				cv::Mat objPoints_mat(4,1, CV_64FC3);				
+				for(int i=0; i<4; i++)
+					objPoints_mat.at<cv::Point3d>(i,0) = objPoints[i];
+
+				//[MGP]Dont know but we have to call undistortPoints as a dummy call
+				//Something to do with older version of opencv which gets linked by mrpt
+				cv::Mat dummy;
+				cv::undistortPoints(imgPoints_mat, dummy, cameraMatrix, distCoeffs);
+				cv::solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, false, CV_EPNP);
+
 
 				// std::cout<<"rvec : "<<rvec<<std::endl;
 				// std::cout<<"tvec : "<<tvec<<std::endl;
