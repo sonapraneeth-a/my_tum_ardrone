@@ -121,6 +121,41 @@ public:
 	}
 };
 
+struct pGrid {
+public:
+	float au, av; //left upper point
+	std::vector<float> rd; // right direction vector
+	std::vector<float> dd; // down direction vector
+	float width; // distance along rd
+	float height; // height along dd
+	float overlap; // overlap across grid squares
+	int row;
+	std::vector<std::vector<pGridSquare> > rowSquares;
+
+	pGrid(float au, float av, std::vector<float> rd, std::vector<float> dd, float width, float height, float overlap) {
+		this->au = au;
+		this->av = av;
+		this->rd = rd;
+		this->dd = dd;
+		this->width = width; this->height = height; this->overlap = overlap;
+		std::vector<pGridSquare> v;
+		rowSquares.push_back(v);
+		row = 0;
+	}
+	void add(pGridSquare gs) {
+		rowSquares[row].push_back(gs);
+	}
+	bool translate(pGridSquare gs) {
+
+	}
+	pGridSquare getLatest(){
+		if(rowSquares[row].empty())
+			return rowSquares[row-1].back();
+		else
+			return rowSquares[row].back();
+	}
+};
+
 class ControlUINode
 {
 private:
