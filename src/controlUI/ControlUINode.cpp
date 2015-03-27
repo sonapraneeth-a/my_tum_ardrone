@@ -16,19 +16,22 @@ Author : Anirudh Vemula
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+#include "ardrone_autonomy/RecordEnable.h"
+
 #include <string>
 #include <fstream>
 #include <stdlib.h>
 #include <sstream>
+#include <list>
 
 using namespace std;
 
 pthread_mutex_t ControlUINode::keyPoint_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::pose_CS = PTHREAD_MUTEX_INITIALIZER;
-
+pthread_mutex_t ControlUINode::tum_ardrone_CS = PTHREAD_MUTEX_INITIALIZER;
 
 ControlUINode::ControlUINode() {
-	command_channel = nh_.resolveName("ardrone/com");
+	command_channel = nh_.resolveName("tum_ardrone/com");
 	keypoint_channel = nh_.resolveName("/keypoint_coord");
 	pose_channel = nh_.resolveName("ardrone/predictedPose");
 
@@ -38,11 +41,26 @@ ControlUINode::ControlUINode() {
 	tum_ardrone_pub = nh_.advertise<std_msgs::String>(command_channel, 50);
 	tum_ardrone_sub = nh_.subscribe(command_channel, 50, &ControlUINode::comCb, this);
 
+	video = nh_.serviceClient<ardrone_autonomy::RecordEnable>("ardrone/setrecord");
+
+
 	image_gui = new ImageView(this);
 
 	ransacVerbose = true;
 	useScaleFactor = true;
 	threshold = 0.1;
+	error_threshold = 0.1;
+	recordTime = 5.0; // a second
+	pollingTime = 0.5;
+	record = false;
+	targetSet = false;
+
+	currentCommand = false;
+	recordNow = false;
+	notRecording = true;
+
+	timer_checkPos = nh_.createTimer(ros::Duration(pollingTime), &ControlUINode::checkPos, this);
+	// timer_record = nh_.createTimer(ros::Duration(recordTime), &ControlUINode::recordVideo);
 }
 
 ControlUINode::~ControlUINode() {
@@ -71,7 +89,61 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 	y_offset = statePtr->y_offset;
 	z_offset = statePtr->z_offset;
 
+	x_drone = statePtr->x;
+	y_drone = statePtr->y;
+	z_drone = statePtr->z;
+	yaw = statePtr->yaw;
+
 	pthread_mutex_unlock(&pose_CS);
+
+	// Goto commands left to be executed
+	if(commands.size() > 0 && !currentCommand) {
+		currentCommand = true;
+		pthread_mutex_lock(&tum_ardrone_CS);
+		tum_ardrone_pub.publish(commands.front());
+		pthread_mutex_unlock(&tum_ardrone_CS);
+		targetPoint = targetPoints.front();
+	}
+	else if(currentCommand && !recordNow) {
+		double x = targetPoint[0];
+		double y = targetPoint[1];
+		double z = targetPoint[2];
+
+		pthread_mutex_lock(&pose_CS);
+		double ea = sqrt(pow(x - x_drone, 2) + pow(y - y_drone, 2) + pow(z - z_drone, 2));
+		//printf("Error %lf\n", ea);
+		pthread_mutex_unlock(&pose_CS);
+		if(ea < error_threshold) {
+			//printf("reached\n");
+			recordNow = true;
+			last= ros::Time::now();
+		}
+		else {
+			recordNow = false;
+		}
+	}
+	else if(recordNow) {
+		if(ros::Time::now() - last < ros::Duration(recordTime)) {
+			if(record && notRecording) {
+				ardrone_autonomy::RecordEnable srv;
+				srv.request.enable = true;
+				video.call(srv);
+			}
+			else if(!notRecording) {
+
+			}
+		}
+		else {
+			currentCommand = false;
+			notRecording = true;
+			recordNow = false;
+			commands.pop_front();
+			targetPoints.pop_front();
+		}
+	}
+	else {
+		// do nothing
+	}
 }
 
 void ControlUINode::load2dPoints (std::vector<float> x_img, std::vector<float> y_img) {
@@ -673,3 +745,53 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 
 	return tPoints;
 }
+
+void ControlUINode::moveDrone (std::vector<std::vector<double> > tPoints) {
+	double drone_length = 0.4;
+	double yaw = 0.0;
+
+	for (unsigned int i = 0; i < tPoints.size(); ++i)
+	{
+		std::vector<double> p = tPoints[i];
+		p[1] = p[1] - drone_length;
+		targetPoints.push_back(p);
+		char buf[100];
+		snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], yaw);
+		std_msgs::String s;
+		s.data = buf;
+		commands.push_back(s);
+	}
+}
+
+
+void ControlUINode::checkPos(const ros::TimerEvent&) {
+	if(targetSet) {
+		double x = targetPoint[0];
+		double y = targetPoint[1];
+		double z = targetPoint[2];
+
+		pthread_mutex_lock(&pose_CS);
+		double ea = sqrt(pow(x - x_drone, 2) + pow(y - y_drone, 2) + pow(z - z_drone, 2));
+		pthread_mutex_unlock(&pose_CS);
+
+		if(ea < error_threshold)
+			targetSet = false;
+		else
+			targetSet = true;
+	}
+}
+
+// void ControlUINode::recordVideo(const ros::TimerEvent&) {
+	// ardrone_autonomy::RecordEnable srv;
+	// srv.request.enable = true;
+
+	// if(video.call(srv)) {
+	// 	ros::Duration(recordTime).sleep(); // record for half a second
+	// 	srv.request.enable = false;
+	// 	video.call(srv);
+	// 	return true;
+// 	}
+// 	else {
+// 		return false;
+// 	}
+// }

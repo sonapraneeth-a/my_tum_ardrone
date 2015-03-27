@@ -306,7 +306,7 @@ void ImageView::on_key_down(int key) {
 		std::vector<std::vector<float> > pPoints =  node->projectPoints (ccPoints, keyPointsNearest);
 		grid g = node->buildGrid(pPoints);
 		std::vector<std::vector<double> > tPoints =  node->getTargetPoints(g, plane);
-		bool status = node->moveDrone(tPoints);
+		node->moveDrone(tPoints);
 		//std::vector<float> translatedPlane = node->translatePlane (translateDistance);
 		
 	}

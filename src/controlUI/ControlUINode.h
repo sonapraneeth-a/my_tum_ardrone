@@ -12,6 +12,7 @@ Author : Anirudh Vemula
 #include "tum_ardrone/filter_state.h"
 #include "std_msgs/String.h"
 #include "helperFunctions.h"
+#include <list>
 
 
 #include <vector>
@@ -243,30 +244,53 @@ private:
 	ros::Subscriber keypoint_coord_sub;
 	ros::Subscriber pose_sub;
 	ros::Time lastKeyStamp;
-	static pthread_mutex_t tum_ardrone_CS;
 	ros::Subscriber tum_ardrone_sub;
 	ros::Publisher tum_ardrone_pub;
 
 	ros::NodeHandle nh_;
 
+	ros::ServiceClient video;
+
+	ros::Timer timer_checkPos;
+	ros::Timer timer_record;
+
+	ros::Time last;
+
+	// Key point information
 	std::vector<std::vector<float> > _3d_points;
 	std::vector<std::vector<float> > _2d_points;
 	std::vector<int> _levels;
 	int numPoints;
-	float scale;
-	float scale_z;
-	float x_offset, y_offset, z_offset;
+
+	float scale; // PTAM X-Y scale
+	float scale_z; // PTAM Z scale
+	float x_offset, y_offset, z_offset; // PTAM offsets
+
+	// Drone state variables
+	float x_drone, y_drone, z_drone, yaw; // drone pose variables
 
 	std::vector<float> _3d_plane; // stored as a 4 length vector with constants a,b,c,d
 								 // corresponding to ax+by+cz+d = 0. Enforcing the constraint that d = 1 for uniformity (except when d = 0)
 
-	std::string keypoint_channel;
-	std::string command_channel;
-	std::string pose_channel;
+	std::vector<double> targetPoint;
+	std::list<std_msgs::String> commands;
+	std::list<std::vector<double> > targetPoints;
 
-	bool ransacVerbose;
-	bool useScaleFactor;
-	float threshold;
+	std::string keypoint_channel; // channel on which keypoint info is received
+	std::string command_channel; // channel on which commands can be posted or received
+	std::string pose_channel; // channel on which pose info is received
+
+	bool ransacVerbose; // Whether we need the ransac verbose output or not
+	bool useScaleFactor; // Using scale factors. MUST BE SET TO TRUE
+	float threshold; // threshold allowed in finding keypoint in the current frame
+	double error_threshold; // threshold allowed in the drone position
+	double recordTime; // time to record the video
+	bool record; // whether to record or not
+	float pollingTime; // Interval at which polling is done to check the drone position
+	bool targetSet;
+	bool currentCommand;
+	bool recordNow;
+	bool notRecording;
 
 	// distance between two 2d points
 	float distance(std::vector<int> pt_int, std::vector<float> pt_float);
@@ -274,6 +298,8 @@ private:
 	// distance between two 3d points
 	float distance3D(std::vector<float> p1, std::vector<float> p2);
 
+	// Thread mutexes
+	static pthread_mutex_t tum_ardrone_CS;
 	static pthread_mutex_t keyPoint_CS;
 	static pthread_mutex_t pose_CS;
 
@@ -340,6 +366,15 @@ public:
 
 	// Gets the target points given the grid and plane
 	std::vector<std::vector<double> > getTargetPoints (grid g, std::vector<float> plane);
+
+	// Generate the appropriate goto commands according to the target points
+	void moveDrone (std::vector<std::vector<double> > tPoints);
+
+	// Checks the position of the drone and whether the error is less than a threshold
+	void checkPos (const ros::TimerEvent&);
+
+	// Records the video for a fixed amount of time
+	// bool recordVideo ();
 };
 
 
