@@ -42,7 +42,7 @@ ControlUINode::ControlUINode() {
 
 	ransacVerbose = true;
 	useScaleFactor = true;
-	threshold = 0.05;
+	threshold = 0.1;
 }
 
 ControlUINode::~ControlUINode() {
@@ -430,7 +430,7 @@ grid ControlUINode::buildGrid (std::vector<std::vector<float> > pPoints) {
 	std::vector<float> lu;
 	float width, height;
 
-	float squareWidth = 0.4, squareHeight = 0.4, overlap = 0.5;
+	float squareWidth = 0.6, squareHeight = 0.34, overlap = 0.5;
 
 	// Assuming that the plane is always parallel to XZ plane - ? Gotta change this
 	getDimensions(pPoints, lu, width, height);
@@ -438,19 +438,32 @@ grid ControlUINode::buildGrid (std::vector<std::vector<float> > pPoints) {
 	grid g(lu[0], lu[1]-height, lu[0]+width, lu[1], squareWidth, squareHeight, overlap);
 	gridSquare gs(lu, squareWidth, squareHeight);
 	g.add(gs);
-	gs.debugPrint();
+	//gs.debugPrint();
 	while(g.translate(gs)) {
 		gs = g.getLatest();
-		gs.debugPrint();
+		//gs.debugPrint();
 
 	}
 
-	ROS_INFO("Number of rows in grid : %d", g.row+1);
+	//ROS_INFO("Number of rows in grid : %d", g.row+1);
+	//g.print();
 
 	return g;
 }
 
+/*pGrid ControlUINode::buildPGrid (std::vector<std::vector<float> > pPoints) {
+	std::vector<float> lu, rd, dd;
+	float maxD, maxR;
+
+	float squareWidth = 0.4, squareHeight = 0.4, overlap = 0.5;
+
+	getPDimensions (pPoints, lu, rd, dd, maxD, maxR);
+}*/
+
 std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::vector<float> plane) {
+
+	g.print(plane);
+
 	std::vector<std::vector<double> > tPoints;
 	std::vector<std::vector<double> > tPoints_z;
 
@@ -529,11 +542,11 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 
 
 		// Iterating across rows
-		ROS_INFO("Starting %dth row", i);
+		//ROS_INFO("Starting %dth row", i);
 		//ROS_INFO("Size of %dth row is %d", i, g.rowSquares[i].size());
 		if(forward) {
 			for(unsigned int j=0; j < g.rowSquares[i].size(); j++) {
-				ROS_INFO("Accessing %dth square of %dth row", j, i);
+				//ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				gridSquare gs = g.rowSquares[i][j];
 				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v, plane), gs.v));
@@ -546,7 +559,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				objPoints.push_back(cv::Point3d(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
 
 				//gs.printCoord();
-				std::cout<<objPoints<<std::endl;
+				//std::cout<<objPoints<<std::endl;
 				
 				cv::Mat objPoints_mat(4,1, CV_64FC3);				
 				for(int i=0; i<4; i++)
@@ -556,7 +569,13 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				//Something to do with older version of opencv which gets linked by mrpt
 				cv::Mat dummy;
 				cv::undistortPoints(imgPoints_mat, dummy, cameraMatrix, distCoeffs);
-				cv::solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, false, CV_EPNP);
+				cv::Mat rot_guess = cv::Mat::eye(3,3, CV_64F);
+				cv::Rodrigues(rot_guess, rvec);
+				tvec.at<double>(0)  = -(gs.u + (gs.width/2));
+				tvec.at<double>(1)  = gs.v - (gs.height/2);
+				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.3);
+
+				cv::solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 		
 				// std::cout<<"rvec : "<<rvec<<std::endl;
 				// std::cout<<"tvec : "<<tvec<<std::endl;
@@ -569,7 +588,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 
 				tvec = -rotinv * tvec;
 
-				std::cout<<"rotated tvec : "<<tvec<<std::endl;
+				//std::cout<<"rotated tvec : "<<tvec<<std::endl;
 
 				std::vector<double> pt;
 				pt.push_back(tvec.at<double>(0));
@@ -586,7 +605,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 		}
 		else {
 			for(int j = g.rowSquares[i].size()-1; j>=0 ; j--) {
-				ROS_INFO("Accessing %dth square of %dth row", j, i);
+				//ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				gridSquare gs = g.rowSquares[i][j];
 				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v, plane), gs.v));
@@ -599,7 +618,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				objPoints.push_back(cv::Point3d(gs.u, -(gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
 
 				//gs.printCoord();
-				std::cout<<objPoints<<std::endl;
+				//std::cout<<objPoints<<std::endl;
 
 				cv::Mat objPoints_mat(4,1, CV_64FC3);				
 				for(int i=0; i<4; i++)
@@ -609,7 +628,13 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				//Something to do with older version of opencv which gets linked by mrpt
 				cv::Mat dummy;
 				cv::undistortPoints(imgPoints_mat, dummy, cameraMatrix, distCoeffs);
-				cv::solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, false, CV_EPNP);
+				cv::Mat rot_guess = cv::Mat::eye(3,3, CV_64F);
+				cv::Rodrigues(rot_guess, rvec);
+				tvec.at<double>(0)  = -(gs.u + (gs.width/2));
+				tvec.at<double>(1)  = gs.v - (gs.height/2);
+				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.3);
+
+				cv::solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 
 
 				// std::cout<<"rvec : "<<rvec<<std::endl;
@@ -623,7 +648,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 
 				tvec = -rotinv * tvec;
 
-				std::cout<<"rotated tvec : "<<tvec<<std::endl;
+				//std::cout<<"rotated tvec : "<<tvec<<std::endl;
 
 				std::vector<double> pt;
 				pt.push_back(tvec.at<double>(0));
@@ -641,10 +666,10 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 
 		forward = !forward;
 	}
-
+	printf("\ntarget points\n\n");
 	print3dPoints(tPoints);
-	printf("Points with X and Z just midpoints\n");
-	print3dPoints(tPoints_z);
+	//printf("Points with X and Z just midpoints\n");
+	//print3dPoints(tPoints_z);
 
 	return tPoints;
 }

@@ -117,6 +117,10 @@ inline static void getDimensions(std::vector<std::vector<float> > pPoints , std:
 	height = maxZ - minZ;
 }
 
+inline static void getPDimensions (std::vector<std::vector<float> > pPoints, std::vector<float> &lu, std::vector<float> &rd, std::vector<float> &dd, float &maxD, float &maxR) {
+
+}
+
 inline static float getY(float x, float z, std::vector<float> plane) {
 	assert(plane[1]!=0);
 
@@ -126,7 +130,7 @@ inline static float getY(float x, float z, std::vector<float> plane) {
 
 inline static void print3dPoints(std::vector<std::vector<double> > points) {
 	for(unsigned int i=0; i < points.size(); i++) {
-		ROS_INFO("Point %d is (%lf, %lf, %lf)", i, points[i][0], points[i][1], points[i][2]);
+		printf("%lf %lf %lf\n", points[i][0], points[i][1], points[i][2]);
 	}
 }
 

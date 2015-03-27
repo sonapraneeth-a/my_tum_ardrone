@@ -119,11 +119,47 @@ public:
 		else
 			return rowSquares[row].back();
 	}
+
+	void print(std::vector<float> plane) {
+		for(unsigned int i=0; i<rowSquares.size(); i++) {
+			for(unsigned int j=0; j<rowSquares[i].size(); j++) {
+				float x = rowSquares[i][j].u;
+				float z = rowSquares[i][j].v;
+				float y = getY(x, z, plane);
+				printf("%f %f %f\n", x, y, z);
+				printf("%f %f %f\n", x + width, getY(x+width, z, plane), z);
+				printf("%f %f %f\n", x + width, getY(x+width, z - height, plane), z - height);
+				printf("%f %f %f\n", x, getY(x, z - height, plane), z - height);
+			}
+		}
+	}
+};
+
+struct pGridSquare {
+public:
+	float u, v; // left upper point
+	float width, height;
+	std::vector<float> rd, dd; // right and down direction vector
+
+	pGridSquare(float u, float v, float width, float height, std::vector<float> rd, std::vector<float> dd) {
+		this->u = u;
+		this->v = v;
+		this->width = width;
+		this->height = height;
+		this->rd = rd;
+		this->dd = dd;
+	}
+	void debugPrint() {
+		ROS_INFO("Square created at (%f, %f) with width %f along (%f, %f) and height %f along (%f, %f)",
+				u, v, width,
+				rd[0], rd[1],height,dd[0],dd[1]);
+	}
 };
 
 struct pGrid {
 public:
 	float au, av; //left upper point
+	float maxR, maxD; // maximum right and down distances along rd and dd resp.
 	std::vector<float> rd; // right direction vector
 	std::vector<float> dd; // down direction vector
 	float width; // distance along rd
@@ -132,12 +168,13 @@ public:
 	int row;
 	std::vector<std::vector<pGridSquare> > rowSquares;
 
-	pGrid(float au, float av, std::vector<float> rd, std::vector<float> dd, float width, float height, float overlap) {
+	pGrid(float au, float av, std::vector<float> rd, std::vector<float> dd, float width, float height, float overlap, float maxR, float maxD) {
 		this->au = au;
 		this->av = av;
 		this->rd = rd;
 		this->dd = dd;
 		this->width = width; this->height = height; this->overlap = overlap;
+		this->maxR = maxR; this->maxD = maxD;
 		std::vector<pGridSquare> v;
 		rowSquares.push_back(v);
 		row = 0;
@@ -145,9 +182,51 @@ public:
 	void add(pGridSquare gs) {
 		rowSquares[row].push_back(gs);
 	}
-	bool translate(pGridSquare gs) {
 
+	bool translate(pGridSquare g) {
+		// Whenever row empty. Check v bounds too.
+		if(rowSquares[row].empty()) {
+			float unew = au + (1-overlap)*height*dd[0];
+			float vnew = g.v - (1-overlap)*height*dd[1];
+			if(av - (vnew - height*dd[1]) <= maxD*dd[1]) {
+				// Clean down shift
+				pGridSquare gnew(unew, vnew, width, height, rd, dd);
+				add(gnew);
+			}
+			else if(av - (vnew - height*dd[1]) > maxD*dd[1]) {
+				// grid with less height - ? No. grid square must always have a fixed height
+				pGridSquare gnew(unew, vnew, width, height, rd, dd);
+				if(vnew > av - maxD*dd[1])
+					add(gnew);
+				else
+					return false;
+
+			}
+		}
+		else {
+			float unew = g.u + (1-overlap)*width*rd[0];
+			float vnew = g.v + (1-overlap)*width*rd[1];
+			// Only right translation
+			if(unew + width*rd[0] - au <= maxR*rd[0]) {
+				// Clean right shift
+				pGridSquare gnew(unew, vnew, width, height, rd, dd);
+				add(gnew);
+			}
+			else if(unew + width*rd[0] - au > maxR*rd[0]) {
+				// grid with less width - ? No. grid square must always have a fixed width
+				pGridSquare gnew(unew, vnew, width, height, rd, dd);
+				if(unew < au + maxR*rd[0]) // lower bound on the width of the square - ?
+					add(gnew);
+				// Row completed
+				row++;
+				std::vector<pGridSquare> v;
+				rowSquares.push_back(v);
+			}
+
+		}
+		return true;
 	}
+
 	pGridSquare getLatest(){
 		if(rowSquares[row].empty())
 			return rowSquares[row-1].back();
@@ -155,6 +234,7 @@ public:
 			return rowSquares[row].back();
 	}
 };
+
 
 class ControlUINode
 {
@@ -254,6 +334,9 @@ public:
 
 	// Builds the grid
 	grid buildGrid (std::vector<std::vector<float> > pPoints);
+
+	// Builds the PGrid
+	//pGrid buildPGrid (std::vector<std::vector<float> > pPoints);
 
 	// Gets the target points given the grid and plane
 	std::vector<std::vector<double> > getTargetPoints (grid g, std::vector<float> plane);
