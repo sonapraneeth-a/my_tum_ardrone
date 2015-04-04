@@ -541,11 +541,17 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 
 	std::vector<cv::Point2d> imgPoints;
 	imgPoints.push_back(cv::Point2d(0,0));
+	imgPoints.push_back(cv::Point2d(320,0));
 	imgPoints.push_back(cv::Point2d(640,0));
+	imgPoints.push_back(cv::Point2d(640,180));
 	imgPoints.push_back(cv::Point2d(640,360));
+	imgPoints.push_back(cv::Point2d(320,360));
 	imgPoints.push_back(cv::Point2d(0,360));
-	cv::Mat imgPoints_mat(4,1, CV_64FC2);
-	for(int i=0; i<4; i++)
+	imgPoints.push_back(cv::Point2d(0,180));
+	imgPoints.push_back(cv::Point2d(320,180));
+	
+	cv::Mat imgPoints_mat(9,1, CV_64FC2);
+	for(int i=0; i<9; i++)
 		imgPoints_mat.at<cv::Point2d>(i,0) = imgPoints[i];
 	
 
@@ -621,20 +627,36 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				//ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				gridSquare gs = g.rowSquares[i][j];
-				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v, plane), gs.v));
-				objPoints.push_back(cv::Point3d(gs.u, - gs.v, getY(gs.u, gs.v, plane)));
-				// objPoints.push_back(cv::Point3d(gs.u + gs.width, getY(gs.u + gs.width, gs.v, plane), gs.v));
-				objPoints.push_back(cv::Point3d(gs.u + gs.width, - gs.v, getY(gs.u + gs.width, gs.v, plane)));
-				// objPoints.push_back(cv::Point3d(gs.u + gs.width, getY(gs.u + gs.width, gs.v - gs.height, plane), gs.v - gs.height));
-				objPoints.push_back(cv::Point3d(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane)));
-				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v - gs.height, plane), gs.v - gs.height));
-				objPoints.push_back(cv::Point3d(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
+				cv::Point3d corner1 = cv::Point3d(gs.u, - gs.v, getY(gs.u, gs.v, plane));
+				cv::Point3d corner2 = cv::Point3d(gs.u + gs.width, - gs.v, getY(gs.u + gs.width, gs.v, plane));
+				cv::Point3d corner3 = cv::Point3d(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane));
+				cv::Point3d corner4 = cv::Point3d(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane));
+				cv::Point3d mid1 = (corner1 + corner2)*0.5;
+				mid1.z = getY(mid1.x, mid1.y, plane);	
+				cv::Point3d mid2 = (corner2 + corner3)*0.5;
+				mid2.z = getY(mid2.x, mid2.y, plane);	
+				cv::Point3d mid3 = (corner3 + corner4)*0.5;
+				mid3.z = getY(mid3.x, mid3.y, plane);	
+				cv::Point3d mid4 = (corner4 + corner1)*0.5;
+				mid4.z = getY(mid4.x, mid4.y, plane);	
+				cv::Point3d center = (mid1 + mid3)*0.5;
+				center.z = getY(center.x, center.y,plane)*0.5;
+
+				objPoints.push_back(corner1);
+				objPoints.push_back(mid1);
+				objPoints.push_back(corner2);
+				objPoints.push_back(mid2);
+				objPoints.push_back(corner3);
+				objPoints.push_back(mid3);
+				objPoints.push_back(corner4);
+				objPoints.push_back(mid4);
+				objPoints.push_back(center);
 
 				//gs.printCoord();
 				//std::cout<<objPoints<<std::endl;
 				
-				cv::Mat objPoints_mat(4,1, CV_64FC3);				
-				for(int i=0; i<4; i++)
+				cv::Mat objPoints_mat(9,1, CV_64FC3);				
+				for(int i=0; i<9; i++)
 					objPoints_mat.at<cv::Point3d>(i,0) = objPoints[i];
 
 				//[MGP]Dont know but we have to call undistortPoints as a dummy call
@@ -680,20 +702,33 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				//ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				gridSquare gs = g.rowSquares[i][j];
-				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v, plane), gs.v));
-				objPoints.push_back(cv::Point3d(gs.u, -gs.v, getY(gs.u, gs.v, plane)));
-				// objPoints.push_back(cv::Point3d(gs.u + gs.width, getY(gs.u + gs.width, gs.v, plane), gs.v));
-				objPoints.push_back(cv::Point3d(gs.u + gs.width, -gs.v, getY(gs.u + gs.width, gs.v, plane)));
-				// objPoints.push_back(cv::Point3d(gs.u + gs.width, getY(gs.u + gs.width, gs.v - gs.height, plane), gs.v - gs.height));
-				objPoints.push_back(cv::Point3d(gs.u + gs.width, -(gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane)));
-				// objPoints.push_back(cv::Point3d(gs.u, getY(gs.u, gs.v - gs.height, plane), gs.v - gs.height));
-				objPoints.push_back(cv::Point3d(gs.u, -(gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane)));
+				cv::Point3d corner1 = cv::Point3d(gs.u, - gs.v, getY(gs.u, gs.v, plane));
+                                cv::Point3d corner2 = cv::Point3d(gs.u + gs.width, - gs.v, getY(gs.u + gs.width, gs.v, plane));
+                                cv::Point3d corner3 = cv::Point3d(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane));
+                                cv::Point3d corner4 = cv::Point3d(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane));
+                                cv::Point3d mid1 = (corner1 + corner2)*0.5;
+                                mid1.z = getY(mid1.x, mid1.y, plane);
+                                cv::Point3d mid2 = (corner2 + corner3)*0.5;
+                                mid2.z = getY(mid2.x, mid2.y, plane);
+                                cv::Point3d mid3 = (corner3 + corner4)*0.5;
+                                mid3.z = getY(mid3.x, mid3.y, plane);
+                                cv::Point3d mid4 = (corner4 + corner1)*0.5;
+                                mid4.z = getY(mid4.x, mid4.y, plane);
+                                cv::Point3d center = (mid1 + mid3)*0.5;
+                                center.z = getY(center.x, center.y,plane)*0.5;
 
-				//gs.printCoord();
-				//std::cout<<objPoints<<std::endl;
+                                objPoints.push_back(corner1);
+                                objPoints.push_back(mid1);
+                                objPoints.push_back(corner2);
+                                objPoints.push_back(mid2);
+                                objPoints.push_back(corner3);
+                                objPoints.push_back(mid3);
+                                objPoints.push_back(corner4);
+                                objPoints.push_back(mid4);
+                                objPoints.push_back(center);
 
-				cv::Mat objPoints_mat(4,1, CV_64FC3);				
-				for(int i=0; i<4; i++)
+				cv::Mat objPoints_mat(9,1, CV_64FC3);				
+				for(int i=0; i<9; i++)
 					objPoints_mat.at<cv::Point3d>(i,0) = objPoints[i];
 
 				//[MGP]Dont know but we have to call undistortPoints as a dummy call
@@ -747,7 +782,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 }
 
 void ControlUINode::moveDrone (std::vector<std::vector<double> > tPoints) {
-	double drone_length = 0.4;
+	double drone_length = 0.6;
 	double yaw = 0.0;
 
 	for (unsigned int i = 0; i < tPoints.size(); ++i)
@@ -759,7 +794,9 @@ void ControlUINode::moveDrone (std::vector<std::vector<double> > tPoints) {
 		snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], yaw);
 		std_msgs::String s;
 		s.data = buf;
-		commands.push_back(s);
+		ROS_INFO("Message: ");
+		ROS_INFO(buf);	
+		//commands.push_back(s);
 	}
 }
 
