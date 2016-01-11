@@ -49,10 +49,10 @@ ControlUINode::ControlUINode() {
 	ransacVerbose = true;
 	useScaleFactor = true;
 	threshold = 0.1;
-	error_threshold = 0.1;
+	error_threshold = 0.3;
 	recordTime = 5.0; // a second
 	pollingTime = 0.5;
-	record = false;
+	record = true;
 	targetSet = false;
 
 	currentCommand = false;
@@ -103,8 +103,19 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		tum_ardrone_pub.publish(commands.front());
 		pthread_mutex_unlock(&tum_ardrone_CS);
 		targetPoint = targetPoints.front();
+		printf(" Current target: %lf %lf %lf\n", targetPoint[0], targetPoint[1] , targetPoint[2] );
 	}
 	else if(currentCommand && !recordNow) {
+		static int numCommands = 0;
+		numCommands++;
+		if(numCommands < 4)
+		{
+			ros::Duration(1).sleep();
+			currentCommand = false;	
+			commands.pop_front();
+            targetPoints.pop_front();
+			return;
+		}
 		double x = targetPoint[0];
 		double y = targetPoint[1];
 		double z = targetPoint[2];
@@ -116,6 +127,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		if(ea < error_threshold) {
 			//printf("reached\n");
 			recordNow = true;
+			ros::Duration(3).sleep();
 			last= ros::Time::now();
 		}
 		else {
@@ -128,17 +140,22 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 				ardrone_autonomy::RecordEnable srv;
 				srv.request.enable = true;
 				video.call(srv);
+				notRecording = false;
 			}
 			else if(!notRecording) {
 
 			}
 		}
 		else {
+			ardrone_autonomy::RecordEnable srv;
+            srv.request.enable = false;	
+			video.call(srv);
 			currentCommand = false;
 			notRecording = true;
 			recordNow = false;
 			commands.pop_front();
 			targetPoints.pop_front();
+			ros::Duration(3).sleep();
 		}
 	}
 	else {
@@ -502,7 +519,7 @@ grid ControlUINode::buildGrid (std::vector<std::vector<float> > pPoints) {
 	std::vector<float> lu;
 	float width, height;
 
-	float squareWidth = 0.6, squareHeight = 0.34, overlap = 0.5;
+	float squareWidth = 0.8, squareHeight = 0.45, overlap = 0.5;
 
 	// Assuming that the plane is always parallel to XZ plane - ? Gotta change this
 	getDimensions(pPoints, lu, width, height);
@@ -667,7 +684,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				cv::Rodrigues(rot_guess, rvec);
 				tvec.at<double>(0)  = -(gs.u + (gs.width/2));
 				tvec.at<double>(1)  = gs.v - (gs.height/2);
-				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.3);
+				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.6);
 
 				cv::solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 		
@@ -739,7 +756,7 @@ std::vector<std::vector<double> > ControlUINode::getTargetPoints(grid g, std::ve
 				cv::Rodrigues(rot_guess, rvec);
 				tvec.at<double>(0)  = -(gs.u + (gs.width/2));
 				tvec.at<double>(1)  = gs.v - (gs.height/2);
-				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.3);
+				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.6);
 
 				cv::solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 
@@ -789,14 +806,62 @@ void ControlUINode::moveDrone (std::vector<std::vector<double> > tPoints) {
 	{
 		std::vector<double> p = tPoints[i];
 		p[1] = p[1] - drone_length;
-		targetPoints.push_back(p);
+
 		char buf[100];
-		snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], yaw);
-		std_msgs::String s;
-		s.data = buf;
-		ROS_INFO("Message: ");
-		ROS_INFO(buf);	
-		//commands.push_back(s);
+		if(i == 0){
+			pthread_mutex_lock(&pose_CS);
+			double half_y = (y_drone + p[1])/2;
+			std::vector<double> interm_point(3);			
+			interm_point[0] = x_drone;
+			interm_point[1] = half_y;
+			interm_point[2] = z_drone;
+
+			snprintf(buf, 100, "c goto %lf %lf %lf %lf", x_drone, half_y, z_drone, yaw);
+	        std_msgs::String s;
+	        s.data = buf;
+    	    ROS_INFO("Message: ");
+        	ROS_INFO(buf);		
+			commands.push_back(s);
+			targetPoints.push_back(interm_point);	
+
+			interm_point[1] = p[1];
+			snprintf(buf, 100, "c goto %lf %lf %lf %lf", x_drone, p[1], z_drone, yaw);
+            std_msgs::String s1;
+            s1.data = buf;
+            ROS_INFO("Message: ");
+            ROS_INFO(buf);
+			commands.push_back(s1);
+			targetPoints.push_back(interm_point);	
+
+			interm_point[0] = p[0];
+			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], z_drone, yaw);
+            std_msgs::String s2;
+            s2.data = buf;
+            ROS_INFO("Message: ");
+            ROS_INFO(buf);
+			commands.push_back(s2);
+			targetPoints.push_back(interm_point);	
+			
+			interm_point[2] = p[2];
+			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], yaw);
+            std_msgs::String s3;
+            s3.data = buf;
+            ROS_INFO("Message: ");
+            ROS_INFO(buf);
+			commands.push_back(s3);
+			targetPoints.push_back(p);
+			pthread_mutex_unlock(&pose_CS);
+		}
+		else {
+			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], yaw);
+			std_msgs::String s;
+			s.data = buf;
+			ROS_INFO("Message: ");
+			ROS_INFO(buf);
+			commands.push_back(s);
+			targetPoints.push_back(p);
+		}
+
 	}
 }
 
