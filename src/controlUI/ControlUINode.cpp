@@ -21,6 +21,7 @@ Author : Anirudh Vemula
 #include <string>
 #include <fstream>
 #include <stdlib.h>
+#include <stdio.h>
 #include <sstream>
 #include <list>
 
@@ -141,9 +142,10 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 				srv.request.enable = true;
 				video.call(srv);
 				notRecording = false;
+				popen("rosbag record /ardrone/image_raw /ardrone/predictedPose --duration=5", "r");
 			}
 			else if(!notRecording) {
-
+				
 			}
 		}
 		else {
