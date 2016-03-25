@@ -12,13 +12,13 @@
 void sortData(
 		const vector<double> &data,
 		vector<double> &sortedData,
-		vector<LLI> &indices) {
+		vector<int> &indices) {
 
 	sortedData = data;
-	LLI dataSize = data.size();
+	int dataSize = data.size();
 
-	map<double, LLI> oldIndices;
-	LLI i;
+	map<double, int> oldIndices;
+	int i;
 	for (i = 0; i < dataSize; ++i) {
 		oldIndices[data[i]] = i;
 	}
@@ -32,12 +32,12 @@ void sortData(
 
 }
 
-LLI numberOfUniquePlanes(
+int numberOfUniquePlanes(
 		const vector<double> &planeIndices ) {
 
-	LLI ans = 0;
-	LLI numberOfPlanes = planeIndices.size();
-	set<LLI> uniquePlaneIndices(planeIndices.begin(), planeIndices.end());
+	int ans = 0;
+	int numberOfPlanes = planeIndices.size();
+	set<int> uniquePlaneIndices(planeIndices.begin(), planeIndices.end());
 	ans = uniquePlaneIndices.size();
 	return ans;
 

@@ -51,8 +51,8 @@ void AllXYZToUVCoordinates(
 		vector<Point2d> &uvCoordinates,
 		vector<Point3d> &uvAxes) {
 
-	LLI numberOfPoints = xyzCoordinates.size();
-	LLI i, j;
+	int numberOfPoints = xyzCoordinates.size();
+	int i, j;
 	Point2d uvCoord;
 	vector<Point3d> uvAxis;
 
@@ -109,8 +109,8 @@ void AllUVToXYZCoordinates(
 		const double d,
 		vector<Point3d> &xyzCoordinates) {
 
-	LLI numberOfPoints = uvCoordinates.size();
-	LLI i, j;
+	int numberOfPoints = uvCoordinates.size();
+	int i, j;
 	Point3d xyzCoord;
 
 	for (i = 0; i < numberOfPoints; ++i) {

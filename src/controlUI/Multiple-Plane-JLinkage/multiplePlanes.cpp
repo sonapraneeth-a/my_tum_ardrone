@@ -11,6 +11,22 @@
 #include "readingData.hpp"
 #include "additionalSteps.hpp"
 #include "utilities.hpp"
+#include "makeBoundingRects.hpp"
+#include "JLinkage.h"
+#include "RandomSampler.h"
+#include "PrimitiveFunctions.h"
+#include <opencv2/core/core.hpp>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <list>
+
+
+using namespace std;
+using namespace cv;
+
 
 // The main file
 void callJLinkage(const vector<Point3d> &locations, vector<int> &labels)
@@ -19,11 +35,14 @@ void callJLinkage(const vector<Point3d> &locations, vector<int> &labels)
     mDataPoints = new vector<vector<float> *>(locations.size());
     for(int i=0; i<locations.size(); i++)
     {
-        (*mDataPoints)[i] = new vector<float>(3);
-        for(int j=0; j<3; j++){
-            (*(*mDataPoints)[i])[j] = locations[i][j];
-        }
+       (*mDataPoints)[i] = new vector<float>(3);
+       (*(*mDataPoints)[i])[0] = locations[i].x;
+       (*(*mDataPoints)[i])[1] = locations[i].y;
+       (*(*mDataPoints)[i])[2] = locations[i].z;
     }
+	int numModels = 10000;
+	float mKdTreeCloseProb = 0.8, mKdTreeFarProb = 0.2;
+	int mKdTreeRange =10;
 
     RandomSampler mRandomSampler(GetFunction_Plane, DistanceFunction_Plane, (int)(*(*mDataPoints)[0]).size()-1, 3, (int)mDataPoints->size(),true);
     mRandomSampler.SetPoints(mDataPoints);
@@ -67,17 +86,8 @@ void callJLinkage(const vector<Point3d> &locations, vector<int> &labels)
 
 int findMultiplePlanes(vector<Point3d> points ){ 
 
-	// Initializing the parameters for the JLinkage
-	// Number of initial hypothesis to be generated. 'M' in the paper
-	int numberOfTrials = 5000;
-	// Minimum number of points to be present in the plane. 'S' in the paper
-	int clusterThreshold = 75;
-	// Inliers fraction
-	double inliersThreshold = 0.1;
-	// $\sigma$ for gaussian distribution to calculate the distribution (CDF)
-	double sigmaExp = 0.5;
-
-
+	
+	vector<Point3d> newPoints;
 	// Step 1: Performing JLinkage to find multiple models
 	// This vector describes to which plane does point i belong to
 	// This is an output from JLinkage
@@ -85,7 +95,8 @@ int findMultiplePlanes(vector<Point3d> points ){
 	// Plane Parameters (a, b, c, d) for plane i
 	vector< vector<double> > planeParameters;
 
-	callJLinkage(points, labels);
+
+	callJLinkage(points, planeIndices);
 	// planeParameters = fitting_fn(points);
 
 	// Step 2
@@ -100,13 +111,13 @@ int findMultiplePlanes(vector<Point3d> points ){
 			numberOfPointsPerPlane, newPoints, newPlaneIndices, numberOfPlanes);
 
 	// Step 3
-	// Generate parameters from the new set of points
+	// Generate parameters from the n:w
+	// ew set of points
 	// planeParameters = fitting_fn(points);
 
 	// Step 4
 	// Perform K-means
 	Mat pointsMatrix = Mat(points);
-	int numberOfPlanes = 4;
 	// Reference: http://docs.opencv.org/2.4/modules/core/doc/clustering.html
 	// kmeans(pointsMatrix, numberOfPlanes, planeIndices, TermCriteria::epsilon, clustersCenters);
 	// planeParameters = fitting_fn(points);
@@ -115,7 +126,7 @@ int findMultiplePlanes(vector<Point3d> points ){
 	// Remove points which far from the estimated plane after performing k-means
 	// Get 3D Projection of points onto the plane
 	vector<double> distanceMatrix;
-	vector< vector<LLI> > planePointsIndexMapping;
+	vector< vector<int> > planePointsIndexMapping;
 	vector<Point3d> newSortedPoints;
 	vector< vector<double> > newPlaneParameters;
 	map<int, pair<int, int> > planeIndexBounds;
@@ -131,7 +142,7 @@ int findMultiplePlanes(vector<Point3d> points ){
 	// Step 6
 	vector<Point3d> sortedProjectionsOf3DPoints;
 	vector< vector<double> > sortedPlaneParameters;
-	map<LLI, pair<LLI, LLI> > sortedPlaneIndexBounds;
+	map<int, pair<int, int> > sortedPlaneIndexBounds;
 	vector< vector<Point3d> > boundingBoxPoints;
 	vector< vector<Point3d> > continuousBoundingBoxPoints;
 	orderPlanePointsByCentroids( projectionsOf3DPoints, planeParameters, planeIndexBounds,

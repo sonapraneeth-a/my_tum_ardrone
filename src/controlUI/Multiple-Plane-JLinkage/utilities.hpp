@@ -16,7 +16,7 @@
 void sortData(
 		const vector<double> &data,
 		vector<double> &sortedData,
-		vector<LLI> &indices);
+		vector<int> &indices);
 
-LLI numberOfUniquePlanes(
+int numberOfUniquePlanes(
 		const vector<double> &planeIndices );

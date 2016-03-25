@@ -213,14 +213,28 @@ add_dependencies(drone_gui thirdparty ${PROJECT_NAME}_gencpp ${PROJECT_NAME}_gen
 
 # ----------------------------- CONTROLUI --------------------------------------------------
 # set header source files
+
+set(JLINKAGE_SOURCE_FILES
+	src/controlUI/Multiple-Plane-JLinkage/JLinkage/JLinkage.cpp
+	src/controlUI/Multiple-Plane-JLinkage/JLinkage/RandomSampler.cpp
+	src/controlUI/Multiple-Plane-JLinkage/JLinkage/Utilities.cpp)
+
+
+set(JLINKAGE_HEADER_FILES
+	src/controlUI/Multiple-Plane-JLinkage/JLinkage/JLinkage.h
+    src/controlUI/Multiple-Plane-JLinkage/JLinkage/RandomSampler.h
+    src/controlUI/Multiple-Plane-JLinkage/JLinkage/Utilities.h)
+	
+
 set(MULTIPLEPLANEJLINKAGE_SOURCE_FILES
-    src/controlUI/Multiple-Plane-JLinkage/main.cpp
+	src/controlUI/Multiple-Plane-JLinkage/multiplePlanes.cpp
     src/controlUI/Multiple-Plane-JLinkage/additionalSteps.cpp         
     src/controlUI/Multiple-Plane-JLinkage/utilities.cpp
     src/controlUI/Multiple-Plane-JLinkage/calculateIntersections.cpp  
     src/controlUI/Multiple-Plane-JLinkage/makeBoundingRects.cpp
     src/controlUI/Multiple-Plane-JLinkage/conversion.cpp              
-    src/controlUI/Multiple-Plane-JLinkage/readingData.cpp)
+    src/controlUI/Multiple-Plane-JLinkage/readingData.cpp
+	${JLINKAGE_SOURCE_FILES})
 
 set(MULTIPLEPLANEJLINKAGE_HEADER_FILES
     src/controlUI/Multiple-Plane-JLinkage/additionalSteps.hpp         
@@ -228,7 +242,8 @@ set(MULTIPLEPLANEJLINKAGE_HEADER_FILES
     src/controlUI/Multiple-Plane-JLinkage/calculateIntersections.hpp  
     src/controlUI/Multiple-Plane-JLinkage/makeBoundingRects.hpp
     src/controlUI/Multiple-Plane-JLinkage/conversion.hpp              
-    src/controlUI/Multiple-Plane-JLinkage/readingData.hpp)
+    src/controlUI/Multiple-Plane-JLinkage/readingData.hpp
+	${JLINKAGE_HEADER_FILES})
 
 set(CONTROLUI_SOURCE_FILES
     src/controlUI/main_controlUI.cpp
@@ -249,6 +264,7 @@ set(CONTROLUI_HEADER_FILES
     src/controlUI/helperFunctions.h
     ${MULTIPLEPLANEJLINKAGE_HEADER_FILES})
 
+include_directories(src/controlUI/Multiple-Plane-JLinkage/JLinkage/)
 find_package(MRPT REQUIRED slam;vision;gui;topography)
 #find_package(CGAL QUIET COMPONENTS Core)
 

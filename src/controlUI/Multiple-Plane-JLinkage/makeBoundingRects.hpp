@@ -18,10 +18,10 @@
 void orderPlanePointsByCentroids(
 		const vector<Point3d> &projectionOf3DPoints,
 		const vector< vector<double> > &planeParameters,
-		const map<LLI, pair<LLI, LLI> > &planeIndexBounds,
+		const map<int, pair<int, int> > &planeIndexBounds,
 		vector<Point3d> &sortedProjectionsOf3DPoints,
 		vector< vector<double> > &sortedPlaneParameters,
-		map<LLI, pair<LLI, LLI> > &sortedPlaneIndexBounds );
+		map<int, pair<int, int> > &sortedPlaneIndexBounds );
 
 
 void orderPlanePointsByCentroids1(
@@ -33,7 +33,7 @@ void orderPlanePointsByCentroids1(
 void getBoundingBoxCoordinates (
 		const vector<Point3d> &sortedProjectionOf3DPoints,
 		const vector< vector<double> > &sortedPlaneParameters,
-		const map<LLI, pair<LLI, LLI> > &sortedPlaneIndexBounds,
+		const map<int, pair<int, int> > &sortedPlaneIndexBounds,
 		vector< vector<Point3d> > &boundingBoxPoints );
 
 void getBoundingBoxCoordinates1 (

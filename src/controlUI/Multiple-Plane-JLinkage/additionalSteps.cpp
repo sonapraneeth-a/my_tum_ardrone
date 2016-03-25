@@ -14,16 +14,16 @@
 
 void removeUnnecessaryPlanes(
 		const vector<Point3d> &oldData,
-		const vector<long long int> &planeIndices,
-		const long long int &minimumNumberOfPointsPerPlane,
-		map<long long int, long long int> &numberOfPointsPerPlane,
+		const vector<int> &planeIndices,
+		const int &minimumNumberOfPointsPerPlane,
+		map<int, int> &numberOfPointsPerPlane,
 		vector<Point3d> &newData,
-		vector<long long int> &newPlaneIndices,
-		long long int &numberOfPlanes) {
+		vector<int> &newPlaneIndices,
+		int &numberOfPlanes) {
 
 	// Get the number of points present in the plane
-	long long int numberOfPoints = planeIndices.size();
-	long long int i, numberOfUniquePlanes=0;
+	int numberOfPoints = planeIndices.size();
+	int i, numberOfUniquePlanes=0;
 
 	// Calculate the number of unique planes and also how many points are there
 	// in each plane
@@ -39,7 +39,7 @@ void removeUnnecessaryPlanes(
 	// Remove those planes which having less than minimum number of points in them
 	for (i = 1; i < numberOfUniquePlanes; i++) {
 		if( numberOfPointsPerPlane[i] <= minimumNumberOfPointsPerPlane ) {
-			map<long long int, long long int>::iterator it = numberOfPointsPerPlane.find (i);
+			map<int, int>::iterator it = numberOfPointsPerPlane.find (i);
 			numberOfPointsPerPlane.erase(it);
 		}
 	}
@@ -63,13 +63,13 @@ void removeUnnecessaryPlanes(
 void calculateDistanceFromPlane(
 		const vector<Point3d> &data,
 		const vector< vector<double> > &planeParameters,
-		const vector<long long int> &planeIndices,
+		const vector<int> &planeIndices,
 		vector<double> &distanceMatrix,
-		vector< vector<long long int> > &planePointsIndexMapping) {
+		vector< vector<int> > &planePointsIndexMapping) {
 
 	// Get the number of points in the plane
-	long long int numberOfPoints = data.size();
-	long long int i;
+	int numberOfPoints = data.size();
+	int i;
 
 	for(i = 0; i < numberOfPoints; i++) {
 		// Get the plane parameters into variables a, b, c, d
@@ -108,22 +108,22 @@ void removePointsFarFromPlane(
 		const vector<Point3d> &data,
 		const vector< vector<double> > &planeParameters,
 		const vector<double> &distanceMatrix,
-		const vector< vector<LLI> > &planePointsIndexMapping,
+		const vector< vector<int> > &planePointsIndexMapping,
 		vector<Point3d> &newSortedData,
 		vector< vector<double> > &newPlaneParameters,
-		map<LLI, pair<LLI, LLI> > &planeIndexBounds) {
+		map<int, pair<int, int> > &planeIndexBounds) {
 
-	LLI i, j;
-	LLI numberOfPlanes = planePointsIndexMapping.size();
+	int i, j;
+	int numberOfPlanes = planePointsIndexMapping.size();
 
 	vector<double> distanceOfPointsFromPlane;
 	for(i = 0; i < numberOfPlanes; i++) {
-		LLI numberOfPointsInThePlane = planePointsIndexMapping[i].size();
+		int numberOfPointsInThePlane = planePointsIndexMapping[i].size();
 		for(j = 0; j < numberOfPointsInThePlane; j++) {
 			distanceOfPointsFromPlane.push_back(distanceMatrix[planePointsIndexMapping[i][j]]);
 		}
 		double distanceThreshold = getKthPercentile(distanceOfPointsFromPlane, 95);
-		LLI newDataSize = newSortedData.size(), numberOfPointsInTheCurrentPlane=0;
+		int newDataSize = newSortedData.size(), numberOfPointsInTheCurrentPlane=0;
 		for(j = 0; j < numberOfPointsInThePlane; j++) {
 			if (distanceOfPointsFromPlane[j] <= distanceThreshold ) {
 				newSortedData.push_back(data[planePointsIndexMapping[i][j]]);
@@ -145,22 +145,22 @@ void removePointsFarFromPlane1(
 		const vector<Point3d> &data,
 		const vector< vector<double> > &planeParameters,
 		const vector<double> &distanceMatrix,
-		const vector< vector<LLI> > &planePointsIndexMapping,
+		const vector< vector<int> > &planePointsIndexMapping,
 		vector< vector<Point3d> > &newSortedData,
 		vector< vector<double> > &newPlaneParameters ) {
 
-	LLI i, j;
-	LLI numberOfPlanes = planePointsIndexMapping.size();
+	int i, j;
+	int numberOfPlanes = planePointsIndexMapping.size();
 
 	vector<double> distanceOfPointsFromPlane;
 	vector<Point3d> pointsInThePlane;
 	for(i = 0; i < numberOfPlanes; i++) {
-		LLI numberOfPointsInThePlane = planePointsIndexMapping[i].size();
+		int numberOfPointsInThePlane = planePointsIndexMapping[i].size();
 		for(j = 0; j < numberOfPointsInThePlane; j++) {
 			distanceOfPointsFromPlane.push_back(distanceMatrix[planePointsIndexMapping[i][j]]);
 		}
 		double distanceThreshold = getKthPercentile(distanceOfPointsFromPlane, 95);
-		LLI newDataSize = newSortedData.size(), numberOfPointsInTheCurrentPlane=0;
+		int newDataSize = newSortedData.size(), numberOfPointsInTheCurrentPlane=0;
 		for(j = 0; j < numberOfPointsInThePlane; j++) {
 			if (distanceOfPointsFromPlane[j] <= distanceThreshold ) {
 				pointsInThePlane.push_back(data[planePointsIndexMapping[i][j]]);
@@ -181,13 +181,13 @@ void removePointsFarFromPlane1(
 void get3DPlaneProjectionsOfPoints (
 		const vector<Point3d> &data,
 		const vector< vector<double> > &planeParameters,
-		const map<LLI, pair<LLI, LLI> > &planeIndexBounds,
+		const map<int, pair<int, int> > &planeIndexBounds,
 		vector<Point3d> &projectionsOf3DPoints	) {
 
-	LLI numberOfPlanes = planeIndexBounds.size();
-	LLI startOfPlanePoints, endOfPlanePoints;
+	int numberOfPlanes = planeIndexBounds.size();
+	int startOfPlanePoints, endOfPlanePoints;
 
-	LLI i, j;
+	int i, j;
 	for (i = 0; i < numberOfPlanes; ++i) {
 		startOfPlanePoints = planeIndexBounds.at(i).first;
 		endOfPlanePoints = planeIndexBounds.at(i).second;
@@ -221,10 +221,10 @@ void get3DPlaneProjectionsOfPoints1 (
 		const vector< vector<double> > &planeParameters,
 		vector<Point3d> &projectionsOf3DPoints	) {
 
-	LLI numberOfPlanes = data.size();
-	LLI numberOfPointsInThisPlane;
+	int numberOfPlanes = data.size();
+	int numberOfPointsInThisPlane;
 
-	LLI i, j;
+	int i, j;
 	for (i = 0; i < numberOfPlanes; ++i) {
 		// Get the plane parameters into variables a, b, c, d
 		double a = planeParameters[i][0];
@@ -254,7 +254,7 @@ void get3DPlaneProjectionsOfPoints1 (
 
 double getKthPercentile(
 		const vector<double> &data,
-		const LLI k) {
+		const int k) {
 
 	// Reference:
 	// http://web.stanford.edu/class/archive/anthsci/anthsci192/anthsci192.1064/handouts/calculating%20percentiles.pdf
@@ -264,11 +264,11 @@ double getKthPercentile(
 
 	sort(copiedData.begin(), copiedData.end());
 
-	LLI i, size = copiedData.size();
+	int i, size = copiedData.size();
 	double percentile;
 	for (i = 0; i < size; ++i) {
 		percentile = (100.0/double(size))*(i+1.0-0.5);
-		if ( (LLI)(percentile) >= k) {
+		if ( (int)(percentile) >= k) {
 			threshold = copiedData[i];
 		}
 	}

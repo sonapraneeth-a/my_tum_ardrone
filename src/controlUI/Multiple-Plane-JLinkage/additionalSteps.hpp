@@ -38,12 +38,12 @@
  */
 void removeUnnecessaryPlanes(
 		const vector<Point3d> &oldData,
-		const vector<long long int> &planeIndices,
-		const long long int &minimumNumberOfPointsPerPlane,
-		map<long long int, long long int> &numberOfPointsPerPlane,
+		const vector<int> &planeIndices,
+		const int &minimumNumberOfPointsPerPlane,
+		map<int, int> &numberOfPointsPerPlane,
 		vector<Point3d> &newData,
-		vector<long long int> &newPlaneIndices,
-		long long int &numberOfPlanes);
+		vector<int> &newPlaneIndices,
+		int &numberOfPlanes);
 
 /**
  * @brief This functions calculates the distances of each point to its respective plane
@@ -51,10 +51,10 @@ void removeUnnecessaryPlanes(
  * @param [in] [vector<Point3d>] data - Set of all points
  * @param [in] [vector< vector<double> >] planeParameters - Set of plane parameters for the planes
  * 								planeParamters[i] corresponds to parameters of plane <i>i</i>
- * @param [in] [vector<long long int>] planeIndices - Indices revealing which point belongs
+ * @param [in] [vector<int>] planeIndices - Indices revealing which point belongs
  * 										to which plane
  * @param [out] [vector<double>] distanceMatrix - Distance of each point from its respective plane
- * @param [out] [vector< vector<long long int> >] planePointsIndexMapping - This contains
+ * @param [out] [vector< vector<int> >] planePointsIndexMapping - This contains
  * 					which plane contains which points.
  * 					Example: planePointsIndexMapping[i] contains points corresponding to plane <i>i</i>
  * @return Nothing
@@ -62,42 +62,42 @@ void removeUnnecessaryPlanes(
 void calculateDistanceFromPlane(
 		const vector<Point3d> &data,
 		const vector< vector<double> > &planeParameters,
-		const vector<long long int> &planeIndices,
+		const vector<int> &planeIndices,
 		vector<double> &distanceMatrix,
-		vector< vector<long long int> > &planePointsIndexMapping);
+		vector< vector<int> > &planePointsIndexMapping);
 
 /**
  *
  * @param [in] [vector<double>] distanceMatrix - Distance of each point from its respective plane
- * @param [in] [vector< vector<long long int> >] planePointsIndexMapping - This contains
+ * @param [in] [vector< vector<int> >] planePointsIndexMapping - This contains
  * 					which plane contains which points.
  * 					Example: planePointsIndexMapping[i] contains points corresponding to plane <i>i</i>
  * @param [out] [vector<Point3d>] newSortedData - Sorted planePoints according to planeIndex
  * @param [out] [vector< vector<double> >] newPlaneParameters - Plane parameters corresponding to index i.
  * 					newPlaneParameters[i] contains parameters for plane i
- * @param [out] [map<LLI, pair<LLI, LLI> >] planeIndexBounds - The bounds which tells the plane(i) points are from index k1 to k2
+ * @param [out] [map<int, pair<int, int> >] planeIndexBounds - The bounds which tells the plane(i) points are from index k1 to k2
  */
 void removePointsFarFromPlane(
 		const vector<Point3d> &data,
 		const vector< vector<double> > &planeParameters,
 		const vector<double> &distanceMatrix,
-		const vector< vector<LLI> > &planePointsIndexMapping,
+		const vector< vector<int> > &planePointsIndexMapping,
 		vector<Point3d> &newSortedData,
 		vector< vector<double> > &newPlaneParameters,
-		map<LLI, pair<LLI, LLI> > &planeIndexBounds);
+		map<int, pair<int, int> > &planeIndexBounds);
 
 void removePointsFarFromPlane1(
 		const vector<Point3d> &data,
 		const vector< vector<double> > &planeParameters,
 		const vector<double> &distanceMatrix,
-		const vector< vector<LLI> > &planePointsIndexMapping,
+		const vector< vector<int> > &planePointsIndexMapping,
 		vector< vector<Point3d> > &newSortedData,
 		vector< vector<double> > &newPlaneParameters );
 
 void get3DPlaneProjectionsOfPoints (
 		const vector<Point3d> &data,
 		const vector< vector<double> > &planeParameters,
-		const map<LLI, pair<LLI, LLI> > &planeIndexBounds,
+		const map<int, pair<int, int> > &planeIndexBounds,
 		vector<Point3d> &projectionsOf3DPoints	);
 
 void get3DPlaneProjectionsOfPoints1 (
@@ -107,6 +107,6 @@ void get3DPlaneProjectionsOfPoints1 (
 
 double getKthPercentile(
 		const vector<double> &data,
-		const LLI k);
+		const int k);
 
 #endif /* ADDITIONALSTEPS_HPP_ */
