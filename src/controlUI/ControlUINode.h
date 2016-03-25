@@ -13,11 +13,14 @@ Author : Anirudh Vemula
 #include "std_msgs/String.h"
 #include "helperFunctions.h"
 #include <list>
+#include <opencv2/core/core.hpp>
 
 
 #include <vector>
 #include <string>
 
+using namespace std;
+using namespace cv;
 class ImageView;
 
 
@@ -333,6 +336,7 @@ public:
 
 	// Algorithmic functions
 	std::vector<float> fitPlane3d (std::vector<int> ccPoints, std::vector<std::vector<int> > pointsClicked);
+	void fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > &pointsClicked, vector<vector<double> >&planeParameters,vector< vector<Point3d> > & continuousBoundingBoxPoints);
 
 	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
 	std::vector<float> searchNearest(std::vector<int> pt, bool considerAllLevels);

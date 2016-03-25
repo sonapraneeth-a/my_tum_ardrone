@@ -27,6 +27,6 @@
 
 using namespace cv;
 using namespace std;
-
+int findMultiplePlanes(const vector<Point3d> &points, vector< vector<double> > &sortedPlaneParameters,  vector< vector<Point3d> > & continuousBoundingBoxPoints);
 #define LLI long long int
 

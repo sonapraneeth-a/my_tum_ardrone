@@ -265,6 +265,7 @@ set(CONTROLUI_HEADER_FILES
     ${MULTIPLEPLANEJLINKAGE_HEADER_FILES})
 
 include_directories(src/controlUI/Multiple-Plane-JLinkage/JLinkage/)
+include_directories(src/controlUI/Multiple-Plane-JLinkage/)
 find_package(MRPT REQUIRED slam;vision;gui;topography)
 #find_package(CGAL QUIET COMPONENTS Core)
 
