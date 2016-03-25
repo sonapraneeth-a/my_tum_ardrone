@@ -84,9 +84,8 @@ void callJLinkage(const vector<Point3d> &locations, vector<int> &labels)
 }
 
 
-int findMultiplePlanes(vector<Point3d> points ){ 
+int findMultiplePlanes(const vector<Point3d> &points, vector< vector<double> > &sortedPlaneParameters,  vector< vector<Point3d> > & continuousBoundingBoxPoints){ 
 
-	
 	vector<Point3d> newPoints;
 	// Step 1: Performing JLinkage to find multiple models
 	// This vector describes to which plane does point i belong to
@@ -141,10 +140,8 @@ int findMultiplePlanes(vector<Point3d> points ){
 
 	// Step 6
 	vector<Point3d> sortedProjectionsOf3DPoints;
-	vector< vector<double> > sortedPlaneParameters;
 	map<int, pair<int, int> > sortedPlaneIndexBounds;
 	vector< vector<Point3d> > boundingBoxPoints;
-	vector< vector<Point3d> > continuousBoundingBoxPoints;
 	orderPlanePointsByCentroids( projectionsOf3DPoints, planeParameters, planeIndexBounds,
 			sortedProjectionsOf3DPoints, sortedPlaneParameters, sortedPlaneIndexBounds);
 	getBoundingBoxCoordinates ( sortedProjectionsOf3DPoints, sortedPlaneParameters,
