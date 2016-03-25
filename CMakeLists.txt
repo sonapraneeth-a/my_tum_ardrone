@@ -213,13 +213,31 @@ add_dependencies(drone_gui thirdparty ${PROJECT_NAME}_gencpp ${PROJECT_NAME}_gen
 
 # ----------------------------- CONTROLUI --------------------------------------------------
 # set header source files
+set(MULTIPLEPLANEJLINKAGE_SOURCE_FILES
+    src/controlUI/Multiple-Plane-JLinkage/main.cpp
+    src/controlUI/Multiple-Plane-JLinkage/additionalSteps.cpp         
+    src/controlUI/Multiple-Plane-JLinkage/utilities.cpp
+    src/controlUI/Multiple-Plane-JLinkage/calculateIntersections.cpp  
+    src/controlUI/Multiple-Plane-JLinkage/makeBoundingRects.cpp
+    src/controlUI/Multiple-Plane-JLinkage/conversion.cpp              
+    src/controlUI/Multiple-Plane-JLinkage/readingData.cpp)
+
+set(MULTIPLEPLANEJLINKAGE_HEADER_FILES
+    src/controlUI/Multiple-Plane-JLinkage/additionalSteps.hpp         
+    src/controlUI/Multiple-Plane-JLinkage/utilities.hpp
+    src/controlUI/Multiple-Plane-JLinkage/calculateIntersections.hpp  
+    src/controlUI/Multiple-Plane-JLinkage/makeBoundingRects.hpp
+    src/controlUI/Multiple-Plane-JLinkage/conversion.hpp              
+    src/controlUI/Multiple-Plane-JLinkage/readingData.hpp)
+
 set(CONTROLUI_SOURCE_FILES
     src/controlUI/main_controlUI.cpp
     src/controlUI/ControlUINode.cpp
     src/controlUI/ransacPlaneFit.cpp
     src/controlUI/GLWindow2.cc
     src/controlUI/GLWindowMenu.cc
-    src/controlUI/ImageView.cpp)
+    src/controlUI/ImageView.cpp
+    ${MULTIPLEPLANEJLINKAGE_SOURCE_FILES})
 
 set(CONTROLUI_HEADER_FILES
     src/controlUI/ControlUINode.h
@@ -228,7 +246,8 @@ set(CONTROLUI_HEADER_FILES
     src/controlUI/GLWindow2.h
     src/controlUI/GLWindowMenu.h
     src/controlUI/ImageView.h
-    src/controlUI/helperFunctions.h)
+    src/controlUI/helperFunctions.h
+    ${MULTIPLEPLANEJLINKAGE_HEADER_FILES})
 
 find_package(MRPT REQUIRED slam;vision;gui;topography)
 #find_package(CGAL QUIET COMPONENTS Core)
