@@ -30,9 +30,10 @@
  * 				line equation (a, b, c; x0, y0, z0) Direction and a point
  * @return Nothing
  */
-vector< vector<double> > makeLineFromPoints(
-		Point3d point1,
-		Point3d point2 );
+void makeLineFromPoints(
+		const Point3d &point1,
+		const Point3d &point2,
+		vector< vector<double> > &lineParameters);
 
 /**
  * @brief - Determine the line parameters of the line obtained as the intersection
@@ -44,9 +45,10 @@ vector< vector<double> > makeLineFromPoints(
  * 				line equation (x0, y0, z0; a, b, c) Direction and a point
  * @return Nothing
  */
-vector<double> calculateIntersectionOfPlanes(
-		vector<double> plane1,
-		vector<double> plane2);
+void calculateIntersectionOfPlanes(
+		const vector<double> &plane1,
+		const vector<double> &plane2,
+		vector< vector<double> > &lineParameters);
 
 /**
  * @brief - Determine the line parameters of the line joining two points

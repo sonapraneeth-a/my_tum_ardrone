@@ -23,7 +23,6 @@
 #include <map>
 #include <cmath>
 #include <algorithm>
-#include <unordered_set>
 #include <set>
 
 using namespace cv;

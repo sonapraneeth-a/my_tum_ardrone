@@ -39,7 +39,7 @@
 void removeUnnecessaryPlanes(
 		const vector<Point3d> &oldData,
 		const vector<long long int> &planeIndices,
-		const long long int minimumNumberOfPointsPerPlane,
+		const long long int &minimumNumberOfPointsPerPlane,
 		map<long long int, long long int> &numberOfPointsPerPlane,
 		vector<Point3d> &newData,
 		vector<long long int> &newPlaneIndices,
@@ -78,12 +78,32 @@ void calculateDistanceFromPlane(
  * @param [out] [map<LLI, pair<LLI, LLI> >] planeIndexBounds - The bounds which tells the plane(i) points are from index k1 to k2
  */
 void removePointsFarFromPlane(
+		const vector<Point3d> &data,
+		const vector< vector<double> > &planeParameters,
 		const vector<double> &distanceMatrix,
 		const vector< vector<LLI> > &planePointsIndexMapping,
 		vector<Point3d> &newSortedData,
 		vector< vector<double> > &newPlaneParameters,
 		map<LLI, pair<LLI, LLI> > &planeIndexBounds);
 
+void removePointsFarFromPlane1(
+		const vector<Point3d> &data,
+		const vector< vector<double> > &planeParameters,
+		const vector<double> &distanceMatrix,
+		const vector< vector<LLI> > &planePointsIndexMapping,
+		vector< vector<Point3d> > &newSortedData,
+		vector< vector<double> > &newPlaneParameters );
+
+void get3DPlaneProjectionsOfPoints (
+		const vector<Point3d> &data,
+		const vector< vector<double> > &planeParameters,
+		const map<LLI, pair<LLI, LLI> > &planeIndexBounds,
+		vector<Point3d> &projectionsOf3DPoints	);
+
+void get3DPlaneProjectionsOfPoints1 (
+		const vector< vector<Point3d> > &data,
+		const vector< vector<double> > &planeParameters,
+		vector<Point3d> &projectionsOf3DPoints	);
 
 double getKthPercentile(
 		const vector<double> &data,

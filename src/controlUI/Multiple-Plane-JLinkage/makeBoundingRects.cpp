@@ -10,8 +10,6 @@
 
 #include "allHeaders.hpp"
 #include "makeBoundingRects.hpp"
-#include "conversion.hpp"
-#include "utilities.hpp"
 
 void orderPlanePointsByCentroids(
 		const vector<Point3d> &projectionOf3DPoints,
@@ -29,19 +27,18 @@ void orderPlanePointsByCentroids(
 	vector<double> sortedXPoints;
 	vector<LLI> indices;
 	double xCentroid = 0.0;
-	sortedProjectionsOf3DPoints(numberOfPlanes);
 
 	for(i = 0; i < numberOfPlanes; i++) {
-		startIndex = planeIndexBounds[i].first;
-		endIndex = planeIndexBounds[i].second;
+		startIndex = planeIndexBounds.at(i).first;
+		endIndex = planeIndexBounds.at(i).second;
 		for (j = startIndex; j <= endIndex; ++j) {
 			xPoints.push_back(projectionOf3DPoints[i].x);
 			xCentroid += projectionOf3DPoints[i].x;
 		}
 		xCentroid /= (endIndex-startIndex+1);
 		sortData( xPoints, sortedXPoints, indices);
-		startIndex = planeIndexBounds[indices[i]].first;
-		endIndex = planeIndexBounds[indices[i]].second;
+		startIndex = planeIndexBounds.at(indices[i]).first;
+		endIndex = planeIndexBounds.at(indices[i]).second;
 		for (j = startIndex; j <= endIndex; ++j) {
 			sortedProjectionsOf3DPoints.push_back(projectionOf3DPoints[j]);
 		}
@@ -67,7 +64,11 @@ void orderPlanePointsByCentroids1(
 	vector<double> sortedXPoints;
 	vector<LLI> indices;
 	double xCentroid = 0.0;
-	sortedProjectionsOf3DPoints(numberOfPlanes);
+	vector<Point3d> points;
+	//sortedProjectionsOf3DPoints(vector< vector<Point3d> >(numberOfPlanes));
+	for (i = 0; i < numberOfPlanes; ++i) {
+		sortedProjectionsOf3DPoints.push_back(points);
+	}
 
 	for(i = 0; i < numberOfPlanes; i++) {
 		numberOfPointsInThisPlane = projectionOf3DPoints[i].size();
@@ -103,8 +104,8 @@ void getBoundingBoxCoordinates (
 	vector<Point3d> planeXYZBoundingPoints;
 
 	for (i = 0; i < numberOfPlanes; ++i) {
-		indexOne = sortedPlaneIndexBounds[i].first;
-		indexTwo = sortedPlaneIndexBounds[i].second;
+		indexOne = sortedPlaneIndexBounds.at(i).first;
+		indexTwo = sortedPlaneIndexBounds.at(i).second;
 		numberOfPointsInThePlane = indexTwo - indexOne;
 		for (j = indexOne; j < indexTwo; ++j) {
 			pointsInThePlane.push_back(sortedProjectionOf3DPoints[j]);

@@ -11,9 +11,10 @@
 #include "readingData.hpp"
 #include "additionalSteps.hpp"
 #include "utilities.hpp"
+#include "makeBoundingRects.hpp"
 
 // The main file
-int main( int argc, char** argv ) {
+int test() {
 
 	// Initializing the parameters for the JLinkage
 	// Number of initial hypothesis to be generated. 'M' in the paper
@@ -59,7 +60,6 @@ int main( int argc, char** argv ) {
 	// Step 4
 	// Perform K-means
 	Mat pointsMatrix = Mat(points);
-	LLI numberOfPlanes = 4;
 	// Reference: http://docs.opencv.org/2.4/modules/core/doc/clustering.html
 	// kmeans(pointsMatrix, numberOfPlanes, planeIndices, TermCriteria::epsilon, clustersCenters);
 	// planeParameters = fitting_fn(points);
@@ -67,7 +67,7 @@ int main( int argc, char** argv ) {
 	// Step 5
 	// Remove points which far from the estimated plane after performing k-means
 	// Get 3D Projection of points onto the plane
-	vector<double> &distanceMatrix;
+	vector<double> distanceMatrix;
 	vector< vector<LLI> > planePointsIndexMapping;
 	vector<Point3d> newSortedPoints;
 	vector< vector<double> > newPlaneParameters;
@@ -82,11 +82,11 @@ int main( int argc, char** argv ) {
 
 
 	// Step 6
-	vector<Point3d> &sortedProjectionsOf3DPoints;
-	vector< vector<double> > &sortedPlaneParameters;
-	map<LLI, pair<LLI, LLI> > &sortedPlaneIndexBounds;
-	vector< vector<Point3d> > &boundingBoxPoints;
-	vector< vector<Point3d> > &continuousBoundingBoxPoints;
+	vector<Point3d> sortedProjectionsOf3DPoints;
+	vector< vector<double> > sortedPlaneParameters;
+	map<LLI, pair<LLI, LLI> > sortedPlaneIndexBounds;
+	vector< vector<Point3d> > boundingBoxPoints;
+	vector< vector<Point3d> > continuousBoundingBoxPoints;
 	orderPlanePointsByCentroids( projectionsOf3DPoints, planeParameters, planeIndexBounds,
 			sortedProjectionsOf3DPoints, sortedPlaneParameters, sortedPlaneIndexBounds);
 	getBoundingBoxCoordinates ( sortedProjectionsOf3DPoints, sortedPlaneParameters,

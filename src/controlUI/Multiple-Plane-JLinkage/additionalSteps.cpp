@@ -189,8 +189,8 @@ void get3DPlaneProjectionsOfPoints (
 
 	LLI i, j;
 	for (i = 0; i < numberOfPlanes; ++i) {
-		startOfPlanePoints = planeIndexBounds[i].first;
-		endOfPlanePoints = planeIndexBounds[i].second;
+		startOfPlanePoints = planeIndexBounds.at(i).first;
+		endOfPlanePoints = planeIndexBounds.at(i).second;
 		// Get the plane parameters into variables a, b, c, d
 		double a = planeParameters[i][0];
 		double b = planeParameters[i][1];

@@ -11,10 +11,10 @@
 
 void sortData(
 		const vector<double> &data,
-		const vector<double> &sortedData,
-		const vector<LLI> &indices) {
+		vector<double> &sortedData,
+		vector<LLI> &indices) {
 
-	data = sortedData;
+	sortedData = data;
 	LLI dataSize = data.size();
 
 	map<double, LLI> oldIndices;
@@ -33,7 +33,7 @@ void sortData(
 }
 
 LLI numberOfUniquePlanes(
-		vector<double> planeIndices ) {
+		const vector<double> &planeIndices ) {
 
 	LLI ans = 0;
 	LLI numberOfPlanes = planeIndices.size();
