@@ -1,0 +1,306 @@
+/*
+ *   File Name: makeBoundingRects.cpp
+ *     Project: Multiple Plane JLinkage
+ *  Created on: 22-Mar-2016
+ *      Author: Sona Praneeth Akula
+ *     Details:
+ *   TodoNotes: TODO
+ */
+
+
+#include "allHeaders.hpp"
+#include "makeBoundingRects.hpp"
+#include "conversion.hpp"
+#include "utilities.hpp"
+
+void orderPlanePointsByCentroids(
+		const vector<Point3d> &projectionOf3DPoints,
+		const vector< vector<double> > &planeParameters,
+		const map<LLI, pair<LLI, LLI> > &planeIndexBounds,
+		vector<Point3d> &sortedProjectionsOf3DPoints,
+		vector< vector<double> > &sortedPlaneParameters,
+		map<LLI, pair<LLI, LLI> > &sortedPlaneIndexBounds ) {
+
+
+	LLI numberOfPlanes = planeParameters.size();
+	LLI i, j;
+	LLI startIndex, endIndex;
+	vector<double> xPoints;
+	vector<double> sortedXPoints;
+	vector<LLI> indices;
+	double xCentroid = 0.0;
+	sortedProjectionsOf3DPoints(numberOfPlanes);
+
+	for(i = 0; i < numberOfPlanes; i++) {
+		startIndex = planeIndexBounds[i].first;
+		endIndex = planeIndexBounds[i].second;
+		for (j = startIndex; j <= endIndex; ++j) {
+			xPoints.push_back(projectionOf3DPoints[i].x);
+			xCentroid += projectionOf3DPoints[i].x;
+		}
+		xCentroid /= (endIndex-startIndex+1);
+		sortData( xPoints, sortedXPoints, indices);
+		startIndex = planeIndexBounds[indices[i]].first;
+		endIndex = planeIndexBounds[indices[i]].second;
+		for (j = startIndex; j <= endIndex; ++j) {
+			sortedProjectionsOf3DPoints.push_back(projectionOf3DPoints[j]);
+		}
+		sortedPlaneParameters[i] = planeParameters[indices[i]];
+		sortedPlaneIndexBounds[i] = make_pair(startIndex, endIndex);
+	}
+
+	return ;
+
+}
+
+void orderPlanePointsByCentroids1(
+		const vector< vector<Point3d> > &projectionOf3DPoints,
+		const vector< vector<double> > &planeParameters,
+		vector< vector<Point3d> > &sortedProjectionsOf3DPoints,
+		vector< vector<double> > &sortedPlaneParameters ) {
+
+
+	LLI numberOfPlanes = planeParameters.size();
+	LLI i, j;
+	LLI numberOfPointsInThisPlane;
+	vector<double> xPoints;
+	vector<double> sortedXPoints;
+	vector<LLI> indices;
+	double xCentroid = 0.0;
+	sortedProjectionsOf3DPoints(numberOfPlanes);
+
+	for(i = 0; i < numberOfPlanes; i++) {
+		numberOfPointsInThisPlane = projectionOf3DPoints[i].size();
+		for (j = 0; j < numberOfPointsInThisPlane; ++j) {
+			xPoints.push_back(projectionOf3DPoints[i][j].x);
+			xCentroid += projectionOf3DPoints[i][j].x;
+		}
+		xCentroid /= numberOfPointsInThisPlane;
+		sortData( xPoints, sortedXPoints, indices);
+		sortedProjectionsOf3DPoints[i] = projectionOf3DPoints[indices[i]];
+		sortedPlaneParameters[i] = planeParameters[indices[i]];
+	}
+
+	return ;
+
+}
+
+void getBoundingBoxCoordinates (
+		const vector<Point3d> &sortedProjectionOf3DPoints,
+		const vector< vector<double> > &sortedPlaneParameters,
+		const map<LLI, pair<LLI, LLI> > &sortedPlaneIndexBounds,
+		vector< vector<Point3d> > &boundingBoxPoints ) {
+
+
+	LLI numberOfPlanes = sortedPlaneIndexBounds.size();
+	LLI i, j;
+	LLI numberOfPointsInThePlane, indexOne, indexTwo;
+	vector<Point3d> pointsInThePlane;
+	vector<Point2d> uvCoord;
+	vector<double> uCoord, vCoord;
+	vector<Point3d> uvAxes;
+	vector<Point2d> planeUVBoundingPoints;
+	vector<Point3d> planeXYZBoundingPoints;
+
+	for (i = 0; i < numberOfPlanes; ++i) {
+		indexOne = sortedPlaneIndexBounds[i].first;
+		indexTwo = sortedPlaneIndexBounds[i].second;
+		numberOfPointsInThePlane = indexTwo - indexOne;
+		for (j = indexOne; j < indexTwo; ++j) {
+			pointsInThePlane.push_back(sortedProjectionOf3DPoints[j]);
+		}
+
+		AllXYZToUVCoordinates( pointsInThePlane, sortedPlaneParameters[i],
+								uvCoord, uvAxes);
+
+		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+			uCoord.push_back(uvCoord[j].x);
+		}
+		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+			vCoord.push_back(uvCoord[j].y);
+		}
+
+		double minU = *min_element(uCoord.begin(), uCoord.end());
+		double maxU = *max_element(uCoord.begin(), uCoord.end());
+		double minV = *min_element(vCoord.begin(), vCoord.end());
+		double maxV = *max_element(vCoord.begin(), vCoord.end());
+		Point2d bottomLeft = Point2d(minU, minV);
+		Point2d bottomRight = Point2d(maxU, minV);
+		Point2d topLeft = Point2d(minU, maxV);
+		Point2d topRight = Point2d(maxU, maxV);
+
+		planeUVBoundingPoints.push_back(bottomLeft);
+		planeUVBoundingPoints.push_back(bottomRight);
+		planeUVBoundingPoints.push_back(topLeft);
+		planeUVBoundingPoints.push_back(topRight);
+
+		AllUVToXYZCoordinates( planeUVBoundingPoints, uvAxes, sortedPlaneParameters[i][3],
+				planeXYZBoundingPoints);
+
+		vector<double> zCoord;
+		vector<double> xCoord;
+		vector<double> sortedZCoord;
+		vector<LLI> sortedZCoordOriginalIndices;
+
+
+		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+			zCoord.push_back(planeXYZBoundingPoints[j].z);
+			xCoord.push_back(planeXYZBoundingPoints[j].x);
+		}
+		sortData(zCoord, sortedZCoord, sortedZCoordOriginalIndices);
+
+		if(xCoord[sortedZCoordOriginalIndices[0]] >= xCoord[sortedZCoordOriginalIndices[1]]) {
+			swap(planeXYZBoundingPoints[sortedZCoordOriginalIndices[0]],
+					planeXYZBoundingPoints[sortedZCoordOriginalIndices[1]]);
+		}
+		if(xCoord[sortedZCoordOriginalIndices[2]] < xCoord[sortedZCoordOriginalIndices[3]]) {
+			swap(planeXYZBoundingPoints[sortedZCoordOriginalIndices[2]],
+					planeXYZBoundingPoints[sortedZCoordOriginalIndices[3]]);
+		}
+
+		planeXYZBoundingPoints.push_back(planeXYZBoundingPoints[0]);
+		boundingBoxPoints.push_back(planeXYZBoundingPoints);
+
+
+	}
+
+
+	return ;
+
+}
+
+void getBoundingBoxCoordinates1 (
+		const vector< vector<Point3d> > &sortedProjectionOf3DPoints,
+		const vector< vector<double> > &sortedPlaneParameters,
+		vector< vector<Point3d> > &boundingBoxPoints ) {
+
+
+	LLI numberOfPlanes = sortedProjectionOf3DPoints.size();
+	LLI i, j;
+	LLI numberOfPointsInThePlane, indexOne, indexTwo;
+	vector<Point3d> pointsInThePlane;
+	vector<Point2d> uvCoord;
+	vector<double> uCoord, vCoord;
+	vector<Point3d> uvAxes;
+	vector<Point2d> planeUVBoundingPoints;
+	vector<Point3d> planeXYZBoundingPoints;
+
+	for (i = 0; i < numberOfPlanes; ++i) {
+		numberOfPointsInThePlane = sortedProjectionOf3DPoints[i].size();
+		pointsInThePlane = sortedProjectionOf3DPoints[i];
+
+		AllXYZToUVCoordinates( pointsInThePlane, sortedPlaneParameters[i],
+								uvCoord, uvAxes);
+
+		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+			uCoord.push_back(uvCoord[j].x);
+		}
+		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+			vCoord.push_back(uvCoord[j].y);
+		}
+
+		double minU = *min_element(uCoord.begin(), uCoord.end());
+		double maxU = *max_element(uCoord.begin(), uCoord.end());
+		double minV = *min_element(vCoord.begin(), vCoord.end());
+		double maxV = *max_element(vCoord.begin(), vCoord.end());
+		Point2d bottomLeft = Point2d(minU, minV);
+		Point2d bottomRight = Point2d(maxU, minV);
+		Point2d topLeft = Point2d(minU, maxV);
+		Point2d topRight = Point2d(maxU, maxV);
+
+		planeUVBoundingPoints.push_back(bottomLeft);
+		planeUVBoundingPoints.push_back(bottomRight);
+		planeUVBoundingPoints.push_back(topLeft);
+		planeUVBoundingPoints.push_back(topRight);
+
+		AllUVToXYZCoordinates( planeUVBoundingPoints, uvAxes, sortedPlaneParameters[i][3],
+				planeXYZBoundingPoints);
+
+		vector<double> zCoord;
+		vector<double> xCoord;
+		vector<double> sortedZCoord;
+		vector<LLI> sortedZCoordOriginalIndices;
+
+
+		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+			zCoord.push_back(planeXYZBoundingPoints[j].z);
+			xCoord.push_back(planeXYZBoundingPoints[j].x);
+		}
+		sortData(zCoord, sortedZCoord, sortedZCoordOriginalIndices);
+
+		if(xCoord[sortedZCoordOriginalIndices[0]] >= xCoord[sortedZCoordOriginalIndices[1]]) {
+			swap(planeXYZBoundingPoints[sortedZCoordOriginalIndices[0]],
+					planeXYZBoundingPoints[sortedZCoordOriginalIndices[1]]);
+		}
+		if(xCoord[sortedZCoordOriginalIndices[2]] < xCoord[sortedZCoordOriginalIndices[3]]) {
+			swap(planeXYZBoundingPoints[sortedZCoordOriginalIndices[2]],
+					planeXYZBoundingPoints[sortedZCoordOriginalIndices[3]]);
+		}
+
+		planeXYZBoundingPoints.push_back(planeXYZBoundingPoints[0]);
+		boundingBoxPoints.push_back(planeXYZBoundingPoints);
+
+
+	}
+
+
+	return ;
+
+}
+
+void getContinuousBoundingBox (
+		const vector< vector<Point3d> > &boundingBoxPoints,
+		const vector< vector<double> > &sortedPlaneParameters,
+		vector< vector<Point3d> > &continuousBoundingBoxPoints) {
+
+	LLI numberOfPlanes = sortedPlaneParameters.size();
+	LLI i, j;
+	vector< vector<double> > lineParameters1;
+	vector< vector<double> > lineParameters2;
+	vector< vector<double> > lineParameters3;
+	vector< vector<double> > lineParameters4;
+	vector< vector<double> > lineIntersectionOfPlanes;
+	LLI firstPlaneBoundingBoxStart, secondPlaneBoundingBoxStart;
+	Point3d firstPoint, secondPoint;
+	Point3d point1, point2, point3, point4;
+
+	for (i = 0; i < numberOfPlanes-1; ++i) {
+		calculateIntersectionOfPlanes( sortedPlaneParameters[i],
+				sortedPlaneParameters[i+1], lineIntersectionOfPlanes);
+
+		firstPlaneBoundingBoxStart = 5*i;
+		secondPlaneBoundingBoxStart = 5*(i+1);
+
+		firstPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart];
+		secondPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+1];
+		makeLineFromPoints( firstPoint, secondPoint, lineParameters1);
+		firstPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+2];
+		secondPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+3];
+		makeLineFromPoints( firstPoint, secondPoint, lineParameters2);
+
+		firstPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart];
+		secondPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+1];
+		makeLineFromPoints( firstPoint, secondPoint, lineParameters3);
+		firstPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+2];
+		secondPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+3];
+		makeLineFromPoints( firstPoint, secondPoint, lineParameters4);
+
+		point1 = calculateIntersectionOfLines( lineParameters1, lineIntersectionOfPlanes);
+		point2 = calculateIntersectionOfLines( lineParameters2, lineIntersectionOfPlanes);
+		point3 = calculateIntersectionOfLines( lineParameters3, lineIntersectionOfPlanes);
+		point4 = calculateIntersectionOfLines( lineParameters4, lineIntersectionOfPlanes);
+
+		continuousBoundingBoxPoints[i][secondPlaneBoundingBoxStart] = point3;
+		continuousBoundingBoxPoints[i][secondPlaneBoundingBoxStart+4] = point3;
+		continuousBoundingBoxPoints[i][secondPlaneBoundingBoxStart+3] = point4;
+
+
+		continuousBoundingBoxPoints[i][firstPlaneBoundingBoxStart+1] = point1;
+		continuousBoundingBoxPoints[i][firstPlaneBoundingBoxStart+2] = point2;
+
+
+	}
+
+	return ;
+
+}
