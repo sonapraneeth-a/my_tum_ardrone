@@ -26,7 +26,11 @@ void fitFunctionPlane(
 	const vector<int> planeIndices,
 	vector< vector<double> >  &planeParameters);
 
-void fitFunctionPlane1(
+void getPlaneParameters(
 	const vector<Point3d> &planePoints,
 	const vector<int> planeIndices,
 	vector< vector<double> >  &planeParameters);
+
+void fitPlane3D(
+	const vector<Point3d> &planePoints,
+	vector<double>  &planeParameters);

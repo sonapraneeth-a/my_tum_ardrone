@@ -128,7 +128,7 @@ int findMultiplePlanes(const vector<Point3d> &points, vector< vector<double> > &
 			TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),	numberOfRounds, KMEANS_USE_INITIAL_LABELS, clusterCentroids);
 	int numberOfPoints = points.size();
 	planeIndices = newPlaneIndices;
-	fitFunctionPlane(points, planeIndices, planeParameters);
+	getPlaneParameters(points, planeIndices, planeParameters);
 
 	// Step 5
 	// Remove points which far from the estimated plane after performing k-means
