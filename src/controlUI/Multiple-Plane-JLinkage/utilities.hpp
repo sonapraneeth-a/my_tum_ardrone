@@ -20,3 +20,13 @@ void sortData(
 
 int numberOfUniquePlanes(
 		const vector<double> &planeIndices );
+
+void fitFunctionPlane(
+	const vector<Point3d> &planePoints,
+	const vector<int> planeIndices,
+	vector< vector<double> >  &planeParameters);
+
+void fitFunctionPlane1(
+	const vector<Point3d> &planePoints,
+	const vector<int> planeIndices,
+	vector< vector<double> >  &planeParameters);

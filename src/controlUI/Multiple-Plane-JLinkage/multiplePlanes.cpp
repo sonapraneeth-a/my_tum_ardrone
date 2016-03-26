@@ -90,12 +90,12 @@ int findMultiplePlanes(const vector<Point3d> &points, vector< vector<double> > &
 	// Step 1: Performing JLinkage to find multiple models
 	// This vector describes to which plane does point i belong to
 	// This is an output from JLinkage
-	vector<int> planeIndices;
+	vector<int> oldPlaneIndices;
 	// Plane Parameters (a, b, c, d) for plane i
 	vector< vector<double> > planeParameters;
 
 
-	callJLinkage(points, planeIndices);
+	callJLinkage(points, oldPlaneIndices);
 	// planeParameters = fitting_fn(points);
 
 	// Step 2
@@ -104,9 +104,9 @@ int findMultiplePlanes(const vector<Point3d> &points, vector< vector<double> > &
 	int numberOfPointsInData = points.size();
 	// int numberOfUniquePlanes = numberOfUniquePlanes( planeIndices );
 	map<int, int> numberOfPointsPerPlane;
-	vector<int> newPlaneIndices;
+	vector<int> newPlaneIndices, planeIndices;
 	int numberOfPlanes;
-	removeUnnecessaryPlanes( points, planeIndices, minPointsPerPlane,
+	removeUnnecessaryPlanes( points, oldPlaneIndices, minPointsPerPlane,
 			numberOfPointsPerPlane, newPoints, newPlaneIndices, numberOfPlanes);
 
 	// Step 3
@@ -117,9 +117,18 @@ int findMultiplePlanes(const vector<Point3d> &points, vector< vector<double> > &
 	// Step 4
 	// Perform K-means
 	Mat pointsMatrix = Mat(points);
+	//Mat planeIndicesMatrix;
+	vector<Point3d> clusterCentroids;
+	int numberOfRounds = 10;
 	// Reference: http://docs.opencv.org/2.4/modules/core/doc/clustering.html
-	// kmeans(pointsMatrix, numberOfPlanes, planeIndices, TermCriteria::epsilon, clustersCenters);
-	// planeParameters = fitting_fn(points);
+	// double kmeans(const cv::_InputArray &,
+	// 	int, const cv::_OutputArray &,
+	// 	cv::TermCriteria, int, int, const cv::_OutputArray &);
+	kmeans(pointsMatrix, numberOfPlanes, newPlaneIndices,
+			TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),	numberOfRounds, KMEANS_USE_INITIAL_LABELS, clusterCentroids);
+	int numberOfPoints = points.size();
+	planeIndices = newPlaneIndices;
+	fitFunctionPlane(points, planeIndices, planeParameters);
 
 	// Step 5
 	// Remove points which far from the estimated plane after performing k-means
