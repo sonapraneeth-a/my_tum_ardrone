@@ -23,7 +23,7 @@ typedef K::Segment_3 Segment_3;
 
 typedef K::Point_3 Point_3;
 typedef CGAL::Creator_uniform_3<double,Point_3> PointCreator;*/
-
+using namespace std;
 
 ImageView::ImageView(ControlUINode *cnode) {
 	frameWidth = frameHeight = 0;
@@ -198,7 +198,7 @@ void ImageView::renderFrame() {
 		glBegin(GL_POINTS);
 		for (int i = 0; i < numKeyPointsDetected; ++i)
 		{
-			std::vector<int> p;
+			vector<int> p;
 			bool found = node->get2DPoint(keyPointsNearest[i], p, considerAllLevels);
 			if(found) {
 				glVertex2i(p[0], p[1]);
@@ -216,7 +216,7 @@ void ImageView::renderFrame() {
 		glBegin(GL_POINTS);
 		for (int i = 0; i < numKeyPointsDetected; ++i)
 		{
-			std::vector<int> p;
+			vector<int> p;
 			bool found = node->get2DPoint(keyPointsNearest[i], p, considerAllLevels);
 			if(found) {
 				glVertex2i(p[0], p[1]);
@@ -231,7 +231,7 @@ void ImageView::renderFrame() {
 		glColor3f(0, 1.0, 0.0);
 		glBegin(GL_LINE_STRIP);
 		for(unsigned int i=0; i<ccPoints.size(); i++) {
-			std::vector<int> p;
+			vector<int> p;
 			bool found = node->get2DPoint(keyPointsNearest[ccPoints[i]], p, considerAllLevels);
 			if(found) {
 				glVertex2i(p[0], p[1]);
@@ -302,12 +302,39 @@ void ImageView::on_key_down(int key) {
 		// Extract plane
 
 		extractBoundingPoly();
-		std::vector<float> plane = node->fitPlane3d (ccPoints, pointsClicked);
-		std::vector<std::vector<float> > pPoints =  node->projectPoints (ccPoints, keyPointsNearest);
+		/*
+		 * TODO Currently commented code which fits single plane and moves the drone accordingly
+		 * Appropriate code needs to be added which will handle multiple planes
+		 * For time being for multiple planes each plane is shown in different color
+		 *
+		vector<float> plane = node->fitPlane3d (ccPoints, pointsClicked);
+		vector<vector<float> > pPoints =  node->projectPoints (ccPoints, keyPointsNearest);
 		grid g = node->buildGrid(pPoints);
-		std::vector<std::vector<double> > tPoints =  node->getTargetPoints(g, plane);
+		vector<vector<double> > tPoints =  node->getTargetPoints(g, plane);
 		node->moveDrone(tPoints);
-		//std::vector<float> translatedPlane = node->translatePlane (translateDistance);
+		*/
+		vector< vector<Point3d> > continuousBoundingBoxPoints;
+		vector< vector<double> > planeParameters;
+		node->fitMultiplePlanes3d(ccPoints, pointsClicked, planeParameters, continuousBoundingBoxPoints);
+		for(int planeIndex = 0; planeIndex<continuousBoundingBoxPoints.size(); planeIndex++) {
+			vector<Point3d> planeBoundingBoxPoints = continuousBoundingBoxPoints[planeIndex];	
+			vector< vector<int> > planePts2D;
+			glColor3f(1.0-1.0/(planeIndex+1), 1.0/(planeIndex+1), 0.0); 
+		 	glBegin(GL_LINE_STRIP);
+			for(int pointIndex = 0; pointIndex<planeBoundingBoxPoints.size(); pointIndex++) {
+				vector<float> pt(3);
+				pt[0] = planeBoundingBoxPoints[pointIndex].x;
+				pt[1] = planeBoundingBoxPoints[pointIndex].y;
+				pt[2] = planeBoundingBoxPoints[pointIndex].z;
+				vector<int> p;
+				node->get2DPoint(pt, p, true);
+				planePts2D.push_back(p);
+				glVertex2i(p[0],p[1]);
+			}
+			glEnd();
+		}
+		
+		//vector<float> translatedPlane = node->translatePlane (translateDistance);
 		
 	}
 }
@@ -336,7 +363,7 @@ void ImageView::on_mouse_down(CVD::ImageRef where, int state, int button) {
 	printf("X and Y of point clicked : (%d, %d)\n", x, y);
 
 	numPointsClicked++;
-	std::vector<int> v;
+	vector<int> v;
 	v.push_back(x);
 	v.push_back(y);
 	pointsClicked.push_back(v);
@@ -346,8 +373,8 @@ void ImageView::on_mouse_down(CVD::ImageRef where, int state, int button) {
 
 
 
-void ImageView::search(std::vector<int> pt) {
-	std::vector<float> kp = node->searchNearest(pt, considerAllLevels);
+void ImageView::search(vector<int> pt) {
+	vector<float> kp = node->searchNearest(pt, considerAllLevels);
 
 	keyPointsNearest.push_back(kp);
 	numKeyPointsDetected++;
@@ -358,10 +385,10 @@ void ImageView::extractBoundingPoly() {
 	// Check if the number of clicked points is exactly 4
 	//assert(pointsClicked.size()==4);
 	
-	//std::vector<std::vector<int> > ccPoints;
+	//vector<vector<int> > ccPoints;
 	ccPoints.clear();
 
-	std::vector<int> minXPoint;
+	vector<int> minXPoint;
 	float minX = -1;
 	int minXIndex = -1;
 	for(unsigned int i=0; i<pointsClicked.size(); i++) {
@@ -379,7 +406,7 @@ void ImageView::extractBoundingPoly() {
 
 	//ccPoints.push_back(minXPoint);
 
-	std::vector<int> endPoint;
+	vector<int> endPoint;
 	int endIndex;
 	int i=0;
 	do{
