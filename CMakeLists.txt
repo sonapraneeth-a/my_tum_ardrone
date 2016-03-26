@@ -275,5 +275,6 @@ find_package(MRPT REQUIRED slam;vision;gui;topography)
 #endif()
 
 add_executable(drone_controlUI ${CONTROLUI_SOURCE_FILES} ${CONTROLUI_HEADER_FILES})
+set_target_properties(drone_controlUI PROPERTIES COMPILE_FLAGS "-fpermissive")
 target_link_libraries(drone_controlUI ${MRPT_LIBS} ${PTAM_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(drone_controlUI thirdparty ${PROJECT_NAME}_gencpp ${PROJECT_NAME}_gencfg)
