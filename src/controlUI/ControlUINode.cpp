@@ -237,10 +237,10 @@ vector<float> ControlUINode::fitPlane3d (vector<int> ccPoints, vector<vector<int
 	return _3d_plane;
 }
 
-void ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > &pointsClicked, vector<vector<double> >&planeParameters, 
-										vector< vector<Point3d> > & continuousBoundingBoxPoints) 
+void ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > &pointsClicked, vector<vector<float> >&planeParameters, 
+										vector< vector<Point3f> > & continuousBoundingBoxPoints) 
 {
-	vector<Point3d> _in_points;
+	vector<Point3f> _in_points;
 
     vector<vector<int> > points;
     for(unsigned int i=0; i<ccPoints.size(); i++) {
@@ -252,7 +252,7 @@ void ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<in
     for(unsigned int i=0; i<_2d_points.size(); i++) {
         if(liesInside(points, _2d_points[i])) {
             //printf("%f, %f, %f\n", _3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
-			Point3d featurePt;
+			Point3f featurePt;
 			featurePt.x = _3d_points[i][0];
 			featurePt.y = _3d_points[i][1];
 			featurePt.z = _3d_points[i][2];

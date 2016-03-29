@@ -313,11 +313,20 @@ void ImageView::on_key_down(int key) {
 		vector<vector<double> > tPoints =  node->getTargetPoints(g, plane);
 		node->moveDrone(tPoints);
 		*/
-		vector< vector<Point3d> > continuousBoundingBoxPoints;
-		vector< vector<double> > planeParameters;
+		vector< vector<Point3f> > continuousBoundingBoxPoints;
+		vector< vector<float> > planeParameters;
 		node->fitMultiplePlanes3d(ccPoints, pointsClicked, planeParameters, continuousBoundingBoxPoints);
+		int size = continuousBoundingBoxPoints.size();
+		int i, j;
+		cout << "[ DEBUG ] continuousBoundingBoxPoints from ImageView\n";
+		for (i = 0; i < size; ++i) {
+			for (j = 0; j < 5; ++j) {
+				cout << continuousBoundingBoxPoints[i][j] << " ";
+			}
+			cout << "\n";
+		}
 		for(int planeIndex = 0; planeIndex<continuousBoundingBoxPoints.size(); planeIndex++) {
-			vector<Point3d> planeBoundingBoxPoints = continuousBoundingBoxPoints[planeIndex];	
+			vector<Point3f> planeBoundingBoxPoints = continuousBoundingBoxPoints[planeIndex];	
 			vector< vector<int> > planePts2D;
 			glColor3f(1.0-1.0/(planeIndex+1), 1.0/(planeIndex+1), 0.0); 
 		 	glBegin(GL_LINE_STRIP);
