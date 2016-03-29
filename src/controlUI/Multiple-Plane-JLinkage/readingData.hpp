@@ -14,14 +14,14 @@
 
 int readPointsFromCSV(
 		const string filename,
-		vector<Point3d> &points);
+		vector<Point3f> &points);
 
 void readPointsFromTXT(
 		const string filename,
-		vector<Point3d> &points);
+		vector<Point3f> &points);
 
 void printPointsVector(
-		const vector<Point3d> &points,
+		const vector<Point3f> &points,
 		const long long int numberOfPoints);
 
 #endif /* READINGDATA_HPP_ */

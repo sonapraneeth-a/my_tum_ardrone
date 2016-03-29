@@ -10,23 +10,34 @@
 #include "utilities.hpp"
 
 void sortData(
-		const vector<double> &data,
-		vector<double> &sortedData,
+		const vector<float> &data,
+		vector<float> &sortedData,
 		vector<int> &indices) {
 
-	sortedData = data;
 	int dataSize = data.size();
-
-	map<double, int> oldIndices;
+	cout << "[ DEBUG ] Data for sorting has size: " << dataSize << "\n";
+	map<float, int> oldIndices;
 	int i;
+	//cout << "[ DEBUG ] Data: ";
+	sortedData.clear();
 	for (i = 0; i < dataSize; ++i) {
 		oldIndices[data[i]] = i;
+		sortedData.push_back(data[i]);
+		//cout << data[i] << " ";
 	}
-
+	//cout << "\n";
+	/*for (map<float,int>::iterator it=oldIndices.begin(); it!=oldIndices.end(); ++it)
+		cout << it->first << " => " << it->second << '\n';*/
+	cout << "[ DEBUG ] Sorting Data ...\n";
 	sort(sortedData.begin(), sortedData.end());
+	indices.clear();
+	cout << "[ DEBUG ] Sorting Completed ...\n";
+	cout << "[ DEBUG ] Making indices ...\n";
 	for (i = 0; i < dataSize; ++i) {
-		indices[i] = oldIndices[sortedData[i]];
+		//cout << "[ DEBUG ] indices: " << oldIndices.at(sortedData[i]) << "\n";
+		indices.push_back(oldIndices.at(sortedData[i]));
 	}
+	cout << "[ DEBUG ] Making indices Completed ...\n";
 
 	return ;
 
@@ -44,14 +55,14 @@ int numberOfUniquePlanes(
 }
 
 void fitFunctionPlane(
-	const vector<Point3d> &planePoints,
+	const vector<Point3f> &planePoints,
 	const vector<int> planeIndices,
-	vector< vector<double> >  &planeParameters) {
+	vector< vector<float> >  &planeParameters) {
 
-	vector< vector<Point3d> > planeOrderedPoints;
+	vector< vector<Point3f> > planeOrderedPoints;
 	int numberOfPlanes = numberOfUniquePlanes(planeIndices);
 	int numberOfPointsInThePlane = planePoints.size();
-	vector<Point3d> pointsOfAPlane;
+	vector<Point3f> pointsOfAPlane;
 	int i, j;
 
 	for (i = 0; i < numberOfPlanes; ++i) {
@@ -62,8 +73,8 @@ void fitFunctionPlane(
 		planeOrderedPoints[planeIndices[i]].push_back(planePoints[i]);
 	}
 
-	double x1, x2, y1, y2, z1, z2, normN;
-	double a, b, c, d;
+	float x1, x2, y1, y2, z1, z2, normN;
+	float a, b, c, d;
 	for (i = 0; i < numberOfPlanes; ++i) {
 
 		// Normal found as cross product of X2 - X1, X3 - X1
@@ -96,15 +107,15 @@ void fitFunctionPlane(
 }
 
 void getPlaneParameters(
-	const vector<Point3d> &planePoints,
+	const vector<Point3f> &planePoints,
 	const vector<int> planeIndices,
-	vector< vector<double> >  &planeParameters) {
+	vector< vector<float> >  &planeParameters) {
 
-	vector< vector<Point3d> > planeOrderedPoints;
+	vector< vector<Point3f> > planeOrderedPoints;
 	int numberOfPlanes = numberOfUniquePlanes(planeIndices);
 	int numberOfPointsInThePlane = planePoints.size();
-	vector<Point3d> pointsOfAPlane;
-	vector<double> planeParametersForThisPlane;
+	vector<Point3f> pointsOfAPlane;
+	vector<float> planeParametersForThisPlane;
 	int i;
 
 	for (i = 0; i < numberOfPlanes; ++i) {
@@ -115,7 +126,7 @@ void getPlaneParameters(
 		planeOrderedPoints[planeIndices[i]].push_back(planePoints[i]);
 	}
 
-	double a, b, c, d;
+	float a, b, c, d;
 	for (i = 0; i < numberOfPlanes; ++i) {
 
 		fitPlane3D(planeOrderedPoints[i], planeParametersForThisPlane);
@@ -130,49 +141,58 @@ void getPlaneParameters(
 
 
 void fitPlane3D(
-	const vector<Point3d> &planePoints,
-	vector<double>  &planeParameters) {
+	const vector<Point3f> &planePoints,
+	vector<float>  &planeParameters) {
 
-	double a, b, c, d;
+	float a, b, c, d;
 	int j;
 	int numberOfPointsInThisPlane = planePoints.size();
-	Mat pointsMatrix(3, numberOfPointsInThisPlane, CV_64F);
-	Mat pointsMatrixTTemp(numberOfPointsInThisPlane, 3, CV_64F);
+	Mat pointsMatrixTTemp(numberOfPointsInThisPlane, 3, CV_32F);
 	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
-		pointsMatrix.at<double>(0, j) = planePoints[j].x;
-		pointsMatrix.at<double>(1, j) = planePoints[j].y;
-		pointsMatrix.at<double>(2, j) = planePoints[j].z;
-		pointsMatrixTTemp.at<double>(j, 0) = planePoints[j].x;
-		pointsMatrixTTemp.at<double>(j, 1) = planePoints[j].y;
-		pointsMatrixTTemp.at<double>(j, 2) = planePoints[j].z;
+		pointsMatrixTTemp.at<float>(j, 0) = planePoints[j].x;
+		pointsMatrixTTemp.at<float>(j, 1) = planePoints[j].y;
+		pointsMatrixTTemp.at<float>(j, 2) = planePoints[j].z;
 	}
-	pointsMatrixTTemp.t();
-	double centroidX = (mean(pointsMatrixTTemp.col(0)))[0];
-	double centroidY = (mean(pointsMatrixTTemp.col(1)))[0];
-	double centroidZ = (mean(pointsMatrixTTemp.col(2)))[0];
+	float centroidX = (mean(pointsMatrixTTemp.col(0)))[0];
+	float centroidY = (mean(pointsMatrixTTemp.col(1)))[0];
+	float centroidZ = (mean(pointsMatrixTTemp.col(2)))[0];
 	Mat eigenvalues, eigenvectors;
 	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
-		pointsMatrixTTemp.at<double>(0, j) = pointsMatrixTTemp.at<double>(0, j) - centroidX;
-		pointsMatrixTTemp.at<double>(1, j) = pointsMatrixTTemp.at<double>(1, j) - centroidY;
-		pointsMatrixTTemp.at<double>(2, j) = pointsMatrixTTemp.at<double>(2, j) - centroidZ;
+		pointsMatrixTTemp.at<float>(0, j) = pointsMatrixTTemp.at<float>(0, j) - centroidX;
+		pointsMatrixTTemp.at<float>(1, j) = pointsMatrixTTemp.at<float>(1, j) - centroidY;
+		pointsMatrixTTemp.at<float>(2, j) = pointsMatrixTTemp.at<float>(2, j) - centroidZ;
 	}
 	eigen(pointsMatrixTTemp.t()*pointsMatrixTTemp, eigenvalues, eigenvectors);
 	Mat minEigVector = eigenvectors.row(2);
-	double normSum = 0.0;
+	float normSum = 0.0;
 	for(j = 0; j < 3; ++j) {
-		normSum += minEigVector.at<double>(0, j);
+		normSum += minEigVector.at<float>(0, j);
 	}
 	Mat abc = minEigVector;
 	for(j = 0; j < 3; ++j) {
-		minEigVector.at<double>(0, j) = minEigVector.at<double>(0, j)/normSum;
+		minEigVector.at<float>(0, j) = minEigVector.at<float>(0, j)/normSum;
 	}
-	a = abc.at<double>(0, 0); b = abc.at<double>(0, 1); c = abc.at<double>(0, 2); d = 0.0;
+	a = abc.at<float>(0, 0); b = abc.at<float>(0, 1); c = abc.at<float>(0, 2); d = 0.0;
 	d += centroidX*a; d += centroidY*b; d += centroidZ*c;
 	d = (-1.0)*d; 
 	planeParameters.push_back(a);
 	planeParameters.push_back(b);
 	planeParameters.push_back(c);
 	planeParameters.push_back(d);
+
+	return ;
+
+}
+
+//template<typename T>
+void printVector(
+			vector<int> data) {
+
+	int i;
+	for (i = 0; i < data.size(); ++i) {
+		cout << data[i] << " ";
+	}
+	cout << "\n";
 
 	return ;
 

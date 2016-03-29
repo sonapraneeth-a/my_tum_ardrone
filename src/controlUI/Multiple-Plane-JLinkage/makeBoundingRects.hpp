@@ -16,34 +16,34 @@
 
 
 void orderPlanePointsByCentroids(
-		const vector<Point3d> &projectionOf3DPoints,
-		const vector< vector<double> > &planeParameters,
+		const vector<Point3f> &projectionOf3DPoints,
+		const vector< vector<float> > &planeParameters,
 		const map<int, pair<int, int> > &planeIndexBounds,
-		vector<Point3d> &sortedProjectionsOf3DPoints,
-		vector< vector<double> > &sortedPlaneParameters,
+		vector<Point3f> &sortedProjectionsOf3DPoints,
+		vector< vector<float> > &sortedPlaneParameters,
 		map<int, pair<int, int> > &sortedPlaneIndexBounds );
 
 
 void orderPlanePointsByCentroids1(
-		const vector< vector<Point3d> > &projectionOf3DPoints,
-		const vector< vector<double> > &planeParameters,
-		vector< vector<Point3d> > &sortedProjectionsOf3DPoints,
-		vector< vector<double> > &sortedPlaneParameters );
+		const vector< vector<Point3f> > &projectionOf3DPoints,
+		const vector< vector<float> > &planeParameters,
+		vector< vector<Point3f> > &sortedProjectionsOf3DPoints,
+		vector< vector<float> > &sortedPlaneParameters );
 
 void getBoundingBoxCoordinates (
-		const vector<Point3d> &sortedProjectionOf3DPoints,
-		const vector< vector<double> > &sortedPlaneParameters,
+		const vector<Point3f> &sortedProjectionOf3DPoints,
+		const vector< vector<float> > &sortedPlaneParameters,
 		const map<int, pair<int, int> > &sortedPlaneIndexBounds,
-		vector< vector<Point3d> > &boundingBoxPoints );
+		vector< vector<Point3f> > &boundingBoxPoints );
 
 void getBoundingBoxCoordinates1 (
-		const vector< vector<Point3d> > &sortedProjectionOf3DPoints,
-		const vector< vector<double> > &sortedPlaneParameters,
-		vector< vector<Point3d> > &boundingBoxPoints );
+		const vector< vector<Point3f> > &sortedProjectionOf3DPoints,
+		const vector< vector<float> > &sortedPlaneParameters,
+		vector< vector<Point3f> > &boundingBoxPoints );
 
 void getContinuousBoundingBox (
-		const vector< vector<Point3d> > &boundingBoxPoints,
-		const vector< vector<double> > &sortedPlaneParameters,
-		vector< vector<Point3d> > &continuousBoundingBoxPoints);
+		const vector< vector<Point3f> > &boundingBoxPoints,
+		const vector< vector<float> > &sortedPlaneParameters,
+		vector< vector<Point3f> > &continuousBoundingBoxPoints);
 
 #endif /* MAKEBOUNDINGRECTS_HPP_ */

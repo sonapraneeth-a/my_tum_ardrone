@@ -28,53 +28,53 @@
 /**
  * @brief - Converting XYZ 3D co-ordinates to UV co-ordinates
  *
- * @param [in]  [Point3d] xyzCoordinates  XYZ co-ordinates of the point to be
+ * @param [in]  [Point3f] xyzCoordinates  XYZ co-ordinates of the point to be
  * 										transformed
- * @param [in]  [vector<double>] planeParameters - Parameters for the plane
+ * @param [in]  [vector<float>] planeParameters - Parameters for the plane
  * 												ax+by+cz+d=0: (a, b, c, d)
  * @param [out] [Point2d] uvCoordinates - The required UV coordinates as output
- * @param [out] [vector<Point3d>] uvAxes - The axes (u, v, n) used in transforming
+ * @param [out] [vector<Point3f>] uvAxes - The axes (u, v, n) used in transforming
  * 										XYZ co-ordinates to UV co-ordinates
  *
  * 	@return Nothing
  */
 void XYZToUVCoordinates(
-		const Point3d &xyzCoordinates,
-		const vector<double> &planeParameters,
-		Point2d &uvCoordinates,
-		vector<Point3d> &uvAxes
+		const Point3f &xyzCoordinates,
+		const vector<float> &planeParameters,
+		Point2f &uvCoordinates,
+		vector<Point3f> &uvAxes
 		);
 
 void AllXYZToUVCoordinates(
-		const vector<Point3d> &xyzCoordinates,
-		const vector<double> &planeParameters,
-		vector<Point2d> &uvCoordinates,
-		vector<Point3d> &uvAxes);
+		const vector<Point3f> &xyzCoordinates,
+		const vector<float> &planeParameters,
+		vector<Point2f> &uvCoordinates,
+		vector<Point3f> &uvAxes);
 
 /**
  * @brief - Converting UV 2D co-ordinates to XYZ 3D co-ordinates
  *
  * @param [in]  [Point2d] uvCoordinates  UV co-ordinates of the point to be
  * 										transformed
- * @param [in]  [vector<Point3d>] uvAxes - The axis (u, v, n) used for transforming
+ * @param [in]  [vector<Point3f>] uvAxes - The axis (u, v, n) used for transforming
  * 										XYZ co-ordinates to UV co-ordinates
- * @param [in]  [double] d - The fourth parameter for the plane ax+by+cz+d=0
- * @param [out] [Point3d] xyzCoordinates - The required output XYZ co-ordinates
+ * @param [in]  [float] d - The fourth parameter for the plane ax+by+cz+d=0
+ * @param [out] [Point3f] xyzCoordinates - The required output XYZ co-ordinates
  *
  * @return Nothing
  */
 void UVToXYZCoordinates(
-		const Point2d &uvCoordinates,
-		const vector<Point3d> &uvAxes,
-		const double d,
-		Point3d &xyzCoordinates
+		const Point2f &uvCoordinates,
+		const vector<Point3f> &uvAxes,
+		const float d,
+		Point3f &xyzCoordinates
 		);
 
 void AllUVToXYZCoordinates(
-		const vector<Point2d> &uvCoordinates,
-		const vector<Point3d> &uvAxes,
-		const double d,
-		vector<Point3d> &xyzCoordinates);
+		const vector<Point2f> &uvCoordinates,
+		const vector<Point3f> &uvAxes,
+		const float d,
+		vector<Point3f> &xyzCoordinates);
 
 
 #endif /* CONVERSION_HPP_ */

@@ -14,23 +14,27 @@
 
 
 void sortData(
-		const vector<double> &data,
-		vector<double> &sortedData,
+		const vector<float> &data,
+		vector<float> &sortedData,
 		vector<int> &indices);
 
 int numberOfUniquePlanes(
-		const vector<double> &planeIndices );
+		const vector<float> &planeIndices );
 
 void fitFunctionPlane(
-	const vector<Point3d> &planePoints,
+	const vector<Point3f> &planePoints,
 	const vector<int> planeIndices,
-	vector< vector<double> >  &planeParameters);
+	vector< vector<float> >  &planeParameters);
 
 void getPlaneParameters(
-	const vector<Point3d> &planePoints,
+	const vector<Point3f> &planePoints,
 	const vector<int> planeIndices,
-	vector< vector<double> >  &planeParameters);
+	vector< vector<float> >  &planeParameters);
 
 void fitPlane3D(
-	const vector<Point3d> &planePoints,
-	vector<double>  &planeParameters);
+	const vector<Point3f> &planePoints,
+	vector<float>  &planeParameters);
+
+//template<typename T>
+void printVector(
+			vector<int> data) ;

@@ -12,7 +12,7 @@
 
 int readPointsFromCSV(
 		const string filename,
-		vector<Point3d> &points) {
+		vector<Point3f> &points) {
 
 	cout << "Reading CSV file: " << filename << "\n";
 	const char* inFilename = filename.c_str();
@@ -26,12 +26,12 @@ int readPointsFromCSV(
 	}
 
 	string readALineFromFile;
-	Point3d toInsert;
+	Point3f toInsert;
 	std::string line;
 	int i = 1, j = 1;
 	while(std::getline(inFile, line)) {
 		std::stringstream  ss(line);
-		double val;
+		float val;
 		while (ss >> val) {
 			cout << val << "\n";
 			if (ss.peek() == ',') { ss.ignore(); }
@@ -43,7 +43,7 @@ int readPointsFromCSV(
 //		while(std::getline(lineStream, cell, ',')) {
 //			const char* cellChar = cell.c_str();
 //			stringstream ss(cell);
-//			double val;
+//			float val;
 //			ss >> val;
 //			if(i==1) { toInsert.x = val; i++; }
 //			else if(i==2) { toInsert.y = val; i++; }
@@ -57,7 +57,7 @@ int readPointsFromCSV(
 }
 
 void printPointsVector(
-		const vector<Point3d> &points,
+		const vector<Point3f> &points,
 		const long long int numberOfPoints) {
 
 	long long int i, j, size;

@@ -22,13 +22,13 @@ int test() {
 	// Minimum number of points to be present in the plane. 'S' in the paper
 	LLI clusterThreshold = 75;
 	// Inliers fraction
-	double inliersThreshold = 0.1;
+	float inliersThreshold = 0.1;
 	// $\sigma$ for gaussian distribution to calculate the distribution (CDF)
-	double sigmaExp = 0.5;
+	float sigmaExp = 0.5;
 
 	// Read 3D points into vector
 	string filename = "points_fckohli_02.csv";
-	vector<Point3d> points, newPoints;
+	vector<Point3f> points, newPoints;
 	readPointsFromCSV(filename, points);
 	// Test to see if the points have been printed correctly
 	printPointsVector(points, 3);
@@ -38,7 +38,7 @@ int test() {
 	// This is an output from JLinkage
 	vector<LLI> planeIndices;
 	// Plane Parameters (a, b, c, d) for plane i
-	vector< vector<double> > planeParameters;
+	vector< vector<float> > planeParameters;
 	// performJLinkage(points, sigmaExp, inliersThreshold, planeIndices, ...);
 	// planeParameters = fitting_fn(points);
 
@@ -67,12 +67,12 @@ int test() {
 	// Step 5
 	// Remove points which far from the estimated plane after performing k-means
 	// Get 3D Projection of points onto the plane
-	vector<double> distanceMatrix;
+	vector<float> distanceMatrix;
 	vector< vector<LLI> > planePointsIndexMapping;
-	vector<Point3d> newSortedPoints;
-	vector< vector<double> > newPlaneParameters;
+	vector<Point3f> newSortedPoints;
+	vector< vector<float> > newPlaneParameters;
 	map<LLI, pair<LLI, LLI> > planeIndexBounds;
-	vector<Point3d> projectionsOf3DPoints;
+	vector<Point3f> projectionsOf3DPoints;
 	calculateDistanceFromPlane( newPoints, planeParameters, planeIndices,
 			distanceMatrix, planePointsIndexMapping);
 	removePointsFarFromPlane( newPoints, planeParameters, distanceMatrix, planePointsIndexMapping,
@@ -82,11 +82,11 @@ int test() {
 
 
 	// Step 6
-	vector<Point3d> sortedProjectionsOf3DPoints;
-	vector< vector<double> > sortedPlaneParameters;
+	vector<Point3f> sortedProjectionsOf3DPoints;
+	vector< vector<float> > sortedPlaneParameters;
 	map<LLI, pair<LLI, LLI> > sortedPlaneIndexBounds;
-	vector< vector<Point3d> > boundingBoxPoints;
-	vector< vector<Point3d> > continuousBoundingBoxPoints;
+	vector< vector<Point3f> > boundingBoxPoints;
+	vector< vector<Point3f> > continuousBoundingBoxPoints;
 	orderPlanePointsByCentroids( projectionsOf3DPoints, planeParameters, planeIndexBounds,
 			sortedProjectionsOf3DPoints, sortedPlaneParameters, sortedPlaneIndexBounds);
 	getBoundingBoxCoordinates ( sortedProjectionsOf3DPoints, sortedPlaneParameters,

@@ -12,37 +12,53 @@
 #include "makeBoundingRects.hpp"
 
 void orderPlanePointsByCentroids(
-		const vector<Point3d> &projectionOf3DPoints,
-		const vector< vector<double> > &planeParameters,
+		const vector<Point3f> &projectionOf3DPoints,
+		const vector< vector<float> > &planeParameters,
 		const map<int, pair<int, int> > &planeIndexBounds,
-		vector<Point3d> &sortedProjectionsOf3DPoints,
-		vector< vector<double> > &sortedPlaneParameters,
+		vector<Point3f> &sortedProjectionsOf3DPoints,
+		vector< vector<float> > &sortedPlaneParameters,
 		map<int, pair<int, int> > &sortedPlaneIndexBounds ) {
 
-
+	cout << "[ DEBUG ] orderPlanePointsByCentroids Started.\n";
 	int numberOfPlanes = planeParameters.size();
 	int i, j;
 	int startIndex, endIndex;
-	vector<double> xPoints;
-	vector<double> sortedXPoints;
+	vector<float> xCentroidPoints;
+	vector<float> sortedXCentroidPoints;
 	vector<int> indices;
-	double xCentroid = 0.0;
+	float xCentroid = 0.0;
+	vector<float> abcd;
+	for( j = 0; j < 4; j++) {
+		abcd.push_back(0.0);
+	}
+	for(i = 0; i < numberOfPlanes; i++) {
+		sortedPlaneParameters.push_back(abcd);
+	}
 
 	for(i = 0; i < numberOfPlanes; i++) {
+		cout << "[ DEBUG ] Finding XCentroid Plane " << i << ".\n";
+		xCentroid = 0.0;
 		startIndex = planeIndexBounds.at(i).first;
 		endIndex = planeIndexBounds.at(i).second;
 		for (j = startIndex; j <= endIndex; ++j) {
-			xPoints.push_back(projectionOf3DPoints[i].x);
 			xCentroid += projectionOf3DPoints[i].x;
 		}
 		xCentroid /= (endIndex-startIndex+1);
-		sortData( xPoints, sortedXPoints, indices);
+		xCentroidPoints.push_back(xCentroid);
+	}
+	cout << "[ DEBUG ] Sorting X Centroid Data Started.\n";
+	sortData( xCentroidPoints, sortedXCentroidPoints, indices);
+	cout << "[ DEBUG ] Sorting X Centroid Data Completed.\n";
+	for(i = 0; i < numberOfPlanes; i++) {
+		cout << "[ DEBUG ] Sorted Projections for Plane " << i << ".\n";
 		startIndex = planeIndexBounds.at(indices[i]).first;
 		endIndex = planeIndexBounds.at(indices[i]).second;
 		for (j = startIndex; j <= endIndex; ++j) {
 			sortedProjectionsOf3DPoints.push_back(projectionOf3DPoints[j]);
 		}
-		sortedPlaneParameters[i] = planeParameters[indices[i]];
+		for( j = 0; j < 4; j++) {
+			sortedPlaneParameters[i][j] = planeParameters[indices[i]][j];
+		}
 		sortedPlaneIndexBounds[i] = make_pair(startIndex, endIndex);
 	}
 
@@ -51,21 +67,21 @@ void orderPlanePointsByCentroids(
 }
 
 void orderPlanePointsByCentroids1(
-		const vector< vector<Point3d> > &projectionOf3DPoints,
-		const vector< vector<double> > &planeParameters,
-		vector< vector<Point3d> > &sortedProjectionsOf3DPoints,
-		vector< vector<double> > &sortedPlaneParameters ) {
+		const vector< vector<Point3f> > &projectionOf3DPoints,
+		const vector< vector<float> > &planeParameters,
+		vector< vector<Point3f> > &sortedProjectionsOf3DPoints,
+		vector< vector<float> > &sortedPlaneParameters ) {
 
 
 	int numberOfPlanes = planeParameters.size();
 	int i, j;
 	int numberOfPointsInThisPlane;
-	vector<double> xPoints;
-	vector<double> sortedXPoints;
+	vector<float> xPoints;
+	vector<float> sortedXPoints;
 	vector<int> indices;
-	double xCentroid = 0.0;
-	vector<Point3d> points;
-	//sortedProjectionsOf3DPoints(vector< vector<Point3d> >(numberOfPlanes));
+	float xCentroid = 0.0;
+	vector<Point3f> points;
+	//sortedProjectionsOf3DPoints(vector< vector<Point3f> >(numberOfPlanes));
 	for (i = 0; i < numberOfPlanes; ++i) {
 		sortedProjectionsOf3DPoints.push_back(points);
 	}
@@ -87,69 +103,86 @@ void orderPlanePointsByCentroids1(
 }
 
 void getBoundingBoxCoordinates (
-		const vector<Point3d> &sortedProjectionOf3DPoints,
-		const vector< vector<double> > &sortedPlaneParameters,
+		const vector<Point3f> &sortedProjectionOf3DPoints,
+		const vector< vector<float> > &sortedPlaneParameters,
 		const map<int, pair<int, int> > &sortedPlaneIndexBounds,
-		vector< vector<Point3d> > &boundingBoxPoints ) {
+		vector< vector<Point3f> > &boundingBoxPoints ) {
 
-
+	cout << "[ DEBUG ] getBoundingBoxCoordinates Started\n";
 	int numberOfPlanes = sortedPlaneIndexBounds.size();
 	int i, j;
 	int numberOfPointsInThePlane, indexOne, indexTwo;
-	vector<Point3d> pointsInThePlane;
-	vector<Point2d> uvCoord;
-	vector<double> uCoord, vCoord;
-	vector<Point3d> uvAxes;
-	vector<Point2d> planeUVBoundingPoints;
-	vector<Point3d> planeXYZBoundingPoints;
+	vector<Point3f> pointsInThePlane;
+	vector<Point2f> uvCoord;
+	vector<float> uCoord, vCoord;
+	vector<Point3f> uvAxes;
+	vector<Point2f> planeUVBoundingPoints;
+	vector<Point3f> planeXYZBoundingPoints;
 
 	for (i = 0; i < numberOfPlanes; ++i) {
+		cout << "[ DEBUG ] Plane " << i << "\n";
 		indexOne = sortedPlaneIndexBounds.at(i).first;
 		indexTwo = sortedPlaneIndexBounds.at(i).second;
 		numberOfPointsInThePlane = indexTwo - indexOne;
+		cout << "[ DEBUG ] Points are starting from " << indexOne << " " << indexTwo << "\n";
+		cout << "[ DEBUG ] There are " << numberOfPointsInThePlane << " in the plane\n";
+		pointsInThePlane.clear();
+		uvAxes.clear();
+		uvCoord.clear();
 		for (j = indexOne; j < indexTwo; ++j) {
 			pointsInThePlane.push_back(sortedProjectionOf3DPoints[j]);
 		}
 
+		cout << "[ DEBUG ] Converting XYZ to UV\n";
 		AllXYZToUVCoordinates( pointsInThePlane, sortedPlaneParameters[i],
 								uvCoord, uvAxes);
 
+		uCoord.clear();
 		for (j = 0; j < numberOfPointsInThePlane; ++j) {
 			uCoord.push_back(uvCoord[j].x);
 		}
+		vCoord.clear();
 		for (j = 0; j < numberOfPointsInThePlane; ++j) {
 			vCoord.push_back(uvCoord[j].y);
 		}
 
-		double minU = *min_element(uCoord.begin(), uCoord.end());
-		double maxU = *max_element(uCoord.begin(), uCoord.end());
-		double minV = *min_element(vCoord.begin(), vCoord.end());
-		double maxV = *max_element(vCoord.begin(), vCoord.end());
-		Point2d bottomLeft = Point2d(minU, minV);
-		Point2d bottomRight = Point2d(maxU, minV);
-		Point2d topLeft = Point2d(minU, maxV);
-		Point2d topRight = Point2d(maxU, maxV);
+		float minU = *min_element(uCoord.begin(), uCoord.end());
+		float maxU = *max_element(uCoord.begin(), uCoord.end());
+		float minV = *min_element(vCoord.begin(), vCoord.end());
+		float maxV = *max_element(vCoord.begin(), vCoord.end());
+		Point2f bottomLeft = Point2f(minU, minV);
+		Point2f bottomRight = Point2f(maxU, minV);
+		Point2f topLeft = Point2f(minU, maxV);
+		Point2f topRight = Point2f(maxU, maxV);
 
+		planeUVBoundingPoints.clear();
+		planeXYZBoundingPoints.clear();
+		cout << "[ DEBUG ] Making planeUVBoundingPoints\n";
 		planeUVBoundingPoints.push_back(bottomLeft);
 		planeUVBoundingPoints.push_back(bottomRight);
 		planeUVBoundingPoints.push_back(topLeft);
 		planeUVBoundingPoints.push_back(topRight);
 
+		cout << "[ DEBUG ] Converting UV to XYZ\n";
 		AllUVToXYZCoordinates( planeUVBoundingPoints, uvAxes, sortedPlaneParameters[i][3],
 				planeXYZBoundingPoints);
 
-		vector<double> zCoord;
-		vector<double> xCoord;
-		vector<double> sortedZCoord;
+		vector<float> zCoord;
+		vector<float> xCoord;
+		vector<float> sortedZCoord;
 		vector<int> sortedZCoordOriginalIndices;
 
-
+		zCoord.clear();
+		xCoord.clear();
+		sortedZCoord.clear();
+		sortedZCoordOriginalIndices.clear();
 		for (j = 0; j < numberOfPointsInThePlane; ++j) {
 			zCoord.push_back(planeXYZBoundingPoints[j].z);
 			xCoord.push_back(planeXYZBoundingPoints[j].x);
 		}
+		cout << "[ DEBUG ] Sorting by Z Coordinates\n";
 		sortData(zCoord, sortedZCoord, sortedZCoordOriginalIndices);
-
+		cout << "[ DEBUG ] Swapping by X Coordinates\n";
 		if(xCoord[sortedZCoordOriginalIndices[0]] >= xCoord[sortedZCoordOriginalIndices[1]]) {
 			swap(planeXYZBoundingPoints[sortedZCoordOriginalIndices[0]],
 					planeXYZBoundingPoints[sortedZCoordOriginalIndices[1]]);
@@ -160,31 +193,32 @@ void getBoundingBoxCoordinates (
 		}
 
 		planeXYZBoundingPoints.push_back(planeXYZBoundingPoints[0]);
+		cout << "[ DEBUG ] Created Bounding Box Points for Plane " << i << "\n";
 		boundingBoxPoints.push_back(planeXYZBoundingPoints);
 
 
 	}
-
+	cout << "[ DEBUG ] getBoundingBoxCoordinates Completed.\n";
 
 	return ;
 
 }
 
 void getBoundingBoxCoordinates1 (
-		const vector< vector<Point3d> > &sortedProjectionOf3DPoints,
-		const vector< vector<double> > &sortedPlaneParameters,
-		vector< vector<Point3d> > &boundingBoxPoints ) {
+		const vector< vector<Point3f> > &sortedProjectionOf3DPoints,
+		const vector< vector<float> > &sortedPlaneParameters,
+		vector< vector<Point3f> > &boundingBoxPoints ) {
 
 
 	int numberOfPlanes = sortedProjectionOf3DPoints.size();
 	int i, j;
 	int numberOfPointsInThePlane, indexOne, indexTwo;
-	vector<Point3d> pointsInThePlane;
-	vector<Point2d> uvCoord;
-	vector<double> uCoord, vCoord;
-	vector<Point3d> uvAxes;
-	vector<Point2d> planeUVBoundingPoints;
-	vector<Point3d> planeXYZBoundingPoints;
+	vector<Point3f> pointsInThePlane;
+	vector<Point2f> uvCoord;
+	vector<float> uCoord, vCoord;
+	vector<Point3f> uvAxes;
+	vector<Point2f> planeUVBoundingPoints;
+	vector<Point3f> planeXYZBoundingPoints;
 
 	for (i = 0; i < numberOfPlanes; ++i) {
 		numberOfPointsInThePlane = sortedProjectionOf3DPoints[i].size();
@@ -200,14 +234,14 @@ void getBoundingBoxCoordinates1 (
 			vCoord.push_back(uvCoord[j].y);
 		}
 
-		double minU = *min_element(uCoord.begin(), uCoord.end());
-		double maxU = *max_element(uCoord.begin(), uCoord.end());
-		double minV = *min_element(vCoord.begin(), vCoord.end());
-		double maxV = *max_element(vCoord.begin(), vCoord.end());
-		Point2d bottomLeft = Point2d(minU, minV);
-		Point2d bottomRight = Point2d(maxU, minV);
-		Point2d topLeft = Point2d(minU, maxV);
-		Point2d topRight = Point2d(maxU, maxV);
+		float minU = *min_element(uCoord.begin(), uCoord.end());
+		float maxU = *max_element(uCoord.begin(), uCoord.end());
+		float minV = *min_element(vCoord.begin(), vCoord.end());
+		float maxV = *max_element(vCoord.begin(), vCoord.end());
+		Point2f bottomLeft = Point2f(minU, minV);
+		Point2f bottomRight = Point2f(maxU, minV);
+		Point2f topLeft = Point2f(minU, maxV);
+		Point2f topRight = Point2f(maxU, maxV);
 
 		planeUVBoundingPoints.push_back(bottomLeft);
 		planeUVBoundingPoints.push_back(bottomRight);
@@ -217,9 +251,9 @@ void getBoundingBoxCoordinates1 (
 		AllUVToXYZCoordinates( planeUVBoundingPoints, uvAxes, sortedPlaneParameters[i][3],
 				planeXYZBoundingPoints);
 
-		vector<double> zCoord;
-		vector<double> xCoord;
-		vector<double> sortedZCoord;
+		vector<float> zCoord;
+		vector<float> xCoord;
+		vector<float> sortedZCoord;
 		vector<int> sortedZCoordOriginalIndices;
 
 
@@ -250,22 +284,38 @@ void getBoundingBoxCoordinates1 (
 }
 
 void getContinuousBoundingBox (
-		const vector< vector<Point3d> > &boundingBoxPoints,
-		const vector< vector<double> > &sortedPlaneParameters,
-		vector< vector<Point3d> > &continuousBoundingBoxPoints) {
+		const vector< vector<Point3f> > &boundingBoxPoints,
+		const vector< vector<float> > &sortedPlaneParameters,
+		vector< vector<Point3f> > &continuousBoundingBoxPoints) {
 
+	cout << "[ DEBUG ] getContinuousBoundingBox Started\n";
 	int numberOfPlanes = sortedPlaneParameters.size();
 	int i, j;
-	vector< vector<double> > lineParameters1;
-	vector< vector<double> > lineParameters2;
-	vector< vector<double> > lineParameters3;
-	vector< vector<double> > lineParameters4;
-	vector< vector<double> > lineIntersectionOfPlanes;
+	vector< vector<float> > lineParameters1;
+	vector< vector<float> > lineParameters2;
+	vector< vector<float> > lineParameters3;
+	vector< vector<float> > lineParameters4;
+	vector< vector<float> > lineIntersectionOfPlanes;
 	int firstPlaneBoundingBoxStart, secondPlaneBoundingBoxStart;
-	Point3d firstPoint, secondPoint;
-	Point3d point1, point2, point3, point4;
+	Point3f firstPoint, secondPoint;
+	Point3f point1, point2, point3, point4;
 
+	int boundingBoxPointsSize = boundingBoxPoints.size();
+	cout << "[ DEBUG ] Initializing continuousBoundingBoxPoints\n";
+	for (i = 0; i < boundingBoxPointsSize; ++i) {
+		int size = boundingBoxPoints[i].size();
+		for(j = 0; j < size; ++j) {
+			continuousBoundingBoxPoints.push_back(boundingBoxPoints[i]);
+		}
+	}
+	cout << "[ DEBUG ] continuousBoundingBoxPoints Initialized\n";
 	for (i = 0; i < numberOfPlanes-1; ++i) {
+		/*lineIntersectionOfPlanes.swap(vector< <vector<float> >());
+		lineParameters1.swap(vector< <vector<float> >());
+		lineParameters2.swap(vector< <vector<float> >());
+		lineParameters3.swap(vector< <vector<float> >());
+		lineParameters4.swap(vector< <vector<float> >());*/
+		cout << "[ DEBUG ] Calculating intersections for plane " << i << " and plane " << i+1 << "\n";
 		calculateIntersectionOfPlanes( sortedPlaneParameters[i],
 				sortedPlaneParameters[i+1], lineIntersectionOfPlanes);
 
@@ -274,21 +324,29 @@ void getContinuousBoundingBox (
 
 		firstPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart];
 		secondPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+1];
+		cout << "[ DEBUG ] Calculate Line 1 for plane " << i << "\n";
 		makeLineFromPoints( firstPoint, secondPoint, lineParameters1);
 		firstPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+2];
 		secondPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+3];
+		cout << "[ DEBUG ] Calculate Line 2 for plane " << i << "\n";
 		makeLineFromPoints( firstPoint, secondPoint, lineParameters2);
 
 		firstPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart];
 		secondPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+1];
+		cout << "[ DEBUG ] Calculate Line 3 for plane " << i << "\n";
 		makeLineFromPoints( firstPoint, secondPoint, lineParameters3);
 		firstPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+2];
 		secondPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+3];
+		cout << "[ DEBUG ] Calculate Line 4 for plane " << i << "\n";
 		makeLineFromPoints( firstPoint, secondPoint, lineParameters4);
 
+		cout << "[ DEBUG ] Calculate Point 1 for plane " << i << "\n";
 		point1 = calculateIntersectionOfLines( lineParameters1, lineIntersectionOfPlanes);
+		cout << "[ DEBUG ] Calculate Point 2 for plane " << i << "\n";
 		point2 = calculateIntersectionOfLines( lineParameters2, lineIntersectionOfPlanes);
+		cout << "[ DEBUG ] Calculate Point 3 for plane " << i << "\n";
 		point3 = calculateIntersectionOfLines( lineParameters3, lineIntersectionOfPlanes);
+		cout << "[ DEBUG ] Calculate Point 4 for plane " << i << "\n";
 		point4 = calculateIntersectionOfLines( lineParameters4, lineIntersectionOfPlanes);
 
 		continuousBoundingBoxPoints[i][secondPlaneBoundingBoxStart] = point3;
@@ -298,10 +356,11 @@ void getContinuousBoundingBox (
 
 		continuousBoundingBoxPoints[i][firstPlaneBoundingBoxStart+1] = point1;
 		continuousBoundingBoxPoints[i][firstPlaneBoundingBoxStart+2] = point2;
-
+		cout << "[ DEBUG ] continuousBoundingBoxPoints made for plane " << i << "\n";
 
 	}
 
+	cout << "[ DEBUG ] continuousBoundingBoxPoints Completed\n";
 	return ;
 
 }
