@@ -2,6 +2,9 @@
  * @file calculateIntersections.cpp
  * @ingroup calculateIntersection
  *
+ */
+
+/*
  *   File Name: calculateIntersections.cpp
  *     Project: Multiple Plane JLinkage
  *  Created on: 22-Mar-2016
@@ -32,12 +35,29 @@ void makeLineFromPoints(
 	parameters.push_back(x0);
 	parameters.push_back(y0);
 	parameters.push_back(z0);
-	lineParameters.push_back(parameters);
+	int lineParametersSize = lineParameters.size();
+	clearVectorOfVectors(lineParameters);
+	if( lineParametersSize >= 2) {
+		lineParameters[0][1] = x0;
+		lineParameters[0][2] = y0;
+		lineParameters[0][3] = z0;
+	}
+	else {
+		lineParameters.push_back(parameters);
+	}
 	parameters.clear();
+
 	parameters.push_back(a);
 	parameters.push_back(b);
 	parameters.push_back(c);
-	lineParameters.push_back(parameters);
+	if( lineParametersSize >= 2) {
+		lineParameters[1][1] = a;
+		lineParameters[1][2] = b;
+		lineParameters[1][3] = c;
+	}
+	else {
+		lineParameters.push_back(parameters);
+	}
 	parameters.clear();
 
 	return ;
@@ -80,23 +100,39 @@ void calculateIntersectionOfPlanes(
 	parameters.push_back(x0);
 	parameters.push_back(y0);
 	parameters.push_back(z0);
-	lineParameters.push_back(parameters);
+	int lineParametersSize = lineParameters.size();
+	clearVectorOfVectors(lineParameters);
+	if( lineParametersSize >= 2) {
+		lineParameters[0][1] = x0;
+		lineParameters[0][2] = y0;
+		lineParameters[0][3] = z0;
+	}
+	else {
+		lineParameters.push_back(parameters);
+	}
 	parameters.clear();
+
 	parameters.push_back(a);
 	parameters.push_back(b);
 	parameters.push_back(c);
-	lineParameters.push_back(parameters);
+	if( lineParametersSize >= 2) {
+		lineParameters[1][1] = a;
+		lineParameters[1][2] = b;
+		lineParameters[1][3] = c;
+	}
+	else {
+		lineParameters.push_back(parameters);
+	}
 	parameters.clear();
 
 	return ;
 
 }
 
-Point3f calculateIntersectionOfLines(
-		vector< vector<float> > line1,
-		vector< vector<float> > line2) {
-
-	Point3f intersectionOfLines;
+void calculateIntersectionOfLines(
+		const vector< vector<float> > &line1,
+		const vector< vector<float> > &line2,
+		Point3f &intersectionOfLines) {
 
 	// Get the parameters of the line1
 	// x = x01 + a1*t; y = y01 + b1*t; z = z01 + c1*t;
@@ -131,5 +167,6 @@ Point3f calculateIntersectionOfLines(
 	intersectionOfLines.y = y0;
 	intersectionOfLines.z = z0;
 
-	return intersectionOfLines;
+	return ;
+
 }

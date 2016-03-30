@@ -1,141 +1,24 @@
+/**
+ * @file utilities.cpp
+ * @ingroup utilities
+*/
+
 /*
  *   File Name: utilities.cpp
  *     Project: Multiple Plane JLinkage
- *  Created on: 26-Mar-2016
+ *  Created on: 29-Mar-2016
  *      Author: Sona Praneeth Akula
  *     Details:
- *   TodoNotes: TODO
  */
 
 #include "utilities.hpp"
 
-void sortData(
-		const vector<float> &data,
-		vector<float> &sortedData,
-		vector<int> &indices) {
-
-	int dataSize = data.size();
-	cout << "[ DEBUG ] Data for sorting has size: " << dataSize << "\n";
-	map<float, int> oldIndices;
-	int i;
-	//cout << "[ DEBUG ] Data: ";
-	sortedData.clear();
-	for (i = 0; i < dataSize; ++i) {
-		oldIndices[data[i]] = i;
-		sortedData.push_back(data[i]);
-		//cout << data[i] << " ";
-	}
-	//cout << "\n";
-	/*for (map<float,int>::iterator it=oldIndices.begin(); it!=oldIndices.end(); ++it)
-		cout << it->first << " => " << it->second << '\n';*/
-	cout << "[ DEBUG ] Sorting Data ...\n";
-	sort(sortedData.begin(), sortedData.end());
-	indices.clear();
-	cout << "[ DEBUG ] Sorting Completed ...\n";
-	cout << "[ DEBUG ] Making indices ...\n";
-	for (i = 0; i < dataSize; ++i) {
-		//cout << "[ DEBUG ] indices: " << oldIndices.at(sortedData[i]) << "\n";
-		indices.push_back(oldIndices.at(sortedData[i]));
-	}
-	cout << "[ DEBUG ] Making indices Completed ...\n";
-
-	return ;
-
-}
-
-int numberOfUniquePlanes(
-		const vector<int> &planeIndices ) {
-
-	int ans = 0;
-	int numberOfPlanes = planeIndices.size();
-	set<int> uniquePlaneIndices(planeIndices.begin(), planeIndices.end());
-	ans = uniquePlaneIndices.size();
-	return ans;
-
-}
-
-void getPlaneParameters(
-	const vector<Point3f> &planePoints,
-	const vector<int> planeIndices,
-	vector< vector<float> >  &planeParameters) {
-
-	vector< vector<Point3f> > planeOrderedPoints;
-	int numberOfPlanes = numberOfUniquePlanes(planeIndices);
-	int numberOfPointsInThePlane = planePoints.size();
-	vector<Point3f> pointsOfAPlane;
-	vector<float> planeParametersForThisPlane;
-	int i;
-
-	for (i = 0; i < numberOfPlanes; ++i) {
-		planeOrderedPoints.push_back(pointsOfAPlane);
-	}
-
-	for (i = 0; i < numberOfPointsInThePlane; ++i) {
-		planeOrderedPoints[planeIndices[i]].push_back(planePoints[i]);
-	}
-
-	float a, b, c, d;
-	for (i = 0; i < numberOfPlanes; ++i) {
-
-		fitPlane3D(planeOrderedPoints[i], planeParametersForThisPlane);
-		planeParameters.push_back(planeParametersForThisPlane);
-		planeParametersForThisPlane.clear();
-
-	}
-
-	return ;
-
-}
-
-
-void fitPlane3D(
-	const vector<Point3f> &planePoints,
-	vector<float>  &planeParameters) {
-
-	float a, b, c, d;
-	int j;
-	int numberOfPointsInThisPlane = planePoints.size();
-	Mat pointsMatrixTTemp(numberOfPointsInThisPlane, 3, CV_32F);
-	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
-		pointsMatrixTTemp.at<float>(j, 0) = planePoints[j].x;
-		pointsMatrixTTemp.at<float>(j, 1) = planePoints[j].y;
-		pointsMatrixTTemp.at<float>(j, 2) = planePoints[j].z;
-	}
-	float centroidX = (mean(pointsMatrixTTemp.col(0)))[0];
-	float centroidY = (mean(pointsMatrixTTemp.col(1)))[0];
-	float centroidZ = (mean(pointsMatrixTTemp.col(2)))[0];
-	Mat eigenvalues, eigenvectors;
-	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
-		pointsMatrixTTemp.at<float>(0, j) = pointsMatrixTTemp.at<float>(0, j) - centroidX;
-		pointsMatrixTTemp.at<float>(1, j) = pointsMatrixTTemp.at<float>(1, j) - centroidY;
-		pointsMatrixTTemp.at<float>(2, j) = pointsMatrixTTemp.at<float>(2, j) - centroidZ;
-	}
-	eigen(pointsMatrixTTemp.t()*pointsMatrixTTemp, eigenvalues, eigenvectors);
-	Mat minEigVector = eigenvectors.row(2);
-	float normSum = 0.0;
-	for(j = 0; j < 3; ++j) {
-		normSum += (minEigVector.at<float>(0, j))*(minEigVector.at<float>(0, j));
-	}
-	for(j = 0; j < 3; ++j) {
-		minEigVector.at<float>(0, j) = minEigVector.at<float>(0, j)/normSum;
-	}
-	Mat abc = minEigVector;
-	a = abc.at<float>(0, 0); b = abc.at<float>(0, 1); c = abc.at<float>(0, 2); d = 0.0;
-	d += centroidX*a; d += centroidY*b; d += centroidZ*c;
-	d = (-1.0)*d; 
-	planeParameters.push_back(a);
-	planeParameters.push_back(b);
-	planeParameters.push_back(c);
-	planeParameters.push_back(d);
-
-	return ;
-
-}
 
 //template<typename T>
 void printVector(
 			vector<int> data) {
 
+	cout << "[ DEBUG ] Printing the vector: ";
 	int i;
 	for (i = 0; i < data.size(); ++i) {
 		cout << data[i] << " ";
@@ -143,5 +26,244 @@ void printVector(
 	cout << "\n";
 
 	return ;
+
+}
+
+void getPlaneParameters(
+	const vector<Point3f> &planePoints,
+	const vector<int> planeIndices,
+	vector< vector<float> >  &planeParameters,
+	vector< vector<Point3f> > &planeOrderedPoints) {
+
+	cout << "[ DEBUG ] getPlaneParametes Started\n";
+	// vector< vector<Point3f> > planeOrderedPoints;
+	// Get the number of unique planes
+	int numberOfPlanes = numberOfUniquePlanes(planeIndices);
+	// Get the total number of points
+	int numberOfPointsInThePlane = planePoints.size();
+	// Vector for points belonging to particular plane
+	vector<Point3f> pointsOfAPlane;
+	// Vector for parameters of particular plane
+	vector<float> planeParametersForThisPlane;
+
+	int i;
+	// Put all points belonging to a particular plane i in planeOrderedPoints[i]
+	cout << "[ DEBUG ] Creating planeOrderPoints\n";
+	for (i = 0; i < numberOfPlanes; ++i) {
+		planeOrderedPoints.push_back(pointsOfAPlane);
+	}
+	for (i = 0; i < numberOfPointsInThePlane; ++i) {
+		planeOrderedPoints[planeIndices[i]].push_back(planePoints[i]);
+	}
+
+	float a, b, c, d;
+	// Find the plane parameters for each plane
+	for (i = 0; i < numberOfPlanes; ++i) {
+
+		// Get the plane parameters
+		cout << "[ DEBUG ] Fitting a plane to set of points for plane " << i << "\n";
+		fitPlane3D(planeOrderedPoints[i], planeParametersForThisPlane);
+		planeParameters.push_back(planeParametersForThisPlane);
+		// Clear old plane parameters
+		planeParametersForThisPlane.clear();
+
+	}
+
+	cout << "[ DEBUG ] getPlaneParametes Completed\n";
+	return ;
+
+}
+
+int numberOfUniquePlanes(
+		const vector<int> &planeIndices ) {
+
+	cout << "[ DEBUG ] Calculating the number of unique planes\n";
+	int ans = 0;
+	int numberOfPlanes = planeIndices.size();
+	// Convert the vector set to contain only the unique elements
+	set<int> uniquePlaneIndices(planeIndices.begin(), planeIndices.end());
+	ans = uniquePlaneIndices.size();
+	cout << "[ DEBUG ] There are " << ans << " number of planes.\n";
+	return ans;
+
+}
+
+void fitPlane3D(
+	const vector<Point3f> &planePoints,
+	vector<float>  &planeParameters) {
+
+	float a, b, c, d;
+	int j;
+	// Get the number of points in the plane
+	int numberOfPointsInThisPlane = planePoints.size();
+	cout << "[ DEBUG ] fitPlane3D started for " << numberOfPointsInThisPlane << " points\n";
+	// Create a matrix out of the vector of points: Dimension: numberOfPoints*3
+	Mat pointsMatrixTemp(numberOfPointsInThisPlane, 3, CV_32F);
+	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
+		pointsMatrixTemp.at<float>(j, 0) = planePoints[j].x;
+		pointsMatrixTemp.at<float>(j, 1) = planePoints[j].y;
+		pointsMatrixTemp.at<float>(j, 2) = planePoints[j].z;
+	}
+	// Calculate the centroid of the points
+	float centroidX = (mean(pointsMatrixTemp.col(0)))[0];
+	float centroidY = (mean(pointsMatrixTemp.col(1)))[0];
+	float centroidZ = (mean(pointsMatrixTemp.col(2)))[0];
+	Mat eigenvalues, eigenvectors;
+	// Make the points mean centered
+	cout << "[ DEBUG ] Making the points mean-centric\n";
+	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
+		pointsMatrixTemp.at<float>(0, j) = pointsMatrixTemp.at<float>(0, j) - centroidX;
+		pointsMatrixTemp.at<float>(1, j) = pointsMatrixTemp.at<float>(1, j) - centroidY;
+		pointsMatrixTemp.at<float>(2, j) = pointsMatrixTemp.at<float>(2, j) - centroidZ;
+	}
+	// Calculate the eigenvector of pointsMatrixTemp'*pointsMatrixTemp
+	eigen(pointsMatrixTemp.t()*pointsMatrixTemp, eigenvalues, eigenvectors);
+	// Pick the eigenvector corresponding to least eigenvalue
+	Mat minEigVector = eigenvectors.row(2);
+	cout << "[ DEBUG ] Obtaining the plane parameters corresponding to minimum eigenvalue\n";
+	float normSum = 0.0;
+	// Normalise the eigenvector
+	for(j = 0; j < 3; ++j) {
+		normSum += (minEigVector.at<float>(0, j))*(minEigVector.at<float>(0, j));
+	}
+	for(j = 0; j < 3; ++j) {
+		minEigVector.at<float>(0, j) = minEigVector.at<float>(0, j)/normSum;
+	}
+	// Extract the plane parameters from the minimum eigenvector
+	Mat abc = minEigVector;
+	a = abc.at<float>(0, 0); b = abc.at<float>(0, 1); c = abc.at<float>(0, 2); d = 0.0;
+	d += centroidX*a; d += centroidY*b; d += centroidZ*c;
+	d = (-1.0)*d;
+	// Copy the parameters to the output
+	planeParameters.push_back(a);
+	planeParameters.push_back(b);
+	planeParameters.push_back(c);
+	planeParameters.push_back(d);
+
+	cout << "[ DEBUG ] fitPlane3D Completed\n";
+	return ;
+
+}
+
+
+float getKthPercentile(
+		const vector<float> &data,
+		const float k) {
+
+	// Reference:
+	// http://web.stanford.edu/class/archive/anthsci/anthsci192/anthsci192.1064/handouts/calculating%20percentiles.pdf
+	float threshold;
+	cout << "[ DEBUG ] getKthPercentile Started\n";
+	vector<float> copiedData;
+	int sizeOfData = data.size();
+	int i;
+	// Create a copy of data for sorting
+	for( i = 0; i < sizeOfData; i++) {
+		copiedData.push_back(data[i]);
+	}
+
+	// Sort the data
+	sort(copiedData.begin(), copiedData.end());
+
+	// Get the threshold
+	cout << "[ DEBUG ] Get the Kth threshold\n";
+	int size = copiedData.size();
+	float percentile;
+	for (i = 0; i < size; ++i) {
+		percentile = (100.0/float(size))*(i+1.0-0.5);
+		if ( percentile >= k) { // TODO: Check if the comparison is working properly
+			threshold = copiedData[i];
+		}
+	}
+	// Clear the copy of data
+	copiedData.clear();
+
+	cout << "[ DEBUG ] getKthPercentile Completed. Threshold is " << threshold << "\n";
+	return threshold;
+
+}
+
+void sortData(
+		const vector<float> &data,
+		vector<float> &sortedData,
+		vector<int> &indices) {
+
+	cout << "[ DEBUG ] sortData Started\n";
+	// Get number of points in data
+	int dataSize = data.size();
+	cout << "[ DEBUG ] Data for sorting has size: " << dataSize << "\n";
+	map<float, int> oldIndices;
+	int i;
+
+	sortedData.clear();
+	// Make a map of data point to its index in data
+	// Create a copy of data in sortedData
+	for (i = 0; i < dataSize; ++i) {
+		oldIndices[data[i]] = i;
+		sortedData.push_back(data[i]);
+	}
+
+	// Sort the data
+	cout << "[ DEBUG ] Sorting Data ...\n";
+	sort(sortedData.begin(), sortedData.end());
+	indices.clear();
+	cout << "[ DEBUG ] Sorting Completed ...\n";
+
+	// Make new indices based on oldIndices map
+	cout << "[ DEBUG ] Making indices ...\n";
+	for (i = 0; i < dataSize; ++i) {
+		indices.push_back(oldIndices.at(sortedData[i]));
+	}
+	cout << "[ DEBUG ] Making indices Completed ...\n";
+
+	cout << "[ DEBUG ] sortData Completed\n";
+	return ;
+
+}
+
+void clearVectorOfVectors (
+		vector< vector<float> > &data) {
+
+	int dataSize = data.size();
+	int i, j;
+
+	for(i = 0; i < dataSize; i++) {
+		data[i].clear();
+	}
+
+	return ;
+
+}
+
+int writePointsToCSV(
+		const vector<Point3f> &data,
+		const string &filename) {
+
+	int dataSize = data.size();
+	int i;
+
+	cout << "[ DEBUG ] Writing the points to CSV Started\n";
+	// Initiate a ofstream object
+	const char* outFilename = filename.c_str();
+	ofstream outFile;
+	// Open the object in writing mode
+	outFile.open(outFilename, ios::out);
+	// Check if the file is open
+	if (!outFile.is_open()) {
+		cerr << "\nFile " << filename << " cannot be opened for writint.\n";
+		cerr << "Please check if the file is existing and has required permissions ";
+		cerr << " for writing.\n";
+		return -1;
+	}
+	// Write the data to file
+	for( i = 0; i < dataSize; i++) {
+		outFile << data[i].x << ", " << data[i].y << ", " << data[i].z << "\n";
+	}
+
+	// Close the file
+	outFile.close();
+
+	cout << "[ DEBUG ] Writing the points to CSV Completed\n";
+	return 0;
 
 }

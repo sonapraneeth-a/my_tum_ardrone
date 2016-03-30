@@ -20,13 +20,17 @@
 #include <fstream>
 #include <sstream>
 #include <istream>
+#include <ostream>
 #include <map>
 #include <cmath>
 #include <algorithm>
 #include <set>
+#include <list>
 
 using namespace cv;
 using namespace std;
+
 int findMultiplePlanes(const vector<Point3f> &points, vector< vector<float> > &sortedPlaneParameters,  vector< vector<Point3f> > & continuousBoundingBoxPoints);
+
 #define LLI long long int
 

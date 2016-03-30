@@ -2,9 +2,12 @@
  * @file conversion.cpp
  * @ingroup conversion
  *
+ */
+
+/*
  *   File Name: conversion.cpp
  *     Project: Multiple Plane JLinkage
- *  Created on: 22-Mar-2016
+ *  Created on: 29-Mar-2016
  *      Author: Sona Praneeth Akula
  *     Details: The file contains code for to and fro conversion from XYZ to UV form
  *   TodoNotes: Test the code
@@ -23,12 +26,14 @@ void XYZToUVCoordinates(
 	float b = planeParameters[1];
 	float c = planeParameters[2];
 	float d = planeParameters[3];
+
 	// Make the normal vector of the plane
 	Point3f n(a, b, c);
 	// Make the u, v vector for the transformation
 	// \f$u = [b -a 0]\f$, \f$v = n \times u$\f
 	Point3f u(b, -a, 0);
 	Point3f v = n.cross(u);
+
 	// Make the u and v co-ordinates
 	float uCoord = u.dot(xyzCoordinates);
 	float vCoord = v.dot(xyzCoordinates);
@@ -36,6 +41,7 @@ void XYZToUVCoordinates(
 	uvCoordinates.x = uCoord;
 	uvCoordinates.y = vCoord;
 	uvAxes.clear();
+
 	// Copy the UV Axes
 	uvAxes.push_back(u);
 	uvAxes.push_back(v);
@@ -51,11 +57,14 @@ void AllXYZToUVCoordinates(
 		vector<Point2f> &uvCoordinates,
 		vector<Point3f> &uvAxes) {
 
+	// Get the number of points
 	int numberOfPoints = xyzCoordinates.size();
 	int i, j;
 	Point2f uvCoord;
 	vector<Point3f> uvAxis;
 
+	// Convert each XYZ point to UV and make the uvAxis used in making the transformation
+	cout << "[ DEBUG ] All XYZ -> UV Conversion Started for " << numberOfPoints << "\n";
 	for (i = 0; i < numberOfPoints; ++i) {
 		uvAxis.clear();
 		XYZToUVCoordinates( xyzCoordinates[i], planeParameters,
@@ -68,6 +77,7 @@ void AllXYZToUVCoordinates(
 		}
 	}
 
+	cout << "[ DEBUG ] All XYZ -> UV Conversion Completed\n";
 	return ;
 
 }
@@ -114,16 +124,21 @@ void AllUVToXYZCoordinates(
 		const float d,
 		vector<Point3f> &xyzCoordinates) {
 
+	// Get the number of points
 	int numberOfPoints = uvCoordinates.size();
-	int i, j;
+	int i;
 	Point3f xyzCoord;
 
 	xyzCoordinates.clear();
+	// Transform each UV point to XYZ point
+	cout << "[ DEBUG ] All UV -> XYZ Conversion Started for " << numberOfPoints << "\n";
 	for (i = 0; i < numberOfPoints; ++i) {
 		UVToXYZCoordinates( uvCoordinates[i], uvAxes, d,
 							xyzCoord);
 		xyzCoordinates.push_back(xyzCoord);
 	}
+
+	cout << "[ DEBUG ] All UV -> XYZ Conversion Completed\n";
 
 	return ;
 

@@ -52,6 +52,7 @@ int readPointsFromCSV(
 		points.push_back(toInsert);
 	}
 
+	inFile.close();
 	return 0;
 
 }
