@@ -9,7 +9,7 @@
 #include <functional>
 #include <algorithm>
 #include <limits>
-#include <bm/bm.h>
+#include "bm/bm.h"
 #include <kdtree++/kdtree.hpp>
 #include "Utilities.h"
 

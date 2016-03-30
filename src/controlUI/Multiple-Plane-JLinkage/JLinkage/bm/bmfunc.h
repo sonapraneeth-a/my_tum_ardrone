@@ -1452,6 +1452,142 @@ void gap_and_to_bitset(unsigned* dest, const T*  buf)
     }
 }
 
+/*!
+	Function calculates if there is any number of 1 bits
+    in the given array of words in the range between left anf right bits
+    (borders included). Make sure the addresses are aligned.
+
+    @ingroup bitfunc
+*/
+inline
+bm::id_t bit_block_any_range(const bm::word_t* block,
+                             bm::word_t left,
+                             bm::word_t right)
+{
+    BM_ASSERT(left <= right);
+
+    unsigned nbit  = left; // unsigned(left & bm::set_block_mask);
+    unsigned nword = unsigned(nbit >> bm::set_word_shift);
+    nbit &= bm::set_word_mask;
+
+    const bm::word_t* word = block + nword;
+
+    if (left == right)  // special case (only 1 bit to check)
+    {
+        return (*word >> nbit) & 1;
+    }
+    unsigned acc;
+    unsigned bitcount = right - left + 1;
+
+    if (nbit) // starting position is not aligned
+    {
+        unsigned right_margin = nbit + (right - left);
+        if (right_margin < 32)
+        {
+            unsigned mask =
+                block_set_table<true>::_right[nbit] &
+                block_set_table<true>::_left[right_margin];
+            acc = *word & mask;
+            return acc;
+        }
+        else
+        {
+            acc = *word & block_set_table<true>::_right[nbit];
+            if (acc)
+                return acc;
+            bitcount -= 32 - nbit;
+        }
+        ++word;
+    }
+
+    // now when we are word aligned, we can check bits the usual way
+    for ( ;bitcount >= 32; bitcount -= 32)
+    {
+        acc = *word++;
+        if (acc)
+            return acc;
+    }
+
+    if (bitcount)  // we have a tail to count
+    {
+        acc = (*word) & block_set_table<true>::_left[bitcount-1];
+        if (acc)
+            return acc;
+    }
+
+    return 0;
+}
+
+
+/*!
+	Function calculates number of 1 bits in the given array of words in
+    the range between left anf right bits (borders included)
+    Make sure the addresses are aligned.
+
+    @ingroup bitfunc
+*/
+inline
+bm::id_t bit_block_calc_count_range(const bm::word_t* block,
+                                    bm::word_t left,
+                                    bm::word_t right)
+{
+    BM_ASSERT(left <= right);
+
+	bm::id_t count = 0;
+
+    unsigned nbit  = left; // unsigned(left & bm::set_block_mask);
+    unsigned nword = unsigned(nbit >> bm::set_word_shift);
+    nbit &= bm::set_word_mask;
+
+    const bm::word_t* word = block + nword;
+
+    if (left == right)  // special case (only 1 bit to check)
+    {
+        return (*word >> nbit) & 1;
+    }
+    unsigned acc;
+    unsigned bitcount = right - left + 1;
+
+    if (nbit) // starting position is not aligned
+    {
+        unsigned right_margin = nbit + (right - left);
+
+        if (right_margin < 32)
+        {
+            unsigned mask =
+                block_set_table<true>::_right[nbit] &
+                block_set_table<true>::_left[right_margin];
+            acc = *word & mask;
+
+            BM_INCWORD_BITCOUNT(count, acc);
+            return count;
+        }
+        else
+        {
+            acc = *word & block_set_table<true>::_right[nbit];
+            BM_INCWORD_BITCOUNT(count, acc);
+            bitcount -= 32 - nbit;
+        }
+        ++word;
+    }
+
+    // now when we are word aligned, we can count bits the usual way
+    for ( ;bitcount >= 32; bitcount -= 32)
+    {
+        acc = *word++;
+        BM_INCWORD_BITCOUNT(count, acc);
+    }
+
+    if (bitcount)  // we have a tail to count
+    {
+        acc = (*word) & block_set_table<true>::_left[bitcount-1];
+        BM_INCWORD_BITCOUNT(count, acc);
+    }
+
+    return count;
+}
+
+
 
 /*!
    \brief Compute bitcount of bit block AND masked by GAP block.
@@ -2540,143 +2676,6 @@ bm::id_t bit_block_calc_count_change(const bm::word_t* block,
 #endif
     return count;
 }
-
-
-/*!
-	Function calculates number of 1 bits in the given array of words in
-    the range between left anf right bits (borders included)
-    Make sure the addresses are aligned.
-
-    @ingroup bitfunc
-*/
-inline 
-bm::id_t bit_block_calc_count_range(const bm::word_t* block,
-                                    bm::word_t left,
-                                    bm::word_t right)
-{
-    BM_ASSERT(left <= right);
-    
-	bm::id_t count = 0;
-
-    unsigned nbit  = left; // unsigned(left & bm::set_block_mask);
-    unsigned nword = unsigned(nbit >> bm::set_word_shift);
-    nbit &= bm::set_word_mask;
-
-    const bm::word_t* word = block + nword;
-
-    if (left == right)  // special case (only 1 bit to check)
-    {
-        return (*word >> nbit) & 1;
-    }
-    unsigned acc;
-    unsigned bitcount = right - left + 1;
-
-    if (nbit) // starting position is not aligned
-    {
-        unsigned right_margin = nbit + (right - left);
-
-        if (right_margin < 32)
-        {
-            unsigned mask =
-                block_set_table<true>::_right[nbit] &
-                block_set_table<true>::_left[right_margin];
-            acc = *word & mask;
-            
-            BM_INCWORD_BITCOUNT(count, acc);
-            return count;
-        }
-        else
-        {
-            acc = *word & block_set_table<true>::_right[nbit];
-            BM_INCWORD_BITCOUNT(count, acc);
-            bitcount -= 32 - nbit;
-        }
-        ++word;
-    }
-
-    // now when we are word aligned, we can count bits the usual way
-    for ( ;bitcount >= 32; bitcount -= 32)
-    {
-        acc = *word++;
-        BM_INCWORD_BITCOUNT(count, acc);
-    }
-
-    if (bitcount)  // we have a tail to count
-    {
-        acc = (*word) & block_set_table<true>::_left[bitcount-1];
-        BM_INCWORD_BITCOUNT(count, acc);
-    }
-
-    return count;
-}
-
-
-/*!
-	Function calculates if there is any number of 1 bits 
-    in the given array of words in the range between left anf right bits 
-    (borders included). Make sure the addresses are aligned.
-
-    @ingroup bitfunc
-*/
-inline 
-bm::id_t bit_block_any_range(const bm::word_t* block,
-                             bm::word_t left,
-                             bm::word_t right)
-{
-    BM_ASSERT(left <= right);
-    
-    unsigned nbit  = left; // unsigned(left & bm::set_block_mask);
-    unsigned nword = unsigned(nbit >> bm::set_word_shift);
-    nbit &= bm::set_word_mask;
-
-    const bm::word_t* word = block + nword;
-
-    if (left == right)  // special case (only 1 bit to check)
-    {
-        return (*word >> nbit) & 1;
-    }
-    unsigned acc;
-    unsigned bitcount = right - left + 1;
-
-    if (nbit) // starting position is not aligned
-    {
-        unsigned right_margin = nbit + (right - left);
-        if (right_margin < 32)
-        {
-            unsigned mask =
-                block_set_table<true>::_right[nbit] &
-                block_set_table<true>::_left[right_margin];
-            acc = *word & mask;
-            return acc;
-        }
-        else
-        {
-            acc = *word & block_set_table<true>::_right[nbit];
-            if (acc) 
-                return acc;
-            bitcount -= 32 - nbit;
-        }
-        ++word;
-    }
-
-    // now when we are word aligned, we can check bits the usual way
-    for ( ;bitcount >= 32; bitcount -= 32)
-    {
-        acc = *word++;
-        if (acc) 
-            return acc;
-    }
-
-    if (bitcount)  // we have a tail to count
-    {
-        acc = (*word) & block_set_table<true>::_left[bitcount-1];
-        if (acc) 
-            return acc;
-    }
-
-    return 0;
-}
-
 
 
 // ----------------------------------------------------------------------

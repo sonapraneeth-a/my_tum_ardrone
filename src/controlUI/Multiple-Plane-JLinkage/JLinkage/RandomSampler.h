@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <ctime>
 #include <kdtree++/kdtree.hpp>
-#include <bm/bm.h>
+#include "bm/bm.h"
 #include <limits>
 #include "Utilities.h"
 
