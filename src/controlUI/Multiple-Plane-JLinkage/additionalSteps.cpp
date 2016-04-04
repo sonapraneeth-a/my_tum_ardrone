@@ -203,7 +203,7 @@ void removePointsFarFromPlane(
 		}
 		cout << "[ DEBUG ] Added points of plane " << i << " to newSortedData\n";
 		// Get plane index bounds after making new data for plane i
-		planeIndexBounds[i] = make_pair(newDataSize, newDataSize+numberOfPointsInThePlane);
+		planeIndexBounds.insert(make_pair(i,make_pair(newDataSize, newDataSize+numberOfPointsInThePlane)));
 		// Get the new plane parameters
 		cout << "[ DEBUG ] Plane Index Bounds for plane " << i << " are  " << newDataSize << ", " << newDataSize+numberOfPointsInThePlane << "\n";
 

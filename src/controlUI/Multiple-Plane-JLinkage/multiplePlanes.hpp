@@ -11,6 +11,8 @@
  *      Author: Sona Praneeth Akula
  *     Details:
  */
+#ifndef MULTIPLEPLANES_HPP
+#define MULTIPLEPLANES_HPP
 
 #include "allHeaders.hpp"
 #include "readingData.hpp"
@@ -19,7 +21,7 @@
 #include "makeBoundingRects.hpp"
 #include "JLinkage/JLinkage.h"
 #include "JLinkage/RandomSampler.h"
-#include "JLinkage/PrimitiveFunctions.h"
+
 
 /**
  * @brief This function performs JLinkage algorithm
@@ -50,3 +52,5 @@ int findMultiplePlanes1(
 		const vector<Point3f> &points,
 		vector< vector<float> > &sortedPlaneParameters,
 		vector< vector<Point3f> > &continuousBoundingBoxPoints);
+
+#endif

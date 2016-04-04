@@ -13,6 +13,7 @@
 
 #include "allHeaders.hpp"
 #include "multiplePlanes.hpp"
+#include "JLinkage/PrimitiveFunctions.h"
 
 
 void callJLinkage(const vector<Point3f> &locations, vector<int> &labels) {

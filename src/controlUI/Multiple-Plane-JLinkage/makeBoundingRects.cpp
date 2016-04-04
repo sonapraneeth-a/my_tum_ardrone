@@ -88,7 +88,7 @@ void orderPlanePointsByCentroids(
 
 		// Make the index bounds stating from which index to which index does points
 		// related to plane i belong to
-		sortedPlaneIndexBounds[i] = make_pair(startIndex, endIndex);
+		sortedPlaneIndexBounds.insert(make_pair(i,make_pair(startIndex, endIndex)));
 
 	}
 
@@ -184,7 +184,7 @@ void getBoundingBoxCoordinates (
 		sortedZCoordOriginalIndices.clear();
 
 		// Now we have arrange the points in proper order based on X and Z co-ordinates
-		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+		for (j = 0; j < 4; ++j) {
 			zCoord.push_back(planeXYZBoundingPoints[j].z);
 			xCoord.push_back(planeXYZBoundingPoints[j].x);
 		}
@@ -230,7 +230,7 @@ void getContinuousBoundingBox (
 	vector< vector<float> > lineParameters2;
 	vector< vector<float> > lineParameters3;
 	vector< vector<float> > lineParameters4;
-	vector< vector<float> > lineIntersectionOfPlanes;
+
 	int firstPlaneBoundingBoxStart, secondPlaneBoundingBoxStart;
 	Point3f firstPoint, secondPoint;
 	Point3f point1, point2, point3, point4;
@@ -252,7 +252,8 @@ void getContinuousBoundingBox (
 		clearVectorOfVectors(lineParameters2);
 		clearVectorOfVectors(lineParameters3);
 		clearVectorOfVectors(lineParameters4);
-		clearVectorOfVectors(lineIntersectionOfPlanes);
+		//clearVectorOfVectors(lineIntersectionOfPlanes);
+		vector< vector<float> > lineIntersectionOfPlanes;
 		/*lineParameters1.clear();
 		lineParameters2.clear();
 		lineParameters3.clear();
@@ -267,21 +268,21 @@ void getContinuousBoundingBox (
 		firstPlaneBoundingBoxStart = 5*i;
 		secondPlaneBoundingBoxStart = 5*(i+1);
 
-		firstPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart];
-		secondPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+1];
+		firstPoint = boundingBoxPoints[i][0];
+		secondPoint = boundingBoxPoints[i][1];
 		cout << "[ DEBUG ] Calculate Line 1 for plane " << i << "\n";
 		makeLineFromPoints( firstPoint, secondPoint, lineParameters1);
-		firstPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+2];
-		secondPoint = boundingBoxPoints[i][firstPlaneBoundingBoxStart+3];
+		firstPoint = boundingBoxPoints[i][2];
+		secondPoint = boundingBoxPoints[i][3];
 		cout << "[ DEBUG ] Calculate Line 2 for plane " << i << "\n";
 		makeLineFromPoints( firstPoint, secondPoint, lineParameters2);
 
-		firstPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart];
-		secondPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+1];
+		firstPoint = boundingBoxPoints[i+1][0];
+		secondPoint = boundingBoxPoints[i+1][1];
 		cout << "[ DEBUG ] Calculate Line 3 for plane " << i << "\n";
 		makeLineFromPoints( firstPoint, secondPoint, lineParameters3);
-		firstPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+2];
-		secondPoint = boundingBoxPoints[i][secondPlaneBoundingBoxStart+3];
+		firstPoint = boundingBoxPoints[i+1][2];
+		secondPoint = boundingBoxPoints[i+1][3];
 		cout << "[ DEBUG ] Calculate Line 4 for plane " << i << "\n";
 		makeLineFromPoints( firstPoint, secondPoint, lineParameters4);
 
@@ -294,13 +295,13 @@ void getContinuousBoundingBox (
 		cout << "[ DEBUG ] Calculate Point 4 for plane " << i << "\n";
 		calculateIntersectionOfLines( lineParameters4, lineIntersectionOfPlanes, point4);
 
-		continuousBoundingBoxPoints[i][secondPlaneBoundingBoxStart] = point3;
-		continuousBoundingBoxPoints[i][secondPlaneBoundingBoxStart+4] = point3;
-		continuousBoundingBoxPoints[i][secondPlaneBoundingBoxStart+3] = point4;
+		continuousBoundingBoxPoints[i+1][0] = point3;
+		continuousBoundingBoxPoints[i+1][4] = point3;
+		continuousBoundingBoxPoints[i+1][3] = point4;
 
 
-		continuousBoundingBoxPoints[i][firstPlaneBoundingBoxStart+1] = point1;
-		continuousBoundingBoxPoints[i][firstPlaneBoundingBoxStart+2] = point2;
+		continuousBoundingBoxPoints[i][1] = point1;
+		continuousBoundingBoxPoints[i][2] = point2;
 		cout << "[ DEBUG ] continuousBoundingBoxPoints made for plane " << i << "\n";
 
 		cout << "[ DEBUG ] Line Parameters1 size: " << lineParameters1.size() << "\n";

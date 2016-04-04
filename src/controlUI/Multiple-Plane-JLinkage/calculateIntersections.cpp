@@ -101,7 +101,8 @@ void calculateIntersectionOfPlanes(
 	parameters.push_back(y0);
 	parameters.push_back(z0);
 	int lineParametersSize = lineParameters.size();
-	clearVectorOfVectors(lineParameters);
+	//clearVectorOfVectors(lineParameters);
+	/*
 	if( lineParametersSize >= 2) {
 		lineParameters[0][1] = x0;
 		lineParameters[0][2] = y0;
@@ -110,11 +111,14 @@ void calculateIntersectionOfPlanes(
 	else {
 		lineParameters.push_back(parameters);
 	}
+	*/
+	lineParameters.push_back(parameters);
 	parameters.clear();
 
 	parameters.push_back(a);
 	parameters.push_back(b);
 	parameters.push_back(c);
+	/*
 	if( lineParametersSize >= 2) {
 		lineParameters[1][1] = a;
 		lineParameters[1][2] = b;
@@ -123,6 +127,8 @@ void calculateIntersectionOfPlanes(
 	else {
 		lineParameters.push_back(parameters);
 	}
+	*/
+	lineParameters.push_back(parameters);
 	parameters.clear();
 
 	return ;
