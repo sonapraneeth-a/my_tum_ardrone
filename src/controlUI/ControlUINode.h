@@ -350,6 +350,9 @@ public:
 	// Equality function for 3d keypoints. Does it need to be exact equality? Or some heuristic based distance threshold
 	bool equal(std::vector<float> p1, std::vector<float> p2);
 
+	// Write 3D points obtained to a CSV file
+	void write3DPointsToCSV(std::vector<std::vector<float> > &_3d_points);
+
 	// A helper function to get the number of key points in the current frame
 	int getNumKP(bool considerAllLevels);
 

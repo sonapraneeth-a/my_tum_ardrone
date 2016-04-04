@@ -179,6 +179,42 @@ void ControlUINode::load2dPoints (vector<float> x_img, vector<float> y_img) {
 	}
 }
 
+void ControlUINode::write3DPointsToCSV(vector<vector<float> > &_3d_points) {
+
+	int i, j;
+	int numberOfPoints = _3d_points.size();
+
+	string filename = "points_gazebo_test.csv";
+	const char* outFilename = filename.c_str();
+	ofstream outFile;
+	// Open the object in writing mode
+	outFile.open(outFilename, ios::out);
+	// Check if the file is open
+	if (!outFile.is_open()) {
+		cerr << "\nFile " << filename << " cannot be opened for writint.\n";
+		cerr << "Please check if the file is existing and has required permissions ";
+		cerr << " for writing.\n";
+		return -1;
+	}
+	
+	for (i = 0; i < numberOfPoints; ++i) {
+		int dimensions = _3d_points[i].size();
+		for (j = 0; j < dimensions; ++j) {
+			if(j!=dimensions-1) {
+				outFile << _3d_points[i][j] << ", ";
+			}
+			else {
+				outFile << _3d_points[i][j] << "\n";
+			}
+		}
+	}
+
+	// Close the file
+	outFile.close();
+	return ;
+
+}
+
 void ControlUINode::load3dPoints (vector<float> x_w, vector<float> y_w, vector<float> z_w) {
 	pthread_mutex_lock(&pose_CS);
 
@@ -200,7 +236,7 @@ void ControlUINode::load3dPoints (vector<float> x_w, vector<float> y_w, vector<f
 	}
 
 	pthread_mutex_unlock(&pose_CS);
-	//printf("Size of 3d points : %d\n", _3d_points.size());
+	write3DPointsToCSV(_3d_points);
 }
 
 void ControlUINode::loadLevels (vector<int> levels) {

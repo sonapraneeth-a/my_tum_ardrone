@@ -325,7 +325,7 @@ void ImageView::on_key_down(int key) {
 			}
 			cout << "\n";
 		}
-		for(int planeIndex = 0; planeIndex<continuousBoundingBoxPoints.size(); planeIndex++) {
+		for(int planeIndex = 0; planeIndex<size; planeIndex++) {
 			vector<Point3f> planeBoundingBoxPoints = continuousBoundingBoxPoints[planeIndex];	
 			vector< vector<int> > planePts2D;
 			glColor3f(1.0-1.0/(planeIndex+1), 1.0/(planeIndex+1), 0.0); 
@@ -336,7 +336,11 @@ void ImageView::on_key_down(int key) {
 				pt[1] = planeBoundingBoxPoints[pointIndex].y;
 				pt[2] = planeBoundingBoxPoints[pointIndex].z;
 				vector<int> p;
+				cout << "[ DEBUG ] Before get2Dpoint \n";
 				node->get2DPoint(pt, p, true);
+				cout << "[ DEBUG ] After get2Dpoint \n";
+				cout << "[ DEBUG ] Size of p:"<<p.size()<<"\n";
+				cout<<"[ DEBUG ] 2D Point: "<<p[0]<<" "<<p[1];
 				planePts2D.push_back(p);
 				glVertex2i(p[0],p[1]);
 			}
