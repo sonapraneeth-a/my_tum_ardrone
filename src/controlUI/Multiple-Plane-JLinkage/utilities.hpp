@@ -23,7 +23,10 @@
  */
 //template<typename T>
 void printVector(
-			vector<int> data) ;
+	const vector<int> &data) ;
+
+void printVectorOfVectors(
+	const vector< vector<float> > &data) ;
 
 /**
  * @details Get the plane parameters for each plane given the points in that plane
@@ -38,7 +41,7 @@ void printVector(
  */
 void getPlaneParameters(
 	const vector<Point3f> &planePoints,
-	const vector<int> planeIndices,
+	const vector<int> &planeIndices,
 	vector< vector<float> >  &planeParameters,
 	vector< vector<Point3f> > &planeOrderedPoints);
 
@@ -102,3 +105,18 @@ void clearVectorOfVectors (
 void writePointsToCSV(
 		const vector<Point3f> &data,
 		string filename);
+
+
+int writePointsToCSVForGPlot(
+		const vector<Point3f> &data,
+		const vector<int> &planeIndices,
+		const string &filename) ;
+
+int writePointsToCSVForGPlot(
+		const vector<Point3f> &data,
+		const map<int, pair<int,int> > &planeIndexBounds,
+		const string &filename) ;
+
+int writePointsToCSVForGPlot(
+		const vector< vector<Point3f> > &data,
+		const string &filename) ;

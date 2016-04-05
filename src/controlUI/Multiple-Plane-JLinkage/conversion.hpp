@@ -30,9 +30,7 @@
  *
  */
 void XYZToUVCoordinates(
-		const Point3f &xyzCoordinates,
 		const vector<float> &planeParameters,
-		Point2f &uvCoordinates,
 		vector<Point3f> &uvAxes
 		);
 
