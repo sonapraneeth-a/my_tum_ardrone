@@ -242,6 +242,31 @@ void ImageView::renderFrame() {
 		}
 		glEnd();
 	}
+	if(renderRect)
+	{		
+		int size = continuousBoundingBoxPoints.size();
+		
+		for(int planeIndex = 0; planeIndex<size; planeIndex++) {
+			vector<Point3f> planeBoundingBoxPoints = continuousBoundingBoxPoints[planeIndex];	
+			vector< vector<int> > planePts2D;
+			//glColor3f(0, 1.0, 0.0);
+			glColor3f(1.0-1.0/(planeIndex+1), 0, 1.0/(planeIndex+1)); 
+		 	glBegin(GL_LINE_STRIP);
+			for(int pointIndex = 0; pointIndex<planeBoundingBoxPoints.size(); pointIndex++) {
+				vector<float> pt(3);
+				pt[0] = planeBoundingBoxPoints[pointIndex].x;
+				pt[1] = planeBoundingBoxPoints[pointIndex].y;
+				pt[2] = planeBoundingBoxPoints[pointIndex].z;
+				vector<int> p;
+				bool found = node->get2DPoint(pt, p, true);
+				if (found){
+					planePts2D.push_back(p);
+					glVertex2i(p[0],p[1]);
+				}
+			}
+			glEnd();
+		}
+	}
 	glDisable(GL_BLEND);
 
 	myGLWindow->swap_buffers();
@@ -258,6 +283,8 @@ void ImageView::on_key_down(int key) {
 		numKeyPointsDetected = 0;
 		pointsClicked.clear();
 		keyPointsNearest.clear();
+		renderPoly = false;
+		renderRect= false;
 	}
 	if(key == 100) // d
 	{
@@ -313,38 +340,22 @@ void ImageView::on_key_down(int key) {
 		vector<vector<double> > tPoints =  node->getTargetPoints(g, plane);
 		node->moveDrone(tPoints);
 		*/
-		vector< vector<Point3f> > continuousBoundingBoxPoints;
+		renderRect = true;
+		int size = continuousBoundingBoxPoints.size();
+		int i,j;
+		for (i = 0; i < size; ++i) {
+			continuousBoundingBoxPoints[i].clear();
+		}
+		continuousBoundingBoxPoints.clear();
 		vector< vector<float> > planeParameters;
 		node->fitMultiplePlanes3d(ccPoints, pointsClicked, planeParameters, continuousBoundingBoxPoints);
-		int size = continuousBoundingBoxPoints.size();
-		int i, j;
 		cout << "[ DEBUG ] continuousBoundingBoxPoints from ImageView\n";
+		size = continuousBoundingBoxPoints.size();
 		for (i = 0; i < size; ++i) {
 			for (j = 0; j < 5; ++j) {
 				cout << continuousBoundingBoxPoints[i][j] << " ";
 			}
 			cout << "\n";
-		}
-		for(int planeIndex = 0; planeIndex<size; planeIndex++) {
-			vector<Point3f> planeBoundingBoxPoints = continuousBoundingBoxPoints[planeIndex];	
-			vector< vector<int> > planePts2D;
-			glColor3f(1.0-1.0/(planeIndex+1), 1.0/(planeIndex+1), 0.0); 
-		 	glBegin(GL_LINE_STRIP);
-			for(int pointIndex = 0; pointIndex<planeBoundingBoxPoints.size(); pointIndex++) {
-				vector<float> pt(3);
-				pt[0] = planeBoundingBoxPoints[pointIndex].x;
-				pt[1] = planeBoundingBoxPoints[pointIndex].y;
-				pt[2] = planeBoundingBoxPoints[pointIndex].z;
-				vector<int> p;
-				cout << "[ DEBUG ] Before get2Dpoint \n";
-				node->get2DPoint(pt, p, true);
-				cout << "[ DEBUG ] After get2Dpoint \n";
-				cout << "[ DEBUG ] Size of p:"<<p.size()<<"\n";
-				cout<<"[ DEBUG ] 2D Point: "<<p[0]<<" "<<p[1];
-				planePts2D.push_back(p);
-				glVertex2i(p[0],p[1]);
-			}
-			glEnd();
 		}
 		
 		//vector<float> translatedPlane = node->translatePlane (translateDistance);

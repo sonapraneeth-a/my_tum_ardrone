@@ -52,7 +52,7 @@ ControlUINode::ControlUINode() {
 
 	ransacVerbose = true;
 	useScaleFactor = true;
-	threshold = 0.1;
+	threshold = 0.3;
 	error_threshold = 0.3;
 	recordTime = 5.0; // a second
 	pollingTime = 0.5;
