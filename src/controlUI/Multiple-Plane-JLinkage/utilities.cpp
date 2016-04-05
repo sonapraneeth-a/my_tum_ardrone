@@ -16,7 +16,7 @@
 
 //template<typename T>
 void printVector(
-			vector<int> data) {
+			const vector<int> &data) {
 
 	cout << "[ DEBUG ] Printing the vector: ";
 	int i;
@@ -29,9 +29,28 @@ void printVector(
 
 }
 
+void printVectorOfVectors(
+			const vector< vector<float> > &data) {
+
+	cout << "[ DEBUG ] Printing the vector of vectors: \n";
+	int i, j;
+	int dataSize = data.size();
+	for (i = 0; i < dataSize; ++i) {
+		int size= data[i].size();
+		for(j = 0; j < size; j++) {
+			cout << data[i][j] << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+
+	return ;
+
+}
+
 void getPlaneParameters(
 	const vector<Point3f> &planePoints,
-	const vector<int> planeIndices,
+	const vector<int> &planeIndices,
 	vector< vector<float> >  &planeParameters,
 	vector< vector<Point3f> > &planeOrderedPoints) {
 
@@ -47,6 +66,7 @@ void getPlaneParameters(
 	vector<float> planeParametersForThisPlane;
 
 	int i;
+
 	// Put all points belonging to a particular plane i in planeOrderedPoints[i]
 	cout << "[ DEBUG ] Creating planeOrderPoints\n";
 	for (i = 0; i < numberOfPlanes; ++i) {
@@ -60,12 +80,12 @@ void getPlaneParameters(
 	// Find the plane parameters for each plane
 	for (i = 0; i < numberOfPlanes; ++i) {
 
+		// Clear old plane parameters
+		planeParametersForThisPlane.clear();
 		// Get the plane parameters
 		cout << "[ DEBUG ] Fitting a plane to set of points for plane " << i << "\n";
 		fitPlane3D(planeOrderedPoints[i], planeParametersForThisPlane);
 		planeParameters.push_back(planeParametersForThisPlane);
-		// Clear old plane parameters
-		planeParametersForThisPlane.clear();
 
 	}
 
@@ -127,7 +147,7 @@ void fitPlane3D(
 		normSum += (minEigVector.at<float>(0, j))*(minEigVector.at<float>(0, j));
 	}
 	for(j = 0; j < 3; ++j) {
-		minEigVector.at<float>(0, j) = minEigVector.at<float>(0, j)/normSum;
+		minEigVector.at<float>(0, j) = minEigVector.at<float>(0, j)/sqrt(normSum);
 	}
 	// Extract the plane parameters from the minimum eigenvector
 	Mat abc = minEigVector;
@@ -250,7 +270,7 @@ int writePointsToCSV(
 	outFile.open(outFilename, ios::out);
 	// Check if the file is open
 	if (!outFile.is_open()) {
-		cerr << "\nFile " << filename << " cannot be opened for writint.\n";
+		cerr << "\nFile " << filename << " cannot be opened for writing.\n";
 		cerr << "Please check if the file is existing and has required permissions ";
 		cerr << " for writing.\n";
 		return -1;

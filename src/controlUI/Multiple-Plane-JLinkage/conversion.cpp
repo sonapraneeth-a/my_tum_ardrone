@@ -16,16 +16,13 @@
 #include "conversion.hpp"
 
 void XYZToUVCoordinates(
-		const Point3f &xyzCoordinates,
 		const vector<float> &planeParameters,
-		Point2f &uvCoordinates,
 		vector<Point3f> &uvAxes) {
 
 	// Extract the plane parameters to variables
 	float a = planeParameters[0];
 	float b = planeParameters[1];
 	float c = planeParameters[2];
-	float d = planeParameters[3];
 
 	// Make the normal vector of the plane
 	Point3f n(a, b, c);
@@ -34,12 +31,7 @@ void XYZToUVCoordinates(
 	Point3f u(b, -a, 0);
 	Point3f v = n.cross(u);
 
-	// Make the u and v co-ordinates
-	float uCoord = u.dot(xyzCoordinates);
-	float vCoord = v.dot(xyzCoordinates);
 	// Copy it to Point2d structure
-	uvCoordinates.x = uCoord;
-	uvCoordinates.y = vCoord;
 	uvAxes.clear();
 
 	// Copy the UV Axes
@@ -64,17 +56,14 @@ void AllXYZToUVCoordinates(
 	vector<Point3f> uvAxis;
 
 	// Convert each XYZ point to UV and make the uvAxis used in making the transformation
-	cout << "[ DEBUG ] All XYZ -> UV Conversion Started for " << numberOfPoints << "\n";
+	cout << "[ DEBUG ] All XYZ -> UV Conversion Started for " << numberOfPoints << "points\n";
+	XYZToUVCoordinates( planeParameters,uvAxes);
+	cout << "UV Axes\n";
+	cout << uvAxes;
 	for (i = 0; i < numberOfPoints; ++i) {
-		uvAxis.clear();
-		XYZToUVCoordinates( xyzCoordinates[i], planeParameters,
-							uvCoord, uvAxis);
+		uvCoord.x = uvAxes[0].dot(xyzCoordinates[i]);
+		uvCoord.y = uvAxes[1].dot(xyzCoordinates[i]);
 		uvCoordinates.push_back(uvCoord);
-		int uvAxisLength = uvAxis.size();
-		uvAxes.clear();
-		for (j = 0; j < uvAxisLength; ++j) {
-			uvAxes.push_back(uvAxis[j]);
-		}
 	}
 
 	cout << "[ DEBUG ] All XYZ -> UV Conversion Completed\n";
@@ -104,9 +93,9 @@ void UVToXYZCoordinates(
 	// Copying uvAxes to Matrix uvAxis
 	for (i = 0; i < 3; i++) {
 		j = 0;
-		uvAxis.at<float>(i, j) = uvAxes[i].x; j++;
-		uvAxis.at<float>(i, j) = uvAxes[i].y; j++;
-		uvAxis.at<float>(i, j) = uvAxes[i].z; j++;
+		uvAxis.at<float>(j, i) = uvAxes[i].x; j++;
+		uvAxis.at<float>(j, i) = uvAxes[i].y; j++;
+		uvAxis.at<float>(j, i) = uvAxes[i].z; j++;
 	}
 	xyzPoint = uvAxis * uvPoint;
 	// Generating the XYZ co-ordinate

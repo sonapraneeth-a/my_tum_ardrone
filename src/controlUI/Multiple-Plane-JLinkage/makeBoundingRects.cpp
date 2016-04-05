@@ -69,6 +69,7 @@ void orderPlanePointsByCentroids(
 
 	// Push the points based on sorted order of x centroids
 	// Also make the plane parameters accordingly
+	int sortedStartIndex, sortedEndIndex;
 	for(i = 0; i < numberOfPlanes; i++) {
 
 		cout << "[ DEBUG ] Sorted Projections for Plane " << i << ".\n";
@@ -77,21 +78,37 @@ void orderPlanePointsByCentroids(
 
 		cout << "[ DEBUG ] Pushing the Sorted Points for Plane " << i << ".\n";
 		// TODO: Please check if this is j < endIndex (or) j <= endIndex
+		sortedStartIndex = sortedProjectionsOf3DPoints.size();
 		for (j = startIndex; j < endIndex; ++j) {
 			sortedProjectionsOf3DPoints.push_back(projectionOf3DPoints[j]);
 		}
 
 		cout << "[ DEBUG ] Pushing the Sorted Plane Parameters for Plane " << i << ".\n";
 		for( j = 0; j < 4; j++) {
-			sortedPlaneParameters[i][j] = planeParameters[indices[i]][j];
+			sortedPlaneParameters[indices[i]][j] = planeParameters[i][j];
 		}
 
 		// Make the index bounds stating from which index to which index does points
 		// related to plane i belong to
-		sortedPlaneIndexBounds.insert(make_pair(i,make_pair(startIndex, endIndex)));
+		sortedEndIndex = sortedStartIndex+endIndex-startIndex;
+		sortedPlaneIndexBounds.insert(make_pair(i,make_pair(sortedStartIndex, sortedEndIndex)));
 
 	}
 
+	cout << "[ DEBUG ] Original Plane Index Bounds\n";
+	for(map<int, pair<int,int> >::const_iterator it = planeIndexBounds.begin();
+		    it != planeIndexBounds.end(); ++it) {
+		std::cout << it->first << " " << it->second.first << " " << it->second.second << "\n";
+	}
+	cout << "[ DEBUG ] Sorted Plane Index Bounds\n";
+	for(map<int, pair<int,int> >::const_iterator it = sortedPlaneIndexBounds.begin();
+	    it != sortedPlaneIndexBounds.end(); ++it) {
+	    std::cout << it->first << " " << it->second.first << " " << it->second.second << "\n";
+	}
+	cout << "[ DEBUG ] Original Plane Parameters\n";
+	printVectorOfVectors(planeParameters);
+	cout << "[ DEBUG ] Sorted Plane Parameters\n";
+	printVectorOfVectors(sortedPlaneParameters);
 	cout << "[ DEBUG ] orderPlanePointsByCentroids Completed.\n";
 	return ;
 
@@ -123,7 +140,7 @@ void getBoundingBoxCoordinates (
 
 		// Get the number of points in the particular plane
 		numberOfPointsInThePlane = indexTwo - indexOne;
-		cout << "[ DEBUG ] Points are starting from " << indexOne << " " << indexTwo << "\n";
+		cout << "[ DEBUG ] Points are starting from " << indexOne << " to " << indexTwo-1 << "\n";
 		cout << "[ DEBUG ] There are " << numberOfPointsInThePlane << " in the plane\n";
 		pointsInThePlane.clear();
 		uvAxes.clear();
@@ -149,12 +166,17 @@ void getBoundingBoxCoordinates (
 		}
 
 		// Get the minimum and maximum x and y co-ordinates
+
 		float minU = *min_element(uCoord.begin(), uCoord.end());
 		float maxU = *max_element(uCoord.begin(), uCoord.end());
 		float minV = *min_element(vCoord.begin(), vCoord.end());
 		float maxV = *max_element(vCoord.begin(), vCoord.end());
 
-		// Make the bottom left, bootom right, top left, top right corners of bounding box
+		cout << "MinU: " << minU << "\n";
+		cout << "MaxU: " << maxU << "\n";
+		cout << "MinV: " << minV << "\n";
+		cout << "MaxV: " << maxV << "\n";
+		// Make the bottom left, bottom right, top left, top right corners of bounding box
 		Point2f bottomLeft = Point2f(minU, minV);
 		Point2f bottomRight = Point2f(maxU, minV);
 		Point2f topLeft = Point2f(minU, maxV);
@@ -166,12 +188,15 @@ void getBoundingBoxCoordinates (
 		cout << "[ DEBUG ] Making planeUVBoundingPoints\n";
 		planeUVBoundingPoints.push_back(bottomLeft);
 		planeUVBoundingPoints.push_back(bottomRight);
-		planeUVBoundingPoints.push_back(topLeft);
 		planeUVBoundingPoints.push_back(topRight);
+		planeUVBoundingPoints.push_back(topLeft);
 
 		cout << "[ DEBUG ] Converting UV to XYZ\n";
 		AllUVToXYZCoordinates( planeUVBoundingPoints, uvAxes, sortedPlaneParameters[i][3],
 				planeXYZBoundingPoints);
+		cout << "Plane XYZ Bounding Points: ";
+		cout << planeXYZBoundingPoints;
+		cout << "\n";
 
 		vector<float> zCoord;
 		vector<float> xCoord;
@@ -231,7 +256,6 @@ void getContinuousBoundingBox (
 	vector< vector<float> > lineParameters3;
 	vector< vector<float> > lineParameters4;
 
-	int firstPlaneBoundingBoxStart, secondPlaneBoundingBoxStart;
 	Point3f firstPoint, secondPoint;
 	Point3f point1, point2, point3, point4;
 	vector<Point3f> continuousPoints;
@@ -264,9 +288,6 @@ void getContinuousBoundingBox (
 		cout << "[ DEBUG ] Calculating intersections for plane " << i << " and plane " << i+1 << "\n";
 		calculateIntersectionOfPlanes( sortedPlaneParameters[i],
 				sortedPlaneParameters[i+1], lineIntersectionOfPlanes);
-
-		firstPlaneBoundingBoxStart = 5*i;
-		secondPlaneBoundingBoxStart = 5*(i+1);
 
 		firstPoint = boundingBoxPoints[i][0];
 		secondPoint = boundingBoxPoints[i][1];

@@ -172,7 +172,7 @@ void removePointsFarFromPlane(
 	vector<float> abcd;
 
 	for (i = 0; i < numberOfPlanes; ++i) {
-		cout << "[ DEBUG ] Plane Parameters for plane " << i << " are: ";
+		cout << "[ DEBUG ] Initial Plane Parameters for plane " << i << " are: ";
 		for (j = 0; j < 4; ++j) {
 			cout << planeParameters[i][j] << " ";
 		}
