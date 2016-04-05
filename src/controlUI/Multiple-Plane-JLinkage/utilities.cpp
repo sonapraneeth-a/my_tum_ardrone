@@ -112,9 +112,9 @@ void fitPlane3D(
 	// Make the points mean centered
 	cout << "[ DEBUG ] Making the points mean-centric\n";
 	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
-		pointsMatrixTemp.at<float>(0, j) = pointsMatrixTemp.at<float>(0, j) - centroidX;
-		pointsMatrixTemp.at<float>(1, j) = pointsMatrixTemp.at<float>(1, j) - centroidY;
-		pointsMatrixTemp.at<float>(2, j) = pointsMatrixTemp.at<float>(2, j) - centroidZ;
+		pointsMatrixTemp.at<float>(j, 0) = pointsMatrixTemp.at<float>(j, 0) - centroidX;
+		pointsMatrixTemp.at<float>(j, 1) = pointsMatrixTemp.at<float>(j, 1) - centroidY;
+		pointsMatrixTemp.at<float>(j, 2) = pointsMatrixTemp.at<float>(j, 2) - centroidZ;
 	}
 	// Calculate the eigenvector of pointsMatrixTemp'*pointsMatrixTemp
 	eigen(pointsMatrixTemp.t()*pointsMatrixTemp, eigenvalues, eigenvectors);
