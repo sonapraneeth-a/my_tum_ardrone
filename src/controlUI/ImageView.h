@@ -23,6 +23,7 @@ camera feed of the drone and recording mouse clicks
 #include "boost/thread.hpp"
 #include "std_msgs/String.h"
 #include <vector>
+#include <opencv2/core/core.hpp>
 #include "helperFunctions.h"
 
 
@@ -97,6 +98,9 @@ private:
 
 	// corners of the convex hull
 	std::vector<int> ccPoints;
+		
+	// corners of multiple planes bounding boxes in 3D
+	std::vector< std::vector<cv::Point3f> > continuousBoundingBoxPoints;
 
 	// corners of the bounding rectangle
 	std::vector<int> bPoints;
