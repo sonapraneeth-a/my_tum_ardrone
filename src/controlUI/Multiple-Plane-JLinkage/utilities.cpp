@@ -76,6 +76,7 @@ void getPlaneParameters(
 		planeOrderedPoints[planeIndices[i]].push_back(planePoints[i]);
 	}
 
+	writePointsToCSVForGPlot(planeOrderedPoints, "output/planeOrderedPoints.txt");
 	float a, b, c, d;
 	// Find the plane parameters for each plane
 	for (i = 0; i < numberOfPlanes; ++i) {
@@ -89,6 +90,7 @@ void getPlaneParameters(
 
 	}
 
+	printVectorOfVectors(planeParameters);
 	cout << "[ DEBUG ] getPlaneParametes Completed\n";
 	return ;
 
@@ -128,6 +130,7 @@ void fitPlane3D(
 	float centroidX = (mean(pointsMatrixTemp.col(0)))[0];
 	float centroidY = (mean(pointsMatrixTemp.col(1)))[0];
 	float centroidZ = (mean(pointsMatrixTemp.col(2)))[0];
+	cout << centroidX << " " << centroidY << " " << centroidZ << "\n";
 	Mat eigenvalues, eigenvectors;
 	// Make the points mean centered
 	cout << "[ DEBUG ] Making the points mean-centric\n";
@@ -203,36 +206,48 @@ float getKthPercentile(
 
 }
 
+typedef std::pair<float,int> mypair;
+	bool asc_comparator ( const mypair& l, const mypair& r)
+	   { return l.first < r.first; }
+	bool dsc_comparator ( const mypair& l, const mypair& r)
+		   { return l.first >= r.first; }
+
 void sortData(
 		const vector<float> &data,
 		vector<float> &sortedData,
-		vector<int> &indices) {
+		vector<int> &indices,
+		bool isAscending) {
 
 	cout << "[ DEBUG ] sortData Started\n";
 	// Get number of points in data
 	int dataSize = data.size();
 	cout << "[ DEBUG ] Data for sorting has size: " << dataSize << "\n";
-	map<float, int> oldIndices;
+
+	vector< mypair> oldDataWithIndex;
 	int i;
 
 	sortedData.clear();
 	// Make a map of data point to its index in data
 	// Create a copy of data in sortedData
 	for (i = 0; i < dataSize; ++i) {
-		oldIndices[data[i]] = i;
-		sortedData.push_back(data[i]);
+		oldDataWithIndex.push_back(make_pair(data[i],i));
 	}
+
 
 	// Sort the data
 	cout << "[ DEBUG ] Sorting Data ...\n";
-	sort(sortedData.begin(), sortedData.end());
+	if(isAscending)
+		sort(oldDataWithIndex.begin(), oldDataWithIndex.end(), asc_comparator);
+	else
+		sort(oldDataWithIndex.begin(), oldDataWithIndex.end(), dsc_comparator);
 	indices.clear();
 	cout << "[ DEBUG ] Sorting Completed ...\n";
 
 	// Make new indices based on oldIndices map
 	cout << "[ DEBUG ] Making indices ...\n";
 	for (i = 0; i < dataSize; ++i) {
-		indices.push_back(oldIndices.at(sortedData[i]));
+		indices.push_back(oldDataWithIndex[i].second);
+		sortedData.push_back(oldDataWithIndex[i].first);
 	}
 	cout << "[ DEBUG ] Making indices Completed ...\n";
 
@@ -284,6 +299,119 @@ int writePointsToCSV(
 	outFile.close();
 
 	cout << "[ DEBUG ] Writing the points to CSV Completed\n";
+	return 0;
+
+}
+
+int writePointsToCSVForGPlot(
+		const vector<Point3f> &data,
+		const vector<int> &planeIndices,
+		const string &filename) {
+
+	int dataSize = data.size();
+	int i;
+
+	cout << "[ DEBUG ] Writing the points to CSV for GNUPlot Started\n";
+	// Initiate a ofstream object
+	const char* outFilename = filename.c_str();
+	ofstream outFile;
+	// Open the object in writing mode
+	outFile.open(outFilename, ios::out);
+	// Check if the file is open
+	if (!outFile.is_open()) {
+		cerr << "\nFile " << filename << " cannot be opened for writing.\n";
+		cerr << "Please check if the file is existing and has required permissions ";
+		cerr << " for writing.\n";
+		return -1;
+	}
+	// Write the data to file
+	cout << "[ DEBUG ] There are " << planeIndices.size() << "(" << dataSize <<
+			") points in the plane.\n";
+	for( i = 0; i < dataSize; i++) {
+		outFile << data[i].x << " " << data[i].y << " " << data[i].z << " " << planeIndices[i] << "\n";
+	}
+
+	// Close the file
+	outFile.close();
+
+	cout << "[ DEBUG ] Writing the points to CSV for GNUPlot Completed\n";
+	return 0;
+
+}
+
+int writePointsToCSVForGPlot(
+		const vector< vector<Point3f> > &data,
+		const string &filename) {
+
+	int numberOfPlanes = data.size();
+	int i, j;
+
+	cout << "[ DEBUG ] Writing the points(vector of vector) to CSV for GNUPlot Started\n";
+	// Initiate a ofstream object
+	const char* outFilename = filename.c_str();
+	ofstream outFile;
+	// Open the object in writing mode
+	outFile.open(outFilename, ios::out);
+	// Check if the file is open
+	if (!outFile.is_open()) {
+		cerr << "\nFile " << filename << " cannot be opened for writing.\n";
+		cerr << "Please check if the file is existing and has required permissions ";
+		cerr << " for writing.\n";
+		return -1;
+	}
+
+	// Write the data to file
+	for( i = 0; i < numberOfPlanes; i++) {
+		int numberOfPoints = data[i].size();
+		for( j = 0; j < numberOfPoints; j++) {
+			outFile << data[i][j].x << " " << data[i][j].y << " " << data[i][j].z << " " << i << "\n";
+		}
+	}
+
+	// Close the file
+	outFile.close();
+
+	cout << "[ DEBUG ] Writing the points(vector of vector) to CSV for GNUPlot Completed\n";
+	return 0;
+
+}
+
+int writePointsToCSVForGPlot(
+		const vector<Point3f> &data,
+		const map<int, pair<int,int> > &planeIndexBounds,
+		const string &filename) {
+
+	int numberOfPlanes = planeIndexBounds.size();
+	int i, j;
+
+	cout << "[ DEBUG ] Writing the points(map) to CSV for GNUPlot Started\n";
+	// Initiate a ofstream object
+	const char* outFilename = filename.c_str();
+	ofstream outFile;
+	// Open the object in writing mode
+	outFile.open(outFilename, ios::out);
+	// Check if the file is open
+	if (!outFile.is_open()) {
+		cerr << "\nFile " << filename << " cannot be opened for writing.\n";
+		cerr << "Please check if the file is existing and has required permissions ";
+		cerr << " for writing.\n";
+		return -1;
+	}
+
+	// Write the data to file
+	cout << "[ DEBUG ] There are " << numberOfPlanes << " planes.\n";
+	for( i = 0; i < numberOfPlanes; i++) {
+		int firstBound = planeIndexBounds.at(i).first;
+		int secondBound = planeIndexBounds.at(i).second;
+		for( j = firstBound; j < secondBound; j++) {
+			outFile << data[j].x << " " << data[j].y << " " << data[j].z << " " << i << "\n";
+		}
+	}
+
+	// Close the file
+	outFile.close();
+
+	cout << "[ DEBUG ] Writing the points(map) to CSV for GNUPlot Completed\n";
 	return 0;
 
 }

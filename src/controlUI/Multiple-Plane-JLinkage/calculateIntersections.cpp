@@ -20,11 +20,6 @@ void makeLineFromPoints(
 		const Point3f &point2,
 		vector< vector<float> > &lineParameters) {
 
-	// Determine the normal of the line
-	float a = point2.x-point1.x;
-	float b = point2.y-point1.y;
-	float c = point2.z-point1.z;
-
 	// Get the co-ordinates of the point1
 	float x0 = point1.x;
 	float y0 = point1.y;
@@ -35,33 +30,21 @@ void makeLineFromPoints(
 	parameters.push_back(x0);
 	parameters.push_back(y0);
 	parameters.push_back(z0);
-	int lineParametersSize = lineParameters.size();
-	clearVectorOfVectors(lineParameters);
-	if( lineParametersSize >= 2) {
-		lineParameters[0][1] = x0;
-		lineParameters[0][2] = y0;
-		lineParameters[0][3] = z0;
-	}
-	else {
-		lineParameters.push_back(parameters);
-	}
+
+	lineParameters.push_back(parameters);
+
 	parameters.clear();
+
+	// Determine the normal of the line
+	float a = point2.x-point1.x;
+	float b = point2.y-point1.y;
+	float c = point2.z-point1.z;
 
 	parameters.push_back(a);
 	parameters.push_back(b);
 	parameters.push_back(c);
-	if( lineParametersSize >= 2) {
-		lineParameters[1][1] = a;
-		lineParameters[1][2] = b;
-		lineParameters[1][3] = c;
-	}
-	else {
-		lineParameters.push_back(parameters);
-	}
-	parameters.clear();
-
+	lineParameters.push_back(parameters);
 	return ;
-
 }
 
 void calculateIntersectionOfPlanes(
@@ -85,49 +68,29 @@ void calculateIntersectionOfPlanes(
 	Point3f plane2Normal(a2, b2, c2);
 	Point3f dir = plane1Normal.cross(plane2Normal);
 
-	// The direction of we're finding (a, b, c)
-	float a = dir.x;
-	float b = dir.y;
-	float c = dir.z;
-
 	// Defining a point on the line (x0, y0, z0)
 	float x0 = (d2*b1-d1*b2)/(a1*b2-a2*b1);
 	float y0 = (-d1 - a1*x0)/b1;
 	float z0 = 0;
 
-	// Definition of line: \f$x = x0 + a*t; y = y0 + b*t; z = z0 + c*t;$\f
 	vector<float> parameters;
 	parameters.push_back(x0);
 	parameters.push_back(y0);
 	parameters.push_back(z0);
-	int lineParametersSize = lineParameters.size();
-	//clearVectorOfVectors(lineParameters);
-	/*
-	if( lineParametersSize >= 2) {
-		lineParameters[0][1] = x0;
-		lineParameters[0][2] = y0;
-		lineParameters[0][3] = z0;
-	}
-	else {
-		lineParameters.push_back(parameters);
-	}
-	*/
+
 	lineParameters.push_back(parameters);
+
 	parameters.clear();
+
+	// The direction of we're finding (a, b, c)
+	float a = dir.x;
+	float b = dir.y;
+	float c = dir.z;
 
 	parameters.push_back(a);
 	parameters.push_back(b);
 	parameters.push_back(c);
-	/*
-	if( lineParametersSize >= 2) {
-		lineParameters[1][1] = a;
-		lineParameters[1][2] = b;
-		lineParameters[1][3] = c;
-	}
-	else {
-		lineParameters.push_back(parameters);
-	}
-	*/
+
 	lineParameters.push_back(parameters);
 	parameters.clear();
 
@@ -142,23 +105,25 @@ void calculateIntersectionOfLines(
 
 	// Get the parameters of the line1
 	// x = x01 + a1*t; y = y01 + b1*t; z = z01 + c1*t;
-	float a1 = line1[0][0];
-	float b1 = line1[0][1];
-	float c1 = line1[0][2];
 
-	float x01 = line1[1][0];
-	float y01 = line1[1][1];
-	float z01 = line1[1][2];
+	float x01 = line1[0][0];
+	float y01 = line1[0][1];
+	float z01 = line1[0][2];
+
+	float a1 = line1[1][0];
+	float b1 = line1[1][1];
+	float c1 = line1[1][2];
 
 	// Get the parameters of the line2
 	// x = x02 + a2*d; y = y02 + b2*d; z = z02 + c2*d;
-	float a2 = line2[0][0];
-	float b2 = line2[0][1];
-	float c2 = line2[0][2];
 
-	float x02 = line2[1][0];
-	float y02 = line2[1][1];
-	float z02 = line2[1][2];
+	float x02 = line2[0][0];
+	float y02 = line2[0][1];
+	float z02 = line2[0][2];
+
+	float a2 = line2[1][0];
+	float b2 = line2[1][1];
+	float c2 = line2[1][2];
 
 	// Solve for d in line2
 	float d = ((x01*b1-x02*b1)-(y01*a1-y02*a1))/(a2*b1-a1*b2);

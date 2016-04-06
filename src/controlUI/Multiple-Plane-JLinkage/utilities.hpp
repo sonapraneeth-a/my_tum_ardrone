@@ -90,7 +90,7 @@ float getKthPercentile(
 void sortData(
 		const vector<float> &data,
 		vector<float> &sortedData,
-		vector<int> &indices);
+		vector<int> &indices, bool isAscending);
 
 void clearVectorOfVectors (
 		vector< vector<float> > &data);

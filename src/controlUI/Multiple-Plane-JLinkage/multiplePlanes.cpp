@@ -181,11 +181,11 @@ int findMultiplePlanes(
 		cout << "[ DEBUG ] Step 5: orderPlanePointsByCentroids Success!!!\n";
 		cout.flush();
 		getBoundingBoxCoordinates ( sortedProjectionsOf3DPoints, sortedPlaneParameters,
-				sortedPlaneIndexBounds, continuousBoundingBoxPoints );
+				sortedPlaneIndexBounds, boundingBoxPoints );
 		cout << "[ DEBUG ] Step 5: getBoundingBoxCoordinates Success!!!\n";
 		cout.flush();
-		//getContinuousBoundingBox ( boundingBoxPoints, sortedPlaneParameters,
-								//continuousBoundingBoxPoints);
+		getContinuousBoundingBox ( boundingBoxPoints, sortedPlaneParameters,
+								continuousBoundingBoxPoints);
 		cout << "[ DEBUG ] Step 5: getContinuousBoundingBox Success!!!\n";
 		cout.flush();
 
