@@ -252,6 +252,7 @@ void ImageView::renderFrame() {
 			//glColor3f(0, 1.0, 0.0);
 			glColor3f(1.0-1.0/(planeIndex+1), 0, 1.0/(planeIndex+1)); 
 		 	glBegin(GL_LINE_STRIP);
+		/*	
 			for(int pointIndex = 0; pointIndex<planeBoundingBoxPoints.size(); pointIndex++) {
 				vector<float> pt(3);
 				pt[0] = planeBoundingBoxPoints[pointIndex].x;
@@ -264,6 +265,17 @@ void ImageView::renderFrame() {
 					glVertex2i(p[0],p[1]);
 				}
 			}
+		*/	
+			node->calibrate();
+			vector<Point2f> imagePts;
+			node->project3DPointsOnImage(planeBoundingBoxPoints, imagePts);
+            for(int pointIndex = 0; pointIndex<imagePts.size(); pointIndex++) {
+				vector<int> p(2);
+				p[0] = imagePts[pointIndex].x;
+				p[1] = imagePts[pointIndex].y;
+				glVertex2i(p[0],p[1]);
+			}
+		
 			glEnd();
 		}
 	}

@@ -263,6 +263,10 @@ private:
 	std::vector<std::vector<float> > _3d_points;
 	std::vector<std::vector<float> > _2d_points;
 	std::vector<int> _levels;
+	cv::Mat cameraMatrix;
+	cv::Mat distCoeffs;
+	std::vector<cv::Mat> rvecs, tvecs;
+
 	int numPoints;
 
 	float scale; // PTAM X-Y scale
@@ -270,7 +274,7 @@ private:
 	float x_offset, y_offset, z_offset; // PTAM offsets
 
 	// Drone state variables
-	float x_drone, y_drone, z_drone, yaw; // drone pose variables
+	float x_drone, y_drone, z_drone, roll, pitch, yaw; // drone pose variables
 
 	std::vector<float> _3d_plane; // stored as a 4 length vector with constants a,b,c,d
 								 // corresponding to ax+by+cz+d = 0. Enforcing the constraint that d = 1 for uniformity (except when d = 0)
@@ -343,6 +347,12 @@ public:
 
 	// Get 2d position (with a threshold) of a key point given its 3d position. Return empty vector if keypoint not found in the current frame (within the threshold)
 	bool get2DPoint(std::vector<float> pt, std::vector<int> &p, bool considerAllLevels);
+
+	//Project World Pts on Image plane
+	void project3DPointsOnImage(const vector<Point3f> &worldPts, vector<Point2f > & imagePts);
+
+	//calibrate camera
+	void calibrate();
 
 	// Get 2d position of the nearest key point given a 3d position
 	bool get2DPointNearest(std::vector<float> pt, std::vector<int> &p, bool considerAllLevels);

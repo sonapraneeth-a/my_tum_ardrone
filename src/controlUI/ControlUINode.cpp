@@ -97,6 +97,8 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 	y_drone = statePtr->y;
 	z_drone = statePtr->z;
 	yaw = statePtr->yaw;
+	roll = statePtr->roll;
+	pitch = statePtr->pitch;
 
 	pthread_mutex_unlock(&pose_CS);
 
@@ -194,7 +196,6 @@ void ControlUINode::write3DPointsToCSV(vector<vector<float> > &_3d_points) {
 		cerr << "\nFile " << filename << " cannot be opened for writint.\n";
 		cerr << "Please check if the file is existing and has required permissions ";
 		cerr << " for writing.\n";
-		return -1;
 	}
 	
 	for (i = 0; i < numberOfPoints; ++i) {
@@ -616,6 +617,102 @@ grid ControlUINode::buildGrid (vector<vector<float> > pPoints) {
 
 	getPDimensions (pPoints, lu, rd, dd, maxD, maxR);
 }*/
+
+void ControlUINode::calibrate(){
+	cameraMatrix = Mat(3,3, DataType<float>::type);
+    cameraMatrix.at<float>(0,0) = 374.6706070969281;
+    cameraMatrix.at<float>(0,1) = 0;                                                                     
+    cameraMatrix.at<float>(0,2) = 320.5;                                                     
+    cameraMatrix.at<float>(1,0) = 0;                                                                     
+    cameraMatrix.at<float>(1,1) = 374.6706070969281;
+    cameraMatrix.at<float>(1,2) = 180.5;
+    cameraMatrix.at<float>(2,0) = 0;                                                                     
+    cameraMatrix.at<float>(2,1) = 0;                                                                     
+    cameraMatrix.at<float>(2,2) = 1;
+	distCoeffs = Mat::zeros(5,1,DataType<float>::type);
+	
+	vector<Vec3f> object_points;
+	vector<Vec2f> image_pts;
+	pthread_mutex_lock(&keyPoint_CS);
+	assert(_3d_points.size() == _2d_points.size());
+	int numPts = _3d_points.size();
+	for(int i=0; i<numPts; i++){
+		Vec3f obj_pt(_3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
+		Vec2f img_pt(_2d_points[i][0], _2d_points[i][1]);
+		object_points.push_back(obj_pt);
+		image_pts.push_back(img_pt);
+	}
+	vector<vector<Vec3f>  > object;
+	vector<vector<Vec2f>  > image;
+	object.push_back(object_points);
+	image.push_back(image_pts);
+	calibrateCamera(object, image, Size(640, 360), cameraMatrix, distCoeffs, rvecs, tvecs, CV_CALIB_USE_INTRINSIC_GUESS);
+	pthread_mutex_unlock(&keyPoint_CS);
+}
+
+void ControlUINode::project3DPointsOnImage(const vector<Point3f> &worldPts, vector<Point2f > & imagePts){
+/*	
+	Mat cameraMatrix(3,3,DataType<float>::type);                                                         
+    // Setting camera matrix for vga quality                                                              
+    //From calibration done on our drone                                                                 
+	vector<Point3f> transformedWorldPts;
+	for(int i=0; i<worldPts.size(); i++){
+		Point3f pt = worldPts[i];
+		Point3f trPoint;
+		trPoint.x = pt.x;
+		trPoint.y = -pt.z;
+		trPoint.z = pt.y;	
+		transformedWorldPts.push_back(trPoint);
+	}
+//Gazebo K: [374.6706070969281, 0.0, 320.5, 0.0, 374.6706070969281, 180.5, 0.0, 0.0, 1.0]	
+    cameraMatrix.at<float>(0,0) = 374.6706070969281;
+    cameraMatrix.at<float>(0,1) = 0;                                                                     
+    cameraMatrix.at<float>(0,2) = 320.5;                                                     
+    cameraMatrix.at<float>(1,0) = 0;                                                                     
+    cameraMatrix.at<float>(1,1) = 374.6706070969281;
+    cameraMatrix.at<float>(1,2) = 180.5;
+    cameraMatrix.at<float>(2,0) = 0;                                                                     
+    cameraMatrix.at<float>(2,1) = 0;                                                                     
+    cameraMatrix.at<float>(2,2) = 1;
+
+	
+    cameraMatrix.at<float>(0,0) = 565.710890694431;                                                      
+    cameraMatrix.at<float>(0,1) = 0;                                                                     
+    cameraMatrix.at<float>(0,2) = 329.70046366652;                                                       
+    cameraMatrix.at<float>(1,0) = 0;                                                                     
+    cameraMatrix.at<float>(1,1) = 565.110297594854;                                                      
+    cameraMatrix.at<float>(1,2) = 169.873085097623;                                                      
+    cameraMatrix.at<float>(2,0) = 0;                                                                     
+    cameraMatrix.at<float>(2,1) = 0;                                                                     
+    cameraMatrix.at<float>(2,2) = 1;
+	
+
+	Mat distCoeffs = Mat::zeros(5,1,DataType<float>::type);
+    // Setting distortion coefficients
+    //From calibration done on our drone
+	
+    distCoeffs.at<float>(0) = -0.516089772391501;
+    distCoeffs.at<float>(1) = 0.285181914111246;
+    distCoeffs.at<float>(2) = -0.000466469917823537;
+    distCoeffs.at<float>(3) = 0.000864792975814983;
+    distCoeffs.at<float>(4) = 0;
+	
+
+	Mat R = getRotationMatrix(roll,pitch, yaw);
+	Mat rvec;
+	Rodrigues(R, rvec);
+	//cout<<"Rotation matrix"<<R<<"\n";
+
+	Mat tvec(3, 1, DataType<float>::type);
+	tvec.at<float>(0,0) = x_drone;
+	tvec.at<float>(1,0) = -z_drone;
+	tvec.at<float>(2,0) = y_drone;
+	*/
+	cv::projectPoints(worldPts, rvecs[0], tvecs[0], cameraMatrix, distCoeffs, imagePts);
+	int numPoints = imagePts.size();
+	//cout<<"Projected points:"<<numPoints<<"\n";
+	//cout<<imagePts<<"\n";
+}
 
 vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> plane) {
 

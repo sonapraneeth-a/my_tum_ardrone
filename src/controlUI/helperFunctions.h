@@ -7,8 +7,26 @@
 #define _HELPER_FUNCTIONS_H
 
 #include <math.h>
+#include <opencv2/core/core.hpp>
+
 
 /* A simple sign function */
+inline static cv::Mat getRotationMatrix(float roll, float pitch, float yaw){
+	roll  = roll*M_PI/180;
+	pitch = pitch*M_PI/180;
+	yaw   = (-1.0)*yaw*M_PI/180;
+	cv::Mat R_x = cv::Mat::eye(3,3, CV_32F);
+	cv::Mat R_y = cv::Mat::eye(3,3, CV_32F);
+	cv::Mat R_z = cv::Mat::eye(3,3, CV_32F);
+	/*
+	R_z.at<float>(0,0) = cos(yaw);
+	R_z.at<float>(0,2) = -sin(yaw);
+	R_z.at<float>(2,0) = sin(yaw);
+	R_z.at<float>(2,2) = cos(yaw);
+	*/
+	return R_z; // Roll & Pitch are not reliable, also most of the time we will have yaw only
+}
+
 inline static int signD(float x) {
 	return (x>0)-(x<0);
 }
