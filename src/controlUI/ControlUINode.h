@@ -340,7 +340,14 @@ public:
 
 	// Algorithmic functions
 	std::vector<float> fitPlane3d (std::vector<int> ccPoints, std::vector<std::vector<int> > pointsClicked);
+
+	// Fit multiple planes in 3D
 	void fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > &pointsClicked, vector<vector<float> >&planeParameters,vector< vector<Point3f> > & continuousBoundingBoxPoints);
+
+	// Move Quadopter to required position
+	void moveQuadcopter(
+		vector< vector<float> >&planeParameters,
+		vector< vector<Point3f> > &continuousBoundingBoxPoints);
 
 	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
 	std::vector<float> searchNearest(std::vector<int> pt, bool considerAllLevels);

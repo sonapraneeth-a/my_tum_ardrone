@@ -186,7 +186,7 @@ void ControlUINode::write3DPointsToCSV(vector<vector<float> > &_3d_points) {
 	int i, j;
 	int numberOfPoints = _3d_points.size();
 
-	string filename = "points_gazebo_test.csv";
+	string filename = "points_fckohli_test_08042016.csv";
 	const char* outFilename = filename.c_str();
 	ofstream outFile;
 	// Open the object in writing mode
@@ -301,6 +301,64 @@ void ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<in
 	findMultiplePlanes(_in_points, planeParameters, continuousBoundingBoxPoints);
 }
 
+void moveQuadcopter(
+		vector< vector<float> > &planeParameters,
+		vector< vector<Point3f> > &continuousBoundingBoxPoints) {
+
+	int numberOfPlanes = planeParameters.size();
+	int i, j;
+
+	vector<Point2f> uvCoordinates;
+	vector<Point3f> uvAxes, xyzGridCoord;
+	vector<float> uCoord, vCoord, uVector, vVector;
+	for (i = 0; i < numberOfPlanes; ++i) {
+
+		// TODO: Move the quadcopter to face the plane i
+
+		// Make parameters for making the grid
+		float a = planeParameters[i][0];
+		float b = planeParameters[i][1];
+		float c = planeParameters[i][2];
+		float d = planeParameters[i][3];
+		uvCoordinates.clear();
+		uvAxes.clear();
+		AllXYZToUVCoordinates( 
+			continuousBoundingBoxPoints[i], planeParameters[i],
+			uvCoordinates, uvAxes);
+		uVector.clear();
+		uVector.push_back(uvAxes[0].x);
+		uVector.push_back(uvAxes[0].y);
+		uVector.push_back(uvAxes[0].z);
+		vVector.clear();
+		vVector.push_back(uvAxes[1].x);
+		vVector.push_back(uvAxes[1].y);
+		vVector.push_back(uvAxes[1].z);
+		uCoord.clear();
+		// Make the X Co-ordinates of plane points
+		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+			uCoord.push_back(uvCoord[j].x);
+		}
+		vCoord.clear();
+		// Make the Y Co-ordinates of plane points
+		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+			vCoord.push_back(uvCoord[j].y);
+		}
+		// Get the minimum and maximum x and y co-ordinates
+		float minU = *min_element(uCoord.begin(), uCoord.end());
+		float maxU = *max_element(uCoord.begin(), uCoord.end());
+		float minV = *min_element(vCoord.begin(), vCoord.end());
+		float maxV = *max_element(vCoord.begin(), vCoord.end());
+		float width = maxU-minU;
+		float height = maxV-minV;
+		// What are maxR and maxH ?
+		pGrid grid = new pGrid(minU, maxV, width, height, uVector, vVector, maxR, maxH);
+		grid.translate();
+
+	}
+
+	return ;
+
+}
 void ControlUINode::Loop () {
 	while(nh_.ok()) {
 		ros::spinOnce();
