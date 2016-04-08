@@ -387,6 +387,15 @@ public:
 
 	// Builds the PGrid
 	//pGrid buildPGrid (std::vector<std::vector<float> > pPoints);
+	pGrid buildPGrid(
+		vector<float> uCoord,
+		vector<float> vCoord );
+
+	// Get the target points in XYZ for the grid for quadcopter movement
+	void getPTargetPoints(
+		const pGrid &grid,
+		const vector<float> &planeParameters,
+		vector< vector<double> > &targetPoints);
 
 	// Gets the target points given the grid and plane
 	std::vector<std::vector<double> > getTargetPoints (grid g, std::vector<float> plane);

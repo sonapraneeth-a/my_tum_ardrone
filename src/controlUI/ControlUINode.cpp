@@ -117,7 +117,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		if(numCommands < 4)
 		{
 			ros::Duration(1).sleep();
-			currentCommand = false;	
+			currentCommand = false;
 			commands.pop_front();
             targetPoints.pop_front();
 			return;
@@ -150,12 +150,12 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 				popen("rosbag record /ardrone/image_raw /ardrone/predictedPose --duration=5", "r");
 			}
 			else if(!notRecording) {
-				
+
 			}
 		}
 		else {
 			ardrone_autonomy::RecordEnable srv;
-            srv.request.enable = false;	
+            srv.request.enable = false;
 			video.call(srv);
 			currentCommand = false;
 			notRecording = true;
@@ -197,7 +197,7 @@ void ControlUINode::write3DPointsToCSV(vector<vector<float> > &_3d_points) {
 		cerr << "Please check if the file is existing and has required permissions ";
 		cerr << " for writing.\n";
 	}
-	
+
 	for (i = 0; i < numberOfPoints; ++i) {
 		int dimensions = _3d_points[i].size();
 		for (j = 0; j < dimensions; ++j) {
@@ -274,8 +274,8 @@ vector<float> ControlUINode::fitPlane3d (vector<int> ccPoints, vector<vector<int
 	return _3d_plane;
 }
 
-void ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > &pointsClicked, vector<vector<float> >&planeParameters, 
-										vector< vector<Point3f> > & continuousBoundingBoxPoints) 
+void ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > &pointsClicked, vector<vector<float> >&planeParameters,
+										vector< vector<Point3f> > & continuousBoundingBoxPoints)
 {
 	vector<Point3f> _in_points;
 
@@ -322,7 +322,8 @@ void moveQuadcopter(
 		float d = planeParameters[i][3];
 		uvCoordinates.clear();
 		uvAxes.clear();
-		AllXYZToUVCoordinates( 
+		// Convert XYZ bounding points to UV coordinates
+		AllXYZToUVCoordinates(
 			continuousBoundingBoxPoints[i], planeParameters[i],
 			uvCoordinates, uvAxes);
 		uVector.clear();
@@ -334,26 +335,30 @@ void moveQuadcopter(
 		vVector.push_back(uvAxes[1].y);
 		vVector.push_back(uvAxes[1].z);
 		uCoord.clear();
-		// Make the X Co-ordinates of plane points
-		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+		vector<float> boundingBoxSegmentLengths;
+		boundingBoxSegmentLengths.clear();
+		// Make the X Co-ordinates of plane bounding box points
+		for (j = 0; j < 5; ++j) {
 			uCoord.push_back(uvCoord[j].x);
 		}
 		vCoord.clear();
-		// Make the Y Co-ordinates of plane points
-		for (j = 0; j < numberOfPointsInThePlane; ++j) {
+		// Make the Y Co-ordinates of plane bouding box points
+		for (j = 0; j < 5; ++j) {
 			vCoord.push_back(uvCoord[j].y);
 		}
-		// Get the minimum and maximum x and y co-ordinates
-		float minU = *min_element(uCoord.begin(), uCoord.end());
-		float maxU = *max_element(uCoord.begin(), uCoord.end());
-		float minV = *min_element(vCoord.begin(), vCoord.end());
-		float maxV = *max_element(vCoord.begin(), vCoord.end());
-		float width = maxU-minU;
-		float height = maxV-minV;
-		// What are maxR and maxH ?
-		pGrid grid = new pGrid(minU, maxV, width, height, uVector, vVector, maxR, maxH);
-		grid.translate();
-
+		// Make the lengths of each side of boudning box points
+		for (j = 0; j < 5; ++j) {
+			float distance = sqrt(pow(uCoord[i],2)+pow(vCoord[i],2));
+			boundingBoxSegmentLengths.push_back(distance);
+		}
+		pGrid grid = buildPGrid(uCoord, vCoord);
+		vector< vector<double> > pTargetPoints;
+		// NOTE: Y and Z swapped oin camera co-ordinates
+		// TODO: Copy getTargetPoints into new function.
+		// TODO: Change the corners. We have UV from 'grid'. Change that to XYZ
+		// TODO: Arrange the XYZ in X,-Z,Y
+		// TODO: Make the other points from width and height and min and max points
+		getPTargetPoints(grid, planeParameters[i], pTargetPoints);
 	}
 
 	return ;
@@ -418,7 +423,7 @@ vector<float> ControlUINode::searchNearest (vector<int> pt, bool considerAllLeve
 			}
 		}
 	}
-	
+
 	pthread_mutex_unlock(&keyPoint_CS);
 
 
@@ -562,7 +567,7 @@ void ControlUINode::saveKeyPointInformation (int numFile) {
 }
 
 vector<float> ControlUINode::translatePlane (float translateDistance) {
-	
+
 	vector<float> translatedPlane;
 
 	float a = _3d_plane[0];
@@ -676,19 +681,48 @@ grid ControlUINode::buildGrid (vector<vector<float> > pPoints) {
 	getPDimensions (pPoints, lu, rd, dd, maxD, maxR);
 }*/
 
+pGrid ControlUINode::buildPGrid(
+	vector<float> uCoord,
+	vector<float> vCoord ) {
+
+	float horizDist1 = sqrt(pow(uCoord[0]-uCoord[1],2)+pow(vCoord[0]-vCoord[1],2));
+	float horizDist2 = sqrt(pow(uCoord[2]-uCoord[3],2)+pow(vCoord[2]-vCoord[3],2));
+	float vertDist1 = sqrt(pow(uCoord[2]-uCoord[1],2)+pow(vCoord[2]-vCoord[1],2));
+	float vertDist2 = sqrt(pow(uCoord[0]-uCoord[3],2)+pow(vCoord[0]-vCoord[3],2));
+	float maxR = max(horizDist1, horizDist2);
+	float maxD = max(vertDist1, vertDist2);
+	// Get the minimum and maximum x and y co-ordinates
+	float minU = *min_element(uCoord.begin(), uCoord.end());
+	float maxU = *max_element(uCoord.begin(), uCoord.end());
+	float minV = *min_element(vCoord.begin(), vCoord.end());
+	float maxV = *max_element(vCoord.begin(), vCoord.end());
+	// pGridSquare width and height
+	float squareWidth = 0.8;
+	float squareHeight = 0.45;
+	pGrid grid = new pGrid(minU, maxV, squareWidth, squareHeight, uVector, vVector, maxR, maxD);
+	pGridSquare gridSquare = new pGridSquare(uCoord[0], vCoord[0], squareWidth, squareWidth);
+	grid.add(gridSquare);
+	while (grid.translate(gridSquare)) {
+		gridSquare = grid.getLatest();
+	}
+
+	return grid;
+
+}
+
 void ControlUINode::calibrate(){
 	cameraMatrix = Mat(3,3, DataType<float>::type);
     cameraMatrix.at<float>(0,0) = 374.6706070969281;
-    cameraMatrix.at<float>(0,1) = 0;                                                                     
-    cameraMatrix.at<float>(0,2) = 320.5;                                                     
-    cameraMatrix.at<float>(1,0) = 0;                                                                     
+    cameraMatrix.at<float>(0,1) = 0;
+    cameraMatrix.at<float>(0,2) = 320.5;
+    cameraMatrix.at<float>(1,0) = 0;
     cameraMatrix.at<float>(1,1) = 374.6706070969281;
     cameraMatrix.at<float>(1,2) = 180.5;
-    cameraMatrix.at<float>(2,0) = 0;                                                                     
-    cameraMatrix.at<float>(2,1) = 0;                                                                     
+    cameraMatrix.at<float>(2,0) = 0;
+    cameraMatrix.at<float>(2,1) = 0;
     cameraMatrix.at<float>(2,2) = 1;
 	distCoeffs = Mat::zeros(5,1,DataType<float>::type);
-	
+
 	vector<Vec3f> object_points;
 	vector<Vec2f> image_pts;
 	pthread_mutex_lock(&keyPoint_CS);
@@ -709,52 +743,52 @@ void ControlUINode::calibrate(){
 }
 
 void ControlUINode::project3DPointsOnImage(const vector<Point3f> &worldPts, vector<Point2f > & imagePts){
-/*	
-	Mat cameraMatrix(3,3,DataType<float>::type);                                                         
-    // Setting camera matrix for vga quality                                                              
-    //From calibration done on our drone                                                                 
+/*
+	Mat cameraMatrix(3,3,DataType<float>::type);
+    // Setting camera matrix for vga quality
+    //From calibration done on our drone
 	vector<Point3f> transformedWorldPts;
 	for(int i=0; i<worldPts.size(); i++){
 		Point3f pt = worldPts[i];
 		Point3f trPoint;
 		trPoint.x = pt.x;
 		trPoint.y = -pt.z;
-		trPoint.z = pt.y;	
+		trPoint.z = pt.y;
 		transformedWorldPts.push_back(trPoint);
 	}
-//Gazebo K: [374.6706070969281, 0.0, 320.5, 0.0, 374.6706070969281, 180.5, 0.0, 0.0, 1.0]	
+//Gazebo K: [374.6706070969281, 0.0, 320.5, 0.0, 374.6706070969281, 180.5, 0.0, 0.0, 1.0]
     cameraMatrix.at<float>(0,0) = 374.6706070969281;
-    cameraMatrix.at<float>(0,1) = 0;                                                                     
-    cameraMatrix.at<float>(0,2) = 320.5;                                                     
-    cameraMatrix.at<float>(1,0) = 0;                                                                     
+    cameraMatrix.at<float>(0,1) = 0;
+    cameraMatrix.at<float>(0,2) = 320.5;
+    cameraMatrix.at<float>(1,0) = 0;
     cameraMatrix.at<float>(1,1) = 374.6706070969281;
     cameraMatrix.at<float>(1,2) = 180.5;
-    cameraMatrix.at<float>(2,0) = 0;                                                                     
-    cameraMatrix.at<float>(2,1) = 0;                                                                     
+    cameraMatrix.at<float>(2,0) = 0;
+    cameraMatrix.at<float>(2,1) = 0;
     cameraMatrix.at<float>(2,2) = 1;
 
-	
-    cameraMatrix.at<float>(0,0) = 565.710890694431;                                                      
-    cameraMatrix.at<float>(0,1) = 0;                                                                     
-    cameraMatrix.at<float>(0,2) = 329.70046366652;                                                       
-    cameraMatrix.at<float>(1,0) = 0;                                                                     
-    cameraMatrix.at<float>(1,1) = 565.110297594854;                                                      
-    cameraMatrix.at<float>(1,2) = 169.873085097623;                                                      
-    cameraMatrix.at<float>(2,0) = 0;                                                                     
-    cameraMatrix.at<float>(2,1) = 0;                                                                     
+
+    cameraMatrix.at<float>(0,0) = 565.710890694431;
+    cameraMatrix.at<float>(0,1) = 0;
+    cameraMatrix.at<float>(0,2) = 329.70046366652;
+    cameraMatrix.at<float>(1,0) = 0;
+    cameraMatrix.at<float>(1,1) = 565.110297594854;
+    cameraMatrix.at<float>(1,2) = 169.873085097623;
+    cameraMatrix.at<float>(2,0) = 0;
+    cameraMatrix.at<float>(2,1) = 0;
     cameraMatrix.at<float>(2,2) = 1;
-	
+
 
 	Mat distCoeffs = Mat::zeros(5,1,DataType<float>::type);
     // Setting distortion coefficients
     //From calibration done on our drone
-	
+
     distCoeffs.at<float>(0) = -0.516089772391501;
     distCoeffs.at<float>(1) = 0.285181914111246;
     distCoeffs.at<float>(2) = -0.000466469917823537;
     distCoeffs.at<float>(3) = 0.000864792975814983;
     distCoeffs.at<float>(4) = 0;
-	
+
 
 	Mat R = getRotationMatrix(roll,pitch, yaw);
 	Mat rvec;
@@ -789,11 +823,11 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 	imgPoints.push_back(Point2d(0,360));
 	imgPoints.push_back(Point2d(0,180));
 	imgPoints.push_back(Point2d(320,180));
-	
+
 	Mat imgPoints_mat(9,1, CV_64FC2);
 	for(int i=0; i<9; i++)
 		imgPoints_mat.at<Point2d>(i,0) = imgPoints[i];
-	
+
 
 	Mat cameraMatrix(3,3,DataType<double>::type);
 	// Setting camera matrix for vga quality
@@ -807,7 +841,7 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 	cameraMatrix.at<double>(2,0) = 0;
 	cameraMatrix.at<double>(2,1) = 0;
 	cameraMatrix.at<double>(2,2) = 1;
-	
+
 	/* From ARDRone package
 	cameraMatrix.at<double>(0,0) = 569.883158064802;
 	cameraMatrix.at<double>(0,1) = 0;
@@ -872,13 +906,13 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 				Point3d corner3 = Point3d(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane));
 				Point3d corner4 = Point3d(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane));
 				Point3d mid1 = (corner1 + corner2)*0.5;
-				mid1.z = getY(mid1.x, mid1.y, plane);	
+				mid1.z = getY(mid1.x, mid1.y, plane);
 				Point3d mid2 = (corner2 + corner3)*0.5;
-				mid2.z = getY(mid2.x, mid2.y, plane);	
+				mid2.z = getY(mid2.x, mid2.y, plane);
 				Point3d mid3 = (corner3 + corner4)*0.5;
-				mid3.z = getY(mid3.x, mid3.y, plane);	
+				mid3.z = getY(mid3.x, mid3.y, plane);
 				Point3d mid4 = (corner4 + corner1)*0.5;
-				mid4.z = getY(mid4.x, mid4.y, plane);	
+				mid4.z = getY(mid4.x, mid4.y, plane);
 				Point3d center = (mid1 + mid3)*0.5;
 				center.z = getY(center.x, center.y,plane)*0.5;
 
@@ -894,8 +928,8 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 
 				//gs.printCoord();
 				//cout<<objPoints<<endl;
-				
-				Mat objPoints_mat(9,1, CV_64FC3);				
+
+				Mat objPoints_mat(9,1, CV_64FC3);
 				for(int i=0; i<9; i++)
 					objPoints_mat.at<Point3d>(i,0) = objPoints[i];
 
@@ -910,7 +944,7 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.6);
 
 				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
-		
+
 				// cout<<"rvec : "<<rvec<<endl;
 				// cout<<"tvec : "<<tvec<<endl;
 
@@ -967,7 +1001,7 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
                                 objPoints.push_back(mid4);
                                 objPoints.push_back(center);
 
-				Mat objPoints_mat(9,1, CV_64FC3);				
+				Mat objPoints_mat(9,1, CV_64FC3);
 				for(int i=0; i<9; i++)
 					objPoints_mat.at<Point3d>(i,0) = objPoints[i];
 
@@ -1034,7 +1068,7 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints) {
 		if(i == 0){
 			pthread_mutex_lock(&pose_CS);
 			double half_y = (y_drone + p[1])/2;
-			vector<double> interm_point(3);			
+			vector<double> interm_point(3);
 			interm_point[0] = x_drone;
 			interm_point[1] = half_y;
 			interm_point[2] = z_drone;
@@ -1043,9 +1077,9 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints) {
 	        std_msgs::String s;
 	        s.data = buf;
     	    ROS_INFO("Message: ");
-        	ROS_INFO(buf);		
+        	ROS_INFO(buf);
 			commands.push_back(s);
-			targetPoints.push_back(interm_point);	
+			targetPoints.push_back(interm_point);
 
 			interm_point[1] = p[1];
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", x_drone, p[1], z_drone, yaw);
@@ -1054,7 +1088,7 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints) {
             ROS_INFO("Message: ");
             ROS_INFO(buf);
 			commands.push_back(s1);
-			targetPoints.push_back(interm_point);	
+			targetPoints.push_back(interm_point);
 
 			interm_point[0] = p[0];
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], z_drone, yaw);
@@ -1063,8 +1097,8 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints) {
             ROS_INFO("Message: ");
             ROS_INFO(buf);
 			commands.push_back(s2);
-			targetPoints.push_back(interm_point);	
-			
+			targetPoints.push_back(interm_point);
+
 			interm_point[2] = p[2];
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], yaw);
             std_msgs::String s3;
