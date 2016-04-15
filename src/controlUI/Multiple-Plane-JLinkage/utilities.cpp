@@ -157,11 +157,20 @@ void fitPlane3D(
 	a = abc.at<float>(0, 0); b = abc.at<float>(0, 1); c = abc.at<float>(0, 2); d = 0.0;
 	d += centroidX*a; d += centroidY*b; d += centroidZ*c;
 	d = (-1.0)*d;
+
 	// Copy the parameters to the output
-	planeParameters.push_back(a);
-	planeParameters.push_back(b);
-	planeParameters.push_back(c);
-	planeParameters.push_back(d);
+	if(d<=0){
+		planeParameters.push_back(a);
+		planeParameters.push_back(b);
+		planeParameters.push_back(c);
+		planeParameters.push_back(d);
+	}
+	else{
+		planeParameters.push_back(-a);
+		planeParameters.push_back(-b);
+		planeParameters.push_back(-c);
+		planeParameters.push_back(-d);
+	}
 
 	cout << "[ DEBUG ] fitPlane3D Completed\n";
 	return ;
@@ -414,4 +423,18 @@ int writePointsToCSVForGPlot(
 	cout << "[ DEBUG ] Writing the points(map) to CSV for GNUPlot Completed\n";
 	return 0;
 
+}
+
+double findAngle(Point3f vec1, Point3f vec2){
+	double dotProduct = vec1.dot(vec2);
+	double mag1 =  sqrt( vec1.x*vec1.x + vec1.y*vec1.y + vec1.z*vec1.z );
+	double mag2 =  sqrt( vec2.x*vec2.x + vec2.y*vec2.y + vec2.z*vec2.z );
+	double angle = acos(dotProduct/(mag1*mag2));
+	Point3f crossProduct = vec1.cross(vec2);
+	Point3f ref(0,0,1);
+	double sign = ref.dot(crossProduct);
+	if(sign>0)
+		return angle;
+	else
+		return(-angle);
 }

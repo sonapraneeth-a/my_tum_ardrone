@@ -19,6 +19,7 @@ Author : Anirudh Vemula
 
 #include "ardrone_autonomy/RecordEnable.h"
 #include "Multiple-Plane-JLinkage/conversion.hpp"
+#include "Multiple-Plane-JLinkage/utilities.hpp"
 #include "Multiple-Plane-JLinkage/makeBoundingRects.hpp"
 
 #include <string>
@@ -343,6 +344,10 @@ void ControlUINode::moveQuadcopter(
 		vector< vector<double> > pTargetPoints;
 		getPTargetPoints(grid, planeParameters[i], uvAxes, pTargetPoints);
 		double yaw = 0;
+		Point3f projectedNormal(planeParameters[i][0], planeParameters[i][1], 0);
+		Point3f yAxis(0,1,0);
+		yaw = findAngle(projectedNormal, yAxis);
+		yaw = yaw*180/M_PI;
 		moveDrone(pTargetPoints, yaw);
 	}
 

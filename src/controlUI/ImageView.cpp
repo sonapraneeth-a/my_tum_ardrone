@@ -337,7 +337,7 @@ void ImageView::on_key_down(int key) {
 	}
 	if(key == 101) // e
 	{
-		// Extract plane
+		// Extract multiple planes
 
 		extractBoundingPoly();
 		/*
@@ -353,12 +353,15 @@ void ImageView::on_key_down(int key) {
 		*/
 		renderRect = true;
 		int size = continuousBoundingBoxPoints.size();
+		assert(size == planeParameters.size());
 		int i,j;
 		for (i = 0; i < size; ++i) {
 			continuousBoundingBoxPoints[i].clear();
+			planeParameters[i].clear();
 		}
 		continuousBoundingBoxPoints.clear();
-		vector< vector<float> > planeParameters;
+		planeParameters.clear();
+	
 		node->fitMultiplePlanes3d(ccPoints, pointsClicked, planeParameters, continuousBoundingBoxPoints);
 		cout << "[ DEBUG ] continuousBoundingBoxPoints from ImageView\n";
 		size = continuousBoundingBoxPoints.size();
@@ -368,9 +371,16 @@ void ImageView::on_key_down(int key) {
 			}
 			cout << "\n";
 		}
-		node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);	
 		//vector<float> translatedPlane = node->translatePlane (translateDistance);
 		
+	}
+	if(key == 103) //g 			
+	{
+		//Cover multiple planes
+		if(renderRect){
+			renderRect = false;  //while moving the quadcopter we don't want bounding box to appear
+			node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);	
+		}
 	}
 }
 

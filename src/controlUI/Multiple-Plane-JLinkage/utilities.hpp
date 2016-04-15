@@ -120,3 +120,8 @@ int writePointsToCSVForGPlot(
 int writePointsToCSVForGPlot(
 		const vector< vector<Point3f> > &data,
 		const string &filename) ;
+
+
+//find angle between two vectors
+double findAngle(Point3f vec1, Point3f vec2);
+

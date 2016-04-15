@@ -102,6 +102,9 @@ private:
 	// corners of multiple planes bounding boxes in 3D
 	std::vector< std::vector<cv::Point3f> > continuousBoundingBoxPoints;
 
+	// Plane parameters
+	std::vector< std::vector<float> > planeParameters;
+
 	// corners of the bounding rectangle
 	std::vector<int> bPoints;
 
