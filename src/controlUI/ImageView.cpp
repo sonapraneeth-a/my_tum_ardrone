@@ -266,7 +266,6 @@ void ImageView::renderFrame() {
 				}
 			}
 		*/	
-			node->calibrate();
 			vector<Point2f> imagePts;
 			node->project3DPointsOnImage(planeBoundingBoxPoints, imagePts);
             for(int pointIndex = 0; pointIndex<imagePts.size(); pointIndex++) {
@@ -369,7 +368,7 @@ void ImageView::on_key_down(int key) {
 			}
 			cout << "\n";
 		}
-		
+		node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);	
 		//vector<float> translatedPlane = node->translatePlane (translateDistance);
 		
 	}

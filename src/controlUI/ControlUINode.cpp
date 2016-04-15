@@ -18,6 +18,8 @@ Author : Anirudh Vemula
 #include "opencv2/highgui/highgui.hpp"
 
 #include "ardrone_autonomy/RecordEnable.h"
+#include "Multiple-Plane-JLinkage/conversion.hpp"
+#include "Multiple-Plane-JLinkage/makeBoundingRects.hpp"
 
 #include <string>
 #include <fstream>
@@ -301,9 +303,9 @@ void ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<in
 	findMultiplePlanes(_in_points, planeParameters, continuousBoundingBoxPoints);
 }
 
-void moveQuadcopter(
-		vector< vector<float> > &planeParameters,
-		vector< vector<Point3f> > &continuousBoundingBoxPoints) {
+void ControlUINode::moveQuadcopter(
+		const vector< vector<float> > &planeParameters,
+		const vector< vector<Point3f> > &continuousBoundingBoxPoints) {
 
 	int numberOfPlanes = planeParameters.size();
 	int i, j;
@@ -313,7 +315,7 @@ void moveQuadcopter(
 	vector<float> uCoord, vCoord, uVector, vVector;
 	for (i = 0; i < numberOfPlanes; ++i) {
 
-		// TODO: Move the quadcopter to face the plane i
+		// TODO: Move the quadcopter to face the plane i (i>0)
 
 		// Make parameters for making the grid
 		float a = planeParameters[i][0];
@@ -335,35 +337,39 @@ void moveQuadcopter(
 		vVector.push_back(uvAxes[1].y);
 		vVector.push_back(uvAxes[1].z);
 		uCoord.clear();
-		vector<float> boundingBoxSegmentLengths;
-		boundingBoxSegmentLengths.clear();
-		// Make the X Co-ordinates of plane bounding box points
-		for (j = 0; j < 5; ++j) {
-			uCoord.push_back(uvCoord[j].x);
-		}
-		vCoord.clear();
-		// Make the Y Co-ordinates of plane bouding box points
-		for (j = 0; j < 5; ++j) {
-			vCoord.push_back(uvCoord[j].y);
-		}
-		// Make the lengths of each side of boudning box points
-		for (j = 0; j < 5; ++j) {
-			float distance = sqrt(pow(uCoord[i],2)+pow(vCoord[i],2));
-			boundingBoxSegmentLengths.push_back(distance);
-		}
-		pGrid grid = buildPGrid(uCoord, vCoord);
+		
+		pGrid grid = buildPGrid(uvCoordinates);
+		//printGrid(grid, uvAxes, planeParameters[i]);
 		vector< vector<double> > pTargetPoints;
-		// NOTE: Y and Z swapped oin camera co-ordinates
-		// TODO: Copy getTargetPoints into new function.
-		// TODO: Change the corners. We have UV from 'grid'. Change that to XYZ
-		// TODO: Arrange the XYZ in X,-Z,Y
-		// TODO: Make the other points from width and height and min and max points
-		getPTargetPoints(grid, planeParameters[i], pTargetPoints);
+		getPTargetPoints(grid, planeParameters[i], uvAxes, pTargetPoints);
+		double yaw = 0;
+		moveDrone(pTargetPoints, yaw);
 	}
 
 	return ;
 
 }
+
+void ControlUINode::printGrid(const pGrid &g, const vector<Point3f> &uvAxes, const vector<float> &plane){
+	vector<Point2f> uvCoordinates;
+	vector<Point3f> xyzCorners;
+	cout<<"[ Debug ] UV Grid \n";
+	for(unsigned int i=0; i<g.rowSquares.size(); i++) {
+		for(unsigned int j=0; j<g.rowSquares[i].size(); j++) {
+			float u = g.rowSquares[i][j].u;
+			float v = g.rowSquares[i][j].v;
+			Point2f uv(u,v);
+			uvCoordinates.push_back(uv);
+		}
+	}
+	
+	AllUVToXYZCoordinates(uvCoordinates, uvAxes, plane[3], xyzCorners);
+	cout<<uvCoordinates<<"\n";
+	cout<<xyzCorners<<"\n";	
+}
+
+
+
 void ControlUINode::Loop () {
 	while(nh_.ok()) {
 		ros::spinOnce();
@@ -681,9 +687,25 @@ grid ControlUINode::buildGrid (vector<vector<float> > pPoints) {
 	getPDimensions (pPoints, lu, rd, dd, maxD, maxR);
 }*/
 
-pGrid ControlUINode::buildPGrid(
-	vector<float> uCoord,
-	vector<float> vCoord ) {
+pGrid ControlUINode::buildPGrid(const vector<Point2f> &uvCoordinates){
+	vector<float> uCoord, vCoord;
+	vector<Point2f> sortedUVCoordinates;
+	sortUVCorners(uvCoordinates, sortedUVCoordinates);
+	int j;
+	// Make the X Co-ordinates of plane bounding box points
+	for (j = 0; j < 4; ++j) {
+		uCoord.push_back(sortedUVCoordinates[j].x);
+	}
+	// Make the Y Co-ordinates of plane bouding box points
+	for (j = 0; j < 4; ++j) {
+		vCoord.push_back(sortedUVCoordinates[j].y);
+	}
+	vector<float> uVector(2), vVector(2);
+	uVector[0] = uCoord[1]-uCoord[0];
+	uVector[1] = vCoord[1]-vCoord[0];
+
+	vVector[0] = uCoord[0]-uCoord[3];
+	vVector[1] = vCoord[0]-vCoord[3];
 
 	float horizDist1 = sqrt(pow(uCoord[0]-uCoord[1],2)+pow(vCoord[0]-vCoord[1],2));
 	float horizDist2 = sqrt(pow(uCoord[2]-uCoord[3],2)+pow(vCoord[2]-vCoord[3],2));
@@ -691,27 +713,26 @@ pGrid ControlUINode::buildPGrid(
 	float vertDist2 = sqrt(pow(uCoord[0]-uCoord[3],2)+pow(vCoord[0]-vCoord[3],2));
 	float maxR = max(horizDist1, horizDist2);
 	float maxD = max(vertDist1, vertDist2);
-	// Get the minimum and maximum x and y co-ordinates
-	float minU = *min_element(uCoord.begin(), uCoord.end());
-	float maxU = *max_element(uCoord.begin(), uCoord.end());
-	float minV = *min_element(vCoord.begin(), vCoord.end());
-	float maxV = *max_element(vCoord.begin(), vCoord.end());
+	uVector[0] /= horizDist1;
+	uVector[1] /= horizDist1;
+	vVector[0] /= vertDist1;
+	vVector[1] /= vertDist1;
 	// pGridSquare width and height
 	float squareWidth = 0.8;
 	float squareHeight = 0.45;
-	pGrid grid = new pGrid(minU, maxV, squareWidth, squareHeight, uVector, vVector, maxR, maxD);
-	pGridSquare gridSquare = new pGridSquare(uCoord[0], vCoord[0], squareWidth, squareWidth);
+	float overlap = 0.5;
+	pGrid grid(uCoord[0], vCoord[0], uVector, vVector, squareWidth, squareHeight, overlap, maxR, maxD);
+	pGridSquare gridSquare = pGridSquare(uCoord[0], vCoord[0], squareWidth, squareHeight, uVector, vVector);
 	grid.add(gridSquare);
 	while (grid.translate(gridSquare)) {
 		gridSquare = grid.getLatest();
 	}
-
 	return grid;
-
 }
 
 void ControlUINode::calibrate(){
 	cameraMatrix = Mat(3,3, DataType<float>::type);
+	/*
     cameraMatrix.at<float>(0,0) = 374.6706070969281;
     cameraMatrix.at<float>(0,1) = 0;
     cameraMatrix.at<float>(0,2) = 320.5;
@@ -721,6 +742,18 @@ void ControlUINode::calibrate(){
     cameraMatrix.at<float>(2,0) = 0;
     cameraMatrix.at<float>(2,1) = 0;
     cameraMatrix.at<float>(2,2) = 1;
+	*/
+	cameraMatrix.at<float>(0,0) = 565.710890694431;
+    cameraMatrix.at<float>(0,1) = 0;
+    cameraMatrix.at<float>(0,2) = 329.70046366652;
+    cameraMatrix.at<float>(1,0) = 0;
+    cameraMatrix.at<float>(1,1) = 565.110297594854;
+    cameraMatrix.at<float>(1,2) = 169.873085097623;
+    cameraMatrix.at<float>(2,0) = 0;
+    cameraMatrix.at<float>(2,1) = 0;
+    cameraMatrix.at<float>(2,2) = 1;
+
+
 	distCoeffs = Mat::zeros(5,1,DataType<float>::type);
 
 	vector<Vec3f> object_points;
@@ -740,6 +773,7 @@ void ControlUINode::calibrate(){
 	image.push_back(image_pts);
 	calibrateCamera(object, image, Size(640, 360), cameraMatrix, distCoeffs, rvecs, tvecs, CV_CALIB_USE_INTRINSIC_GUESS);
 	pthread_mutex_unlock(&keyPoint_CS);
+	calibrated= true;
 }
 
 void ControlUINode::project3DPointsOnImage(const vector<Point3f> &worldPts, vector<Point2f > & imagePts){
@@ -800,6 +834,7 @@ void ControlUINode::project3DPointsOnImage(const vector<Point3f> &worldPts, vect
 	tvec.at<float>(1,0) = -z_drone;
 	tvec.at<float>(2,0) = y_drone;
 	*/
+	calibrate();
 	cv::projectPoints(worldPts, rvecs[0], tvecs[0], cameraMatrix, distCoeffs, imagePts);
 	int numPoints = imagePts.size();
 	//cout<<"Projected points:"<<numPoints<<"\n";
@@ -1055,7 +1090,7 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 	return tPoints;
 }
 
-void ControlUINode::moveDrone (vector<vector<double> > tPoints) {
+void ControlUINode::moveDrone (vector<vector<double> > tPoints, double desiredYaw) {
 	double drone_length = 0.6;
 	double yaw = 0.0;
 
@@ -1107,10 +1142,18 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints) {
             ROS_INFO(buf);
 			commands.push_back(s3);
 			targetPoints.push_back(p);
+
+			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], desiredYaw);
+            std_msgs::String s4;
+            s4.data = buf;
+            ROS_INFO("Message: ");
+            ROS_INFO(buf);
+            commands.push_back(s4);
+            targetPoints.push_back(p);
 			pthread_mutex_unlock(&pose_CS);
 		}
 		else {
-			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], yaw);
+			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], desiredYaw);
 			std_msgs::String s;
 			s.data = buf;
 			ROS_INFO("Message: ");
@@ -1154,3 +1197,295 @@ void ControlUINode::checkPos(const ros::TimerEvent&) {
 // 		return false;
 // 	}
 // }
+//
+void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane, const vector<Point3f> &uvAxes, vector<vector<double> > &sortedTPoints) {
+
+		// TODO: Copy getTargetPoints into new function. - Done
+		// NOTE: Y and Z swapped oin camera co-ordinates
+		// TODO: Change the corners. We have UV from 'grid'. Change that to XYZ
+		// TODO: Arrange the XYZ in X,-Z,Y
+		// TODO: Make the other points from width and height and min and max points
+
+	if(!calibrated)
+		calibrate();
+	vector<vector<double> > tPoints;
+	vector<vector<double> > tPoints_z;
+
+	vector<Point2d> imgPoints;
+	imgPoints.push_back(Point2d(0,0));
+	imgPoints.push_back(Point2d(320,0));
+	imgPoints.push_back(Point2d(640,0));
+	imgPoints.push_back(Point2d(640,180));
+	imgPoints.push_back(Point2d(640,360));
+	imgPoints.push_back(Point2d(320,360));
+	imgPoints.push_back(Point2d(0,360));
+	imgPoints.push_back(Point2d(0,180));
+	imgPoints.push_back(Point2d(320,180));
+
+	Mat imgPoints_mat(9,1, CV_64FC2);
+	for(int i=0; i<9; i++)
+		imgPoints_mat.at<Point2d>(i,0) = imgPoints[i];
+
+
+	Mat cameraMatrix(3,3,DataType<double>::type);
+	// Setting camera matrix for vga quality
+	//From calibration done on our drone
+	cameraMatrix.at<double>(0,0) = 565.710890694431;
+	cameraMatrix.at<double>(0,1) = 0;
+	cameraMatrix.at<double>(0,2) = 329.70046366652;
+	cameraMatrix.at<double>(1,0) = 0;
+	cameraMatrix.at<double>(1,1) = 565.110297594854;
+	cameraMatrix.at<double>(1,2) = 169.873085097623;
+	cameraMatrix.at<double>(2,0) = 0;
+	cameraMatrix.at<double>(2,1) = 0;
+	cameraMatrix.at<double>(2,2) = 1;
+
+	Mat distCoeffs(5,1,DataType<double>::type);
+	// Setting distortion coefficients
+	//From calibration done on our drone
+	distCoeffs.at<double>(0) = -0.516089772391501;
+	distCoeffs.at<double>(1) = 0.285181914111246;
+	distCoeffs.at<double>(2) = -0.000466469917823537;
+	distCoeffs.at<double>(3) = 0.000864792975814983;
+	distCoeffs.at<double>(4) = 0;
+
+
+	Mat rvec(3,1,DataType<double>::type);
+	Mat tvec(3,1,DataType<double>::type);
+
+	vector<Point3d> objPoints;
+
+
+	bool forward = true; // Need to iterate forward or backward
+	cout<<"\nXYZ corners:\n";
+	for(unsigned int i=0; i < g.rowSquares.size()-1; i++) {
+
+		if(forward) {
+			for(unsigned int j=0; j < g.rowSquares[i].size(); j++) {
+	//ROS_INFO("Accessing %dth square of %dth row", j, i);
+				objPoints.clear();
+				pGridSquare gs = g.rowSquares[i][j];
+				vector<Point2f> uvCorners;
+				vector<Point3f> xyzCorners, sortedXYZCorners;
+				getGridSquareUVCorners(gs, uvCorners);
+				AllUVToXYZCoordinates(uvCorners, uvAxes, plane[3], xyzCorners);
+				sortXYZCorners(xyzCorners, sortedXYZCorners);
+				cout<<sortedXYZCorners<<"\n";
+
+				Point3d corner1 = Point3d(sortedXYZCorners[0].x, -sortedXYZCorners[0].z, sortedXYZCorners[0].y);
+				Point3d corner2 = Point3d(sortedXYZCorners[1].x, -sortedXYZCorners[1].z, sortedXYZCorners[1].y);
+				Point3d corner3 = Point3d(sortedXYZCorners[2].x, -sortedXYZCorners[2].z, sortedXYZCorners[2].y);
+				Point3d corner4 = Point3d(sortedXYZCorners[3].x, -sortedXYZCorners[3].z, sortedXYZCorners[3].y);
+				Point3d mid1 = (corner1 + corner2)*0.5;
+				mid1.z = getY(mid1.x, -mid1.y, plane);
+				Point3d mid2 = (corner2 + corner3)*0.5;
+				mid2.z = getY(mid2.x, -mid2.y, plane);
+				Point3d mid3 = (corner3 + corner4)*0.5;
+				mid3.z = getY(mid3.x, -mid3.y, plane);
+				Point3d mid4 = (corner4 + corner1)*0.5;
+				mid4.z = getY(mid4.x, -mid4.y, plane);
+				Point3d center = (mid1 + mid3)*0.5;
+				center.z = getY(center.x, -center.y,plane);
+
+				objPoints.push_back(corner1);
+				objPoints.push_back(mid1);
+				objPoints.push_back(corner2);
+				objPoints.push_back(mid2);
+				objPoints.push_back(corner3);
+				objPoints.push_back(mid3);
+				objPoints.push_back(corner4);
+				objPoints.push_back(mid4);
+				objPoints.push_back(center);
+	
+				//gs.printCoord();
+				//cout<<objPoints<<endl;
+
+				Mat objPoints_mat(9,1, CV_64FC3);
+				for(int i=0; i<9; i++)
+					objPoints_mat.at<Point3d>(i,0) = objPoints[i];
+	
+				//[MGP]Dont know but we have to call undistortPoints as a dummy call
+				//Something to do with older version of opencv which gets linked by mrpt
+				Mat dummy;
+				undistortPoints(imgPoints_mat, dummy, cameraMatrix, distCoeffs);
+				Mat rot_guess = Mat::eye(3,3, CV_64F);
+				Rodrigues(rot_guess, rvec);
+				tvec.at<double>(0)  = center.x;
+				tvec.at<double>(1)  = center.y;
+				tvec.at<double>(2)  = -(center.z - 0.6);
+
+				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
+
+				// cout<<"rvec : "<<rvec<<endl;
+				// cout<<"tvec : "<<tvec<<endl;
+
+				Mat rot(3,3, DataType<double>::type);
+				Rodrigues(rvec, rot);
+
+				Mat rotinv;
+				transpose(rot, rotinv);
+
+				tvec = -rotinv * tvec;
+
+				//cout<<"rotated tvec : "<<tvec<<endl;
+
+				vector<double> pt;
+				pt.push_back(tvec.at<double>(0));
+				pt.push_back(tvec.at<double>(2));
+				pt.push_back(-tvec.at<double>(1));
+				tPoints.push_back(pt);
+
+				pt.clear();
+				pt.push_back(gs.u + (gs.width/2));
+				pt.push_back(tvec.at<double>(2));
+				pt.push_back(gs.v - (gs.height/2));
+				tPoints_z.push_back(pt);
+			}
+		}
+		else {
+			for(int j = g.rowSquares[i].size()-1; j>=0 ; j--) {
+				//ROS_INFO("Accessing %dth square of %dth row", j, i);
+				objPoints.clear();
+				pGridSquare gs = g.rowSquares[i][j];
+				vector<Point2f> uvCorners;
+				vector<Point3f> xyzCorners, sortedXYZCorners;
+				getGridSquareUVCorners(gs, uvCorners);
+				AllUVToXYZCoordinates(uvCorners, uvAxes, plane[3], xyzCorners);
+				sortXYZCorners(xyzCorners, sortedXYZCorners);
+				cout<<sortedXYZCorners<<"\n";
+
+				Point3d corner1 = Point3d(sortedXYZCorners[0].x, -sortedXYZCorners[0].z, sortedXYZCorners[0].y);
+				Point3d corner2 = Point3d(sortedXYZCorners[1].x, -sortedXYZCorners[1].z, sortedXYZCorners[1].y);
+				Point3d corner3 = Point3d(sortedXYZCorners[2].x, -sortedXYZCorners[2].z, sortedXYZCorners[2].y);
+				Point3d corner4 = Point3d(sortedXYZCorners[3].x, -sortedXYZCorners[3].z, sortedXYZCorners[3].y);
+
+	            Point3d mid1 = (corner1 + corner2)*0.5;
+				mid1.z = getY(mid1.x, -mid1.y, plane);
+				Point3d mid2 = (corner2 + corner3)*0.5;
+				mid2.z = getY(mid2.x, -mid2.y, plane);
+	            Point3d mid3 = (corner3 + corner4)*0.5;
+				mid3.z = getY(mid3.x, -mid3.y, plane);
+				Point3d mid4 = (corner4 + corner1)*0.5;
+				mid4.z = getY(mid4.x, -mid4.y, plane);
+				Point3d center = (mid1 + mid3)*0.5;
+				center.z = getY(center.x, -center.y,plane);
+                                
+				objPoints.push_back(corner1);
+    	        objPoints.push_back(mid1);
+	            objPoints.push_back(corner2);
+				objPoints.push_back(mid2);
+				objPoints.push_back(corner3);
+				objPoints.push_back(mid3);
+				objPoints.push_back(corner4);
+				objPoints.push_back(mid4);
+				objPoints.push_back(center);
+				Mat objPoints_mat(9,1, CV_64FC3);
+				for(int i=0; i<9; i++)
+					objPoints_mat.at<Point3d>(i,0) = objPoints[i];
+				//[MGP]Dont know but we have to call undistortPoints as a dummy call
+				//Something to do with older version of opencv which gets linked by mrpt
+				Mat dummy;
+				undistortPoints(imgPoints_mat, dummy, cameraMatrix, distCoeffs);
+				Mat rot_guess = Mat::eye(3,3, CV_64F);
+				Rodrigues(rot_guess, rvec);
+				/*
+				tvec.at<double>(0)  = -(gs.u + (gs.width/2));
+				tvec.at<double>(1)  = gs.v - (gs.height/2);
+				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.6);
+				*/
+				tvec.at<double>(0) = center.x;
+				tvec.at<double>(1) = center.y;
+				tvec.at<double>(2) = -(center.z - 0.6);
+				
+
+				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
+
+				// cout<<"rvec : "<<rvec<<endl;
+				// cout<<"tvec : "<<tvec<<endl;
+
+				Mat rot(3,3, DataType<double>::type);
+				Rodrigues(rvec, rot);
+
+				Mat rotinv;
+				transpose(rot, rotinv);
+
+				tvec = -rotinv * tvec;
+	
+				//cout<<"rotated tvec : "<<tvec<<endl;
+				vector<double> pt;
+				pt.push_back(tvec.at<double>(0));
+				pt.push_back(tvec.at<double>(2));
+				pt.push_back(-tvec.at<double>(1));
+				tPoints.push_back(pt);
+
+				pt.clear();
+				pt.push_back(gs.u + (gs.width/2));
+				pt.push_back(tvec.at<double>(2));
+				pt.push_back(gs.v - (gs.height/2));
+				tPoints_z.push_back(pt);
+			}
+		}
+
+		forward = !forward;
+	}
+	int numRows= g.rowSquares.size()-1;
+	vector<int> numColsPerRow;
+	for(int i=0; i<numRows; i++)
+	{
+		int n  = g.rowSquares[i].size();
+		numColsPerRow.push_back(n);
+	}
+	sortTargetPoints(numRows, numColsPerRow, tPoints, sortedTPoints);
+	printf("\ntarget points\n\n");
+	print3dPoints(sortedTPoints);
+	//printf("Points with X and Z just midpoints\n");
+	//print3dPoints(tPoints_z);
+}
+
+void ControlUINode::getGridSquareUVCorners(const pGridSquare &gs, vector<Point2f> &uvCorners){
+	Point2f corner1 = Point2f(gs.u, gs.v);
+	Point2f corner2 = Point2f(gs.u+gs.width, gs.v);			
+	Point2f corner3 = Point2f(gs.u+gs.width, gs.v - gs.height);
+	Point2f corner4 = Point2f(gs.u, gs.v-gs.height);
+	uvCorners.push_back(corner1);	
+	uvCorners.push_back(corner2);	
+	uvCorners.push_back(corner3);	
+	uvCorners.push_back(corner4);	
+}
+
+void ControlUINode::sortTargetPoints(int numRows, vector<int> numColsPerRow, const vector< vector<double> > &tPoints, vector< vector<double> > &sortedTPoints){
+	vector<float> z_coord(numRows);
+	vector<float> sortedZcoord;
+	vector<int> rowStartIndex;
+	int rowStart = 0;
+	for(int i=0; i<numRows; i++){
+		rowStartIndex.push_back(rowStart);
+		int index = rowStart;
+		z_coord[i] = tPoints[index][2];
+		rowStart += numColsPerRow[i];		
+	}
+	vector<int> indices;
+	sortData(z_coord, sortedZcoord, indices, false);
+	int numCols = 0;
+	for(int i=0; i<numRows; i++)
+	{
+		int index= rowStartIndex[indices[i]] ;
+		int numCols = numColsPerRow[indices[i]];
+		vector< vector<double> > rowTPoints; 
+		for(int j=0; j < numCols; j++)
+		{
+			vector<double> tPoint = tPoints[index+j];
+			rowTPoints.push_back(tPoint);
+		}
+		if( i%2 == (indices[i])%2) //if new index and old index have same parity then the order need not be changed
+		{
+			sortedTPoints.insert(sortedTPoints.end(), rowTPoints.begin(), rowTPoints.end());
+		}
+		else //otherwise need to reverse the order
+		{
+			for(int j=numCols-1; j>=0; j--){
+				sortedTPoints.push_back(rowTPoints[j]);
+			}
+		}
+	}
+}

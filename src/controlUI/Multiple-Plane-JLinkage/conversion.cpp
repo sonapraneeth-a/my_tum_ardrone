@@ -56,17 +56,17 @@ void AllXYZToUVCoordinates(
 	vector<Point3f> uvAxis;
 
 	// Convert each XYZ point to UV and make the uvAxis used in making the transformation
-	cout << "[ DEBUG ] All XYZ -> UV Conversion Started for " << numberOfPoints << "points\n";
+	//cout << "[ DEBUG ] All XYZ -> UV Conversion Started for " << numberOfPoints << "points\n";
 	XYZToUVCoordinates( planeParameters,uvAxes);
-	cout << "UV Axes\n";
-	cout << uvAxes;
+	//cout << "UV Axes\n";
+	//cout << uvAxes;
 	for (i = 0; i < numberOfPoints; ++i) {
 		uvCoord.x = uvAxes[0].dot(xyzCoordinates[i]);
 		uvCoord.y = uvAxes[1].dot(xyzCoordinates[i]);
 		uvCoordinates.push_back(uvCoord);
 	}
 
-	cout << "[ DEBUG ] All XYZ -> UV Conversion Completed\n";
+	//cout << "[ DEBUG ] All XYZ -> UV Conversion Completed\n";
 	return ;
 
 }
@@ -120,14 +120,14 @@ void AllUVToXYZCoordinates(
 
 	xyzCoordinates.clear();
 	// Transform each UV point to XYZ point
-	cout << "[ DEBUG ] All UV -> XYZ Conversion Started for " << numberOfPoints << "\n";
+	//cout << "[ DEBUG ] All UV -> XYZ Conversion Started for " << numberOfPoints << "\n";
 	for (i = 0; i < numberOfPoints; ++i) {
 		UVToXYZCoordinates( uvCoordinates[i], uvAxes, d,
 							xyzCoord);
 		xyzCoordinates.push_back(xyzCoord);
 	}
 
-	cout << "[ DEBUG ] All UV -> XYZ Conversion Completed\n";
+	//cout << "[ DEBUG ] All UV -> XYZ Conversion Completed\n";
 
 	return ;
 

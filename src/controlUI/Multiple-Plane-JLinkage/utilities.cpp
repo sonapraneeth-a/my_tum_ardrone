@@ -218,10 +218,10 @@ void sortData(
 		vector<int> &indices,
 		bool isAscending) {
 
-	cout << "[ DEBUG ] sortData Started\n";
+	//cout << "[ DEBUG ] sortData Started\n";
 	// Get number of points in data
 	int dataSize = data.size();
-	cout << "[ DEBUG ] Data for sorting has size: " << dataSize << "\n";
+	//cout << "[ DEBUG ] Data for sorting has size: " << dataSize << "\n";
 
 	vector< mypair> oldDataWithIndex;
 	int i;
@@ -235,23 +235,23 @@ void sortData(
 
 
 	// Sort the data
-	cout << "[ DEBUG ] Sorting Data ...\n";
+	//cout << "[ DEBUG ] Sorting Data ...\n";
 	if(isAscending)
 		sort(oldDataWithIndex.begin(), oldDataWithIndex.end(), asc_comparator);
 	else
 		sort(oldDataWithIndex.begin(), oldDataWithIndex.end(), dsc_comparator);
 	indices.clear();
-	cout << "[ DEBUG ] Sorting Completed ...\n";
+	//cout << "[ DEBUG ] Sorting Completed ...\n";
 
 	// Make new indices based on oldIndices map
-	cout << "[ DEBUG ] Making indices ...\n";
+	//cout << "[ DEBUG ] Making indices ...\n";
 	for (i = 0; i < dataSize; ++i) {
 		indices.push_back(oldDataWithIndex[i].second);
 		sortedData.push_back(oldDataWithIndex[i].first);
 	}
-	cout << "[ DEBUG ] Making indices Completed ...\n";
+	//cout << "[ DEBUG ] Making indices Completed ...\n";
 
-	cout << "[ DEBUG ] sortData Completed\n";
+	//cout << "[ DEBUG ] sortData Completed\n";
 	return ;
 
 }

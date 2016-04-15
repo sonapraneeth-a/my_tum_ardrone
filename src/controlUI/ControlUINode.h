@@ -237,6 +237,21 @@ public:
 		else
 			return rowSquares[row].back();
 	}
+
+	void print(vector<float> plane){
+		for(unsigned int i=0; i<rowSquares.size(); i++) {
+            for(unsigned int j=0; j<rowSquares[i].size(); j++) {
+                float x = rowSquares[i][j].u;
+                float z = rowSquares[i][j].v;
+                float y = getY(x, z, plane);
+                printf("%f %f %f\n", x, y, z);
+                printf("%f %f %f\n", x + width, getY(x+width, z, plane), z);
+                printf("%f %f %f\n", x + width, getY(x+width, z - height, plane), z - height);
+                printf("%f %f %f\n", x, getY(x, z - height, plane), z - height);
+            }
+        }
+	}
+
 };
 
 
@@ -263,6 +278,7 @@ private:
 	std::vector<std::vector<float> > _3d_points;
 	std::vector<std::vector<float> > _2d_points;
 	std::vector<int> _levels;
+	bool calibrated;
 	cv::Mat cameraMatrix;
 	cv::Mat distCoeffs;
 	std::vector<cv::Mat> rvecs, tvecs;
@@ -322,6 +338,7 @@ public:
 	void keyPointDataCb (const tum_ardrone::keypoint_coordConstPtr coordPtr);
 	void poseCb (const tum_ardrone::filter_stateConstPtr statePtr);
 	void comCb (const std_msgs::StringConstPtr str);
+	inline bool isCalibrated(){return calibrated;}
 
 	// main loop
 	void Loop ();
@@ -346,8 +363,20 @@ public:
 
 	// Move Quadopter to required position
 	void moveQuadcopter(
-		vector< vector<float> >&planeParameters,
-		vector< vector<Point3f> > &continuousBoundingBoxPoints);
+		const vector< vector<float> >&planeParameters,
+		const vector< vector<Point3f> > &continuousBoundingBoxPoints);
+
+	//Find target points for plane not parallel to XZ plane
+	void getPTargetPoints(const pGrid &g, const vector<float> & plane, const vector<Point3f> &uvAxes, vector<vector<double> > &tPoints ); 
+
+	//sort target points according to Z
+	void sortTargetPoints(int numRows, vector<int> numColsPerRow, const vector< vector<double> > &tPoints, vector< vector<double> > &sortedTPoints);
+
+	//Get UV Grid corners
+	void getGridSquareUVCorners(const pGridSquare &gs, vector<Point2f> &uvCorners);
+
+	//Print UV grid and according XYZ grid
+	void printGrid(const pGrid &, const vector<Point3f> &uvAxes, const vector<float> &plane);
 
 	// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
 	std::vector<float> searchNearest(std::vector<int> pt, bool considerAllLevels);
@@ -387,21 +416,13 @@ public:
 
 	// Builds the PGrid
 	//pGrid buildPGrid (std::vector<std::vector<float> > pPoints);
-	pGrid buildPGrid(
-		vector<float> uCoord,
-		vector<float> vCoord );
-
-	// Get the target points in XYZ for the grid for quadcopter movement
-	void getPTargetPoints(
-		const pGrid &grid,
-		const vector<float> &planeParameters,
-		vector< vector<double> > &targetPoints);
+	pGrid buildPGrid(const vector<Point2f> &uvCoordinates);
 
 	// Gets the target points given the grid and plane
 	std::vector<std::vector<double> > getTargetPoints (grid g, std::vector<float> plane);
 
 	// Generate the appropriate goto commands according to the target points
-	void moveDrone (std::vector<std::vector<double> > tPoints);
+	void moveDrone (std::vector<std::vector<double> > tPoints, double yaw);
 
 	// Checks the position of the drone and whether the error is less than a threshold
 	void checkPos (const ros::TimerEvent&);

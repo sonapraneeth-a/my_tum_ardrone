@@ -129,15 +129,15 @@ int findMultiplePlanes(
 		// 	int, const cv::_OutputArray &,
 		// 	cv::TermCriteria, int, int, const cv::_OutputArray &);
 		cout << "[ DEBUG ] We've " << numberOfPlanes << " planes for k-means clustering.\n";
-		cout << "[ DEBUG ] newPoints( " << newPoints.size() << "): " << newPoints << endl;
+		//cout << "[ DEBUG ] newPoints( " << newPoints.size() << "): " << newPoints << endl;
 		cout << "[ DEBUG ] newPlaneIndices( " << newPlaneIndices.size() << "): \n";
-		printVector(newPlaneIndices); cout.flush();
+		//printVector(newPlaneIndices); cout.flush();
 		// Performing kmeans using initial labels we've obtained in step 1
 		kmeans(pointsMatrix, numberOfPlanes, newPlaneIndices,
 				TermCriteria( CV_TERMCRIT_ITER, 10, 2.0), numberOfRounds,
 				KMEANS_USE_INITIAL_LABELS, clusterCentroids);
 		cout << "[ DEBUG ] newPlaneIndices after k-means ( " << newPlaneIndices.size() << "): \n";
-		printVector(newPlaneIndices); cout.flush();
+		//printVector(newPlaneIndices); cout.flush();
 		cout << "[ DEBUG ] Cluster centroids for kmeans\n";
 		cout << clusterCentroids << "\n"; cout.flush();
 		cout << "[ DEBUG ] Step 3: kmeans Success!!!\n"; cout.flush();

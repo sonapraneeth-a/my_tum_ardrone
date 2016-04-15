@@ -106,4 +106,7 @@ void getBoundingBoxCoordinates1 (
 		vector< vector<Point3f> > &boundingBoxPoints );
 
 
+void sortXYZCorners(const vector<Point3f> &corners, vector<Point3f> &sortedPlaneXYZBoundingPoints);
+void sortUVCorners(const vector<Point2f> &planeUVBoundingPoints, vector<Point2f> &sortedPlaneUVBoundingPoints);
+
 #endif /* MAKEBOUNDINGRECTS_HPP_ */
