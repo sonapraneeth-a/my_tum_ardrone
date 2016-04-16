@@ -366,6 +366,9 @@ public:
 		const vector< vector<float> >&planeParameters,
 		const vector< vector<Point3f> > &continuousBoundingBoxPoints);
 
+	
+	void ControlUINode::getInitialPath(const vector<double> &tPoint, double desiredYaw, vector<vector<double> > &xyz_yaw);
+
 	//Find target points for plane not parallel to XZ plane
 	void getPTargetPoints(const pGrid &g, const vector<float> & plane, const vector<Point3f> &uvAxes, vector<vector<double> > &tPoints ); 
 

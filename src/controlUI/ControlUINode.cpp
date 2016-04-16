@@ -343,12 +343,12 @@ void ControlUINode::moveQuadcopter(
 		//printGrid(grid, uvAxes, planeParameters[i]);
 		vector< vector<double> > pTargetPoints;
 		getPTargetPoints(grid, planeParameters[i], uvAxes, pTargetPoints);
-		double yaw = 0;
+		double desiredYaw = 0;
 		Point3f projectedNormal(planeParameters[i][0], planeParameters[i][1], 0);
 		Point3f yAxis(0,1,0);
-		yaw = findAngle(projectedNormal, yAxis);
-		yaw = yaw*180/M_PI;
-		moveDrone(pTargetPoints, yaw);
+		desiredYaw= findAngle(projectedNormal, yAxis);
+		desiredYaw= desiredYaw*180/M_PI;
+		moveDrone(pTargetPoints, desiredYaw);
 	}
 
 	return ;
@@ -1097,7 +1097,6 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 
 void ControlUINode::moveDrone (vector<vector<double> > tPoints, double desiredYaw) {
 	double drone_length = 0.6;
-	double yaw = 0.0;
 
 	for (unsigned int i = 0; i < tPoints.size(); ++i)
 	{
@@ -1106,6 +1105,20 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints, double desiredYa
 
 		char buf[100];
 		if(i == 0){
+			vector<vector <double > > xyz_yaw;
+			getInitialPath(p, desiredYaw, xyz_yaw);
+			for(int j=0; j<xyz_yaw.size(); j++){
+				vector<double> interm_point;
+				interm_point = xyz_yaw[j];
+				snprintf(buf, 100, "c goto %lf %lf %lf %lf", interm_point[0], interm_point[1], interm_point[2], interm_point[3]);
+	            std_msgs::String s;
+    	        s.data = buf;
+        	    ROS_INFO("Message: ");
+            	ROS_INFO(buf);
+	            commands.push_back(s);
+    	        targetPoints.push_back(interm_point);
+			}
+			/*
 			pthread_mutex_lock(&pose_CS);
 			double half_y = (y_drone + p[1])/2;
 			vector<double> interm_point(3);
@@ -1156,6 +1169,7 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints, double desiredYa
             commands.push_back(s4);
             targetPoints.push_back(p);
 			pthread_mutex_unlock(&pose_CS);
+			*/
 		}
 		else {
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], desiredYaw);
@@ -1494,3 +1508,30 @@ void ControlUINode::sortTargetPoints(int numRows, vector<int> numColsPerRow, con
 		}
 	}
 }
+
+void ControlUINode::getInitialPath(const vector<double> &tPoint, double desiredYaw, vector<vector<double> > &xyz_yaw){
+	pthread_mutex_lock(&pose_CS);
+	vector<double> interm_point(4);
+	interm_point[0] = x_drone;
+    interm_point[1] = y_drone;
+    interm_point[2] = z_drone;
+	interm_point[3] = 0;	
+	for(int i=0; i<6; i++)
+	{
+		int m = i/2 +1;
+		int n = 2 - i/2;
+		if(i%2 == 0)
+		{
+			interm_point[0] = (m*tPoint[0] + n*x_drone)/3;
+		}
+		else{
+			interm_point[1] = (m*tPoint[1] + n*y_drone)/3;
+		}
+		interm_point[3] = desiredYaw*(i+1)/6;
+		xyz_yaw.push_back(interm_point);
+	}
+	interm_point[2] = tPoint[2];
+	xyz_yaw.push_back(interm_point);
+	pthread_mutex_unlock(&pose_CS);	
+}
+
