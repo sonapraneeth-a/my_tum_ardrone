@@ -116,8 +116,12 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 	}
 	else if(currentCommand && !recordNow) {
 		static int numCommands = 0;
-		numCommands++;
-		if(numCommands < 4)
+		static int planeIndexCurrent = 0;
+		numCommands++;		
+		if(planeIndexCurrent< (numberOfPlanes-1) && numCommands>startTargePtIndex[planeIndexCurrent+1])
+			planeIndexCurrent++;
+
+		if(numCommands < startTargePtIndex[planeIndexCurrent]+7)
 		{
 			ros::Duration(1).sleep();
 			currentCommand = false;
@@ -308,12 +312,13 @@ void ControlUINode::moveQuadcopter(
 		const vector< vector<float> > &planeParameters,
 		const vector< vector<Point3f> > &continuousBoundingBoxPoints) {
 
-	int numberOfPlanes = planeParameters.size();
+	numberOfPlanes = planeParameters.size();
 	int i, j;
 
 	vector<Point2f> uvCoordinates;
 	vector<Point3f> uvAxes, xyzGridCoord;
 	vector<float> uCoord, vCoord, uVector, vVector;
+	startTargePtIndex.resize(numberOfPlanes, 0);
 	for (i = 0; i < numberOfPlanes; ++i) {
 
 		// TODO: Move the quadcopter to face the plane i (i>0)
@@ -1097,7 +1102,6 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 
 void ControlUINode::moveDrone (vector<vector<double> > tPoints, double desiredYaw) {
 	double drone_length = 0.6;
-
 	for (unsigned int i = 0; i < tPoints.size(); ++i)
 	{
 		vector<double> p = tPoints[i];
@@ -1180,7 +1184,8 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints, double desiredYa
 			commands.push_back(s);
 			targetPoints.push_back(p);
 		}
-
+		if(planeIndex < (numberOfPlanes - 1) )
+			startTargePtIndex[planeIndex+1] = targetPoints.size();	
 	}
 }
 
