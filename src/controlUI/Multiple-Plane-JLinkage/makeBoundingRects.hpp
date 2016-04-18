@@ -57,6 +57,8 @@ void getBoundingBoxCoordinates (
 		const map<int, pair<int, int> > &sortedPlaneIndexBounds,
 		vector< vector<Point3f> > &boundingBoxPoints );
 
+void getBoundingBoxPointsOfPlane(const vector<Point3f> &pointsInThePlane, const vector<float> &sortedPlaneParameters, vector<Point3f> &sortedPlaneXYZBoundingPoints);
+
 /**
  * @brief This function makes the bounding boxes generated before continuous
  *

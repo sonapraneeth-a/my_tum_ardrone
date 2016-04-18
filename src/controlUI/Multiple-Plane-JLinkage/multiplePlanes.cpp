@@ -192,6 +192,27 @@ int findMultiplePlanes(
 	}
 	else {
 		cout << "[ DEBUG ] Number of planes is less than or equal to 1.\n";
+		vector<float> planeParameters;
+		vector<Point3f> projectionsOf3DPoints;
+		fitPlane3D(newPoints, planeParameters);	
+		float a = planeParameters[0];
+        float b = planeParameters[1];
+        float c = planeParameters[2];
+        float d = planeParameters[3];	
+		for (int j = 0; j < newPoints.size(); ++j) {		
+        	float x0 = newPoints[j].x;
+            float y0 = newPoints[j].y;
+            float z0 = newPoints[j].z;
+            float t = ((-1)*(a*x0+b*y0+c*z0+d))/(a*a+b*b+c*c);
+            float projX0 = x0 + a*t;
+            float projY0 = y0 + b*t;
+            float projZ0 = z0 + c*t;
+            projectionsOf3DPoints.push_back(Point3f(projX0, projY0, projZ0));
+        }
+		vector<Point3f> boundingBoxPoints;
+		getBoundingBoxPointsOfPlane(projectionsOf3DPoints, planeParameters, boundingBoxPoints);
+		sortedPlaneParameters.push_back(planeParameters);
+		continuousBoundingBoxPoints.push_back(boundingBoxPoints);		
 	}
 	return 0;
 

@@ -125,11 +125,6 @@ void getBoundingBoxCoordinates (
 	int i, j;
 	int numberOfPointsInThePlane, indexOne, indexTwo;
 	vector<Point3f> pointsInThePlane;
-	vector<Point2f> uvCoord;
-	vector<float> uCoord, vCoord;
-	vector<Point3f> uvAxes;
-	vector<Point2f> planeUVBoundingPoints;
-	vector<Point3f> planeXYZBoundingPoints;
 
 	for (i = 0; i < numberOfPlanes; ++i) {
 
@@ -137,69 +132,17 @@ void getBoundingBoxCoordinates (
 		indexOne = sortedPlaneIndexBounds.at(i).first;
 		indexTwo = sortedPlaneIndexBounds.at(i).second;
 
-		// Get the number of points in the particular plane
-		numberOfPointsInThePlane = indexTwo - indexOne;
 		//cout << "[ DEBUG ] Points are starting from " << indexOne << " to " << indexTwo-1 << "\n";
 		//cout << "[ DEBUG ] There are " << numberOfPointsInThePlane << " in the plane\n";
 		pointsInThePlane.clear();
-		uvAxes.clear();
-		uvCoord.clear();
 
 		for (j = indexOne; j < indexTwo; ++j) {
 			pointsInThePlane.push_back(sortedProjectionOf3DPoints[j]);
 		}
 
-		//cout << "[ DEBUG ] Converting XYZ to UV\n";
-		AllXYZToUVCoordinates( pointsInThePlane, sortedPlaneParameters[i],
-								uvCoord, uvAxes);
-
-		uCoord.clear();
-		// Make the X Co-ordinates of plane points
-		for (j = 0; j < numberOfPointsInThePlane; ++j) {
-			uCoord.push_back(uvCoord[j].x);
-		}
-		vCoord.clear();
-		// Make the Y Co-ordinates of plane points
-		for (j = 0; j < numberOfPointsInThePlane; ++j) {
-			vCoord.push_back(uvCoord[j].y);
-		}
-
-		// Get the minimum and maximum x and y co-ordinates
-
-		float minU = *min_element(uCoord.begin(), uCoord.end());
-		float maxU = *max_element(uCoord.begin(), uCoord.end());
-		float minV = *min_element(vCoord.begin(), vCoord.end());
-		float maxV = *max_element(vCoord.begin(), vCoord.end());
-
-		cout << "MinU: " << minU << "\n";
-		cout << "MaxU: " << maxU << "\n";
-		cout << "MinV: " << minV << "\n";
-		cout << "MaxV: " << maxV << "\n";
-		// Make the bottom left, bottom right, top left, top right corners of bounding box
-		Point2f bottomLeft = Point2f(minU, minV);
-		Point2f bottomRight = Point2f(maxU, minV);
-		Point2f topLeft = Point2f(minU, maxV);
-		Point2f topRight = Point2f(maxU, maxV);
-		//cout << "[ DEBUG ] " << bottomLeft << ":" << bottomRight << ":" << topRight << ":" << topLeft << "\n";
-
-		planeUVBoundingPoints.clear();
-		planeXYZBoundingPoints.clear();
-		//cout << "[ DEBUG ] Making planeUVBoundingPoints\n";
-		planeUVBoundingPoints.push_back(bottomLeft);
-		planeUVBoundingPoints.push_back(bottomRight);
-		planeUVBoundingPoints.push_back(topRight);
-		planeUVBoundingPoints.push_back(topLeft);
-
-		//cout << "[ DEBUG ] Converting UV to XYZ\n";
-		AllUVToXYZCoordinates( planeUVBoundingPoints, uvAxes, sortedPlaneParameters[i][3],
-				planeXYZBoundingPoints);
-		cout << "Plane XYZ Bounding Points: ";
-		cout << planeXYZBoundingPoints;
-		cout << "\n";
-
 		vector<Point3f> sortedPlaneXYZBoundingPoints;
-		sortXYZCorners(planeXYZBoundingPoints, sortedPlaneXYZBoundingPoints);
-		sortedPlaneXYZBoundingPoints.push_back(sortedPlaneXYZBoundingPoints[0]);
+		getBoundingBoxPointsOfPlane(pointsInThePlane, sortedPlaneParameters[i], sortedPlaneXYZBoundingPoints);
+		//cout << "[ DEBUG ] Converting XYZ to UV\n";		
 
 		// Make the plane bounding box points for plane i
 		//cout << "[ DEBUG ] Created Bounding Box Points for Plane " << i << "\n";
@@ -210,6 +153,69 @@ void getBoundingBoxCoordinates (
 	//cout << "[ DEBUG ] getBoundingBoxCoordinates Completed.\n";
 
 	return ;
+
+}
+
+void getBoundingBoxPointsOfPlane(const vector<Point3f> &pointsInThePlane, const vector<float> &sortedPlaneParameters, vector<Point3f> &sortedPlaneXYZBoundingPoints){
+	vector<Point2f> uvCoord;
+	vector<float> uCoord, vCoord;
+	vector<Point3f> uvAxes;
+	vector<Point2f> planeUVBoundingPoints;
+	vector<Point3f> planeXYZBoundingPoints;
+
+	int numberOfPointsInThePlane = pointsInThePlane.size();
+	int j;
+	AllXYZToUVCoordinates( pointsInThePlane, sortedPlaneParameters,
+								uvCoord, uvAxes);
+
+	// Make the X Co-ordinates of plane points
+	for ( j = 0; j < numberOfPointsInThePlane; ++j) {
+		uCoord.push_back(uvCoord[j].x);
+	}
+		// Make the Y Co-ordinates of plane points
+	for (j = 0; j < numberOfPointsInThePlane; ++j) {
+		vCoord.push_back(uvCoord[j].y);
+	}
+
+	// Get the minimum and maximum x and y co-ordinates
+
+	float minU = *min_element(uCoord.begin(), uCoord.end());
+	float maxU = *max_element(uCoord.begin(), uCoord.end());
+	float minV = *min_element(vCoord.begin(), vCoord.end());
+	float maxV = *max_element(vCoord.begin(), vCoord.end());
+	/*
+		cout << "MinU: " << minU << "\n";
+		cout << "MaxU: " << maxU << "\n";
+		cout << "MinV: " << minV << "\n";
+		cout << "MaxV: " << maxV << "\n";
+	*/
+		// Make the bottom left, bottom right, top left, top right corners of bounding box
+	Point2f bottomLeft = Point2f(minU, minV);
+	Point2f bottomRight = Point2f(maxU, minV);
+	Point2f topLeft = Point2f(minU, maxV);
+	Point2f topRight = Point2f(maxU, maxV);
+		//cout << "[ DEBUG ] " << bottomLeft << ":" << bottomRight << ":" << topRight << ":" << topLeft << "\n";
+
+	planeUVBoundingPoints.clear();
+	planeXYZBoundingPoints.clear();
+	//cout << "[ DEBUG ] Making planeUVBoundingPoints\n";
+	planeUVBoundingPoints.push_back(bottomLeft);
+	planeUVBoundingPoints.push_back(bottomRight);
+	planeUVBoundingPoints.push_back(topRight);
+	planeUVBoundingPoints.push_back(topLeft);
+
+	//cout << "[ DEBUG ] Converting UV to XYZ\n";
+	AllUVToXYZCoordinates( planeUVBoundingPoints, uvAxes, sortedPlaneParameters[3],
+				planeXYZBoundingPoints);
+
+	/*
+		cout << "Plane XYZ Bounding Points: ";
+		cout << planeXYZBoundingPoints;
+		cout << "\n";
+	*/
+
+	sortXYZCorners(planeXYZBoundingPoints, sortedPlaneXYZBoundingPoints);
+	sortedPlaneXYZBoundingPoints.push_back(sortedPlaneXYZBoundingPoints[0]);
 
 }
 
@@ -293,6 +299,7 @@ void sortXYZCorners(const vector<Point3f> &planeXYZBoundingPoints, vector<Point3
 		sortedPlaneXYZBoundingPoints[3] = dummy;
 	}
 }
+
 
 void getContinuousBoundingBox (
 		const vector< vector<Point3f> > &boundingBoxPoints,

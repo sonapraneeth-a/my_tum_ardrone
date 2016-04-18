@@ -65,6 +65,7 @@ ControlUINode::ControlUINode() {
 	currentCommand = false;
 	recordNow = false;
 	notRecording = true;
+	planeIndex = 0;
 
 	timer_checkPos = nh_.createTimer(ros::Duration(pollingTime), &ControlUINode::checkPos, this);
 	// timer_record = nh_.createTimer(ros::Duration(recordTime), &ControlUINode::recordVideo);
@@ -354,6 +355,7 @@ void ControlUINode::moveQuadcopter(
 		desiredYaw= findAngle(projectedNormal, yAxis);
 		desiredYaw= desiredYaw*180/M_PI;
 		moveDrone(pTargetPoints, desiredYaw);
+		planeIndex++;
 	}
 
 	return ;

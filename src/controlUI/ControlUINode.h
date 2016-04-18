@@ -300,6 +300,7 @@ private:
 	std::list<std::vector<double> > targetPoints;
 	std::vector<int> startTargePtIndex;
 	int numberOfPlanes;
+	int planeIndex;
 
 	std::string keypoint_channel; // channel on which keypoint info is received
 	std::string command_channel; // channel on which commands can be posted or received
