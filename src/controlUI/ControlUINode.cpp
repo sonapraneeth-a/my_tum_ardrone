@@ -320,6 +320,7 @@ void ControlUINode::moveQuadcopter(
 	vector<Point3f> uvAxes, xyzGridCoord;
 	vector<float> uCoord, vCoord, uVector, vVector;
 	startTargePtIndex.resize(numberOfPlanes, 0);
+	vector<double> prevPosition(3);
 	for (i = 0; i < numberOfPlanes; ++i) {
 
 		// TODO: Move the quadcopter to face the plane i (i>0)
@@ -354,7 +355,17 @@ void ControlUINode::moveQuadcopter(
 		Point3f yAxis(0,1,0);
 		desiredYaw= findAngle(projectedNormal, yAxis);
 		desiredYaw= desiredYaw*180/M_PI;
-		moveDrone(pTargetPoints, desiredYaw);
+		if(i ==0)
+		{
+			prevPosition[0] = x_drone;
+			prevPosition[1] = y_drone;
+			prevPosition[2] = z_drone;
+		}		
+		moveDrone(prevPosition, pTargetPoints, desiredYaw);
+		int numTargetPoints = pTargetPoints.size();
+		prevPosition[0] = pTargetPoints[numTargetPoints-1][0];
+		prevPosition[1] = pTargetPoints[numTargetPoints-1][1] - 0.6;
+		prevPosition[2] = pTargetPoints[numTargetPoints-1][2];
 		planeIndex++;
 	}
 
@@ -1102,7 +1113,7 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 	return tPoints;
 }
 
-void ControlUINode::moveDrone (vector<vector<double> > tPoints, double desiredYaw) {
+void ControlUINode::moveDrone (const vector<double> &prevPosition, vector<vector<double> > tPoints, double desiredYaw) {
 	double drone_length = 0.6;
 	for (unsigned int i = 0; i < tPoints.size(); ++i)
 	{
@@ -1112,7 +1123,7 @@ void ControlUINode::moveDrone (vector<vector<double> > tPoints, double desiredYa
 		char buf[100];
 		if(i == 0){
 			vector<vector <double > > xyz_yaw;
-			getInitialPath(p, desiredYaw, xyz_yaw);
+			getInitialPath(prevPosition, p, desiredYaw, xyz_yaw);
 			for(int j=0; j<xyz_yaw.size(); j++){
 				vector<double> interm_point;
 				interm_point = xyz_yaw[j];
@@ -1516,12 +1527,12 @@ void ControlUINode::sortTargetPoints(int numRows, vector<int> numColsPerRow, con
 	}
 }
 
-void ControlUINode::getInitialPath(const vector<double> &tPoint, double desiredYaw, vector<vector<double> > &xyz_yaw){
+void ControlUINode::getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint, double desiredYaw, vector<vector<double> > &xyz_yaw){
 	pthread_mutex_lock(&pose_CS);
 	vector<double> interm_point(4);
-	interm_point[0] = x_drone;
-    interm_point[1] = y_drone;
-    interm_point[2] = z_drone;
+	interm_point[0] = prevPosition[0];
+    interm_point[1] = prevPosition[1];
+    interm_point[2] = prevPosition[2];
 	interm_point[3] = 0;	
 	for(int i=0; i<6; i++)
 	{
