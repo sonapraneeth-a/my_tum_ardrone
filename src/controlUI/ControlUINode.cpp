@@ -1347,9 +1347,9 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 				undistortPoints(imgPoints_mat, dummy, cameraMatrix, distCoeffs);
 				Mat rot_guess = Mat::eye(3,3, CV_64F);
 				Rodrigues(rot_guess, rvec);
-				tvec.at<double>(0)  = center.x;
-				tvec.at<double>(1)  = center.y;
-				tvec.at<double>(2)  = -(center.z - 0.6);
+				tvec.at<double>(0)  = -(center.x-0.6*plane[0]);
+				tvec.at<double>(1)  = -(center.y+0.6*plane[2]);
+				tvec.at<double>(2)  = -(center.z - 0.6*plane[1]);
 
 				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 
@@ -1430,9 +1430,14 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 				tvec.at<double>(1)  = gs.v - (gs.height/2);
 				tvec.at<double>(2)  = -(getY(gs.u + (gs.width/2), gs.v - (gs.height/2), plane) - 0.6);
 				*/
+				/*
 				tvec.at<double>(0) = center.x;
 				tvec.at<double>(1) = center.y;
 				tvec.at<double>(2) = -(center.z - 0.6);
+				*/
+				tvec.at<double>(0)  = -(center.x-0.6*plane[0]);
+				tvec.at<double>(1)  = -(center.y+0.6*plane[2]);
+				tvec.at<double>(2)  = -(center.z - 0.6*plane[1]);
 				
 
 				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
@@ -1540,10 +1545,10 @@ void ControlUINode::getInitialPath(const vector<double> &prevPosition, const vec
 		int n = 2 - i/2;
 		if(i%2 == 0)
 		{
-			interm_point[0] = (m*tPoint[0] + n*x_drone)/3;
+			interm_point[0] = (m*tPoint[0] + n*prevPosition[0])/3;
 		}
 		else{
-			interm_point[1] = (m*tPoint[1] + n*y_drone)/3;
+			interm_point[1] = (m*tPoint[1] + n*prevPosition[1])/3;
 		}
 		interm_point[3] = desiredYaw*(i+1)/6;
 		xyz_yaw.push_back(interm_point);

@@ -28,7 +28,7 @@ using namespace std;
 ImageView::ImageView(ControlUINode *cnode) {
 	frameWidth = frameHeight = 0;
 
-	video_channel = nh_.resolveName("ardrone/image_raw"); // Change this for undistorted image
+	video_channel = nh_.resolveName("ardrone/front/image_raw"); // Change this for undistorted image
 	command_channel = nh_.resolveName("tum_ardrone/com");
 
 	vid_sub = nh_.subscribe(video_channel, 10, &ImageView::vidCb, this);
