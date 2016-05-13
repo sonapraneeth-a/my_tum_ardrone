@@ -370,7 +370,7 @@ public:
 		const vector< vector<Point3f> > &continuousBoundingBoxPoints);
 
 	
-	void getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint, double desiredYaw, vector<vector<double> > &xyz_yaw);
+	void getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint, double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw);
 
 	//Find target points for plane not parallel to XZ plane
 	void getPTargetPoints(const pGrid &g, const vector<float> & plane, const vector<Point3f> &uvAxes, vector<vector<double> > &tPoints ); 
@@ -428,7 +428,7 @@ public:
 	std::vector<std::vector<double> > getTargetPoints (grid g, std::vector<float> plane);
 
 	// Generate the appropriate goto commands according to the target points
-	void moveDrone (const std::vector<double> &prevPosition, std::vector<std::vector<double> > tPoints, double yaw);
+	void moveDrone (const std::vector<double> &prevPosition, std::vector<std::vector<double> > tPoints, double prevYaw, double yaw);
 
 	// Checks the position of the drone and whether the error is less than a threshold
 	void checkPos (const ros::TimerEvent&);
