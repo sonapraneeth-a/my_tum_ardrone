@@ -122,6 +122,8 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		static int numCommands = 0;
 		static int planeIndexCurrent = 0;
 		numCommands++;		
+		cout<<"PlaneIndexCurrent:"<<planeIndexCurrent<<"\n";
+		cout<<"Start point index:"<<startTargePtIndex[planeIndexCurrent+1]<<"\n";
 		if(planeIndexCurrent< (numberOfPlanes-1) && numCommands>startTargePtIndex[planeIndexCurrent+1])
 			planeIndexCurrent++;
 
@@ -131,6 +133,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 			currentCommand = false;
 			commands.pop_front();
             targetPoints.pop_front();
+			pthread_mutex_lock(&command_CS);
 			return;
 		}
 		double x = targetPoint[0];
