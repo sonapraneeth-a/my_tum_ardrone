@@ -140,6 +140,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		pthread_mutex_unlock(&pose_CS);
 		if(ea < error_threshold) {
 			//printf("reached\n");
+			ROS_INFO("Started Recording bag file at %f %f %f\n", x, y, z);
 			recordNow = true;
 			ros::Duration(3).sleep();
 			last= ros::Time::now();
@@ -320,6 +321,7 @@ void ControlUINode::moveQuadcopter(
 	vector<Point3f> uvAxes, xyzGridCoord;
 	vector<float> uCoord, vCoord, uVector, vVector;
 	startTargePtIndex.resize(numberOfPlanes, 0);
+	startTargePtIndex[0] = 0;
 	vector<double> prevPosition(3);
 	double prevYaw = 0;
 	for (i = 0; i < numberOfPlanes; ++i) {
