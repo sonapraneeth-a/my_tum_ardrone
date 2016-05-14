@@ -328,6 +328,7 @@ private:
 	static pthread_mutex_t tum_ardrone_CS;
 	static pthread_mutex_t keyPoint_CS;
 	static pthread_mutex_t pose_CS;
+	static pthread_mutex_t command_CS;
 
 
 public:

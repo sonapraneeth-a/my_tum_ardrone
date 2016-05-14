@@ -35,6 +35,7 @@ using namespace cv;
 pthread_mutex_t ControlUINode::keyPoint_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::pose_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::tum_ardrone_CS = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t ControlUINode::command_CS = PTHREAD_MUTEX_INITIALIZER;
 
 
 ControlUINode::ControlUINode() {
@@ -107,6 +108,8 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 	pthread_mutex_unlock(&pose_CS);
 
 	// Goto commands left to be executed
+	
+	pthread_mutex_lock(&command_CS);
 	if(commands.size() > 0 && !currentCommand) {
 		currentCommand = true;
 		pthread_mutex_lock(&tum_ardrone_CS);
@@ -177,6 +180,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 	else {
 		// do nothing
 	}
+	pthread_mutex_unlock(&command_CS);
 }
 
 void ControlUINode::load2dPoints (vector<float> x_img, vector<float> y_img) {
@@ -324,7 +328,7 @@ void ControlUINode::moveQuadcopter(
 	startTargePtIndex[0] = 0;
 	vector<double> prevPosition(3);
 	double prevYaw = 0;
-	pthread_mutex_lock(&pose_CS);
+	pthread_mutex_lock(&command_CS);
 	for (i = 0; i < numberOfPlanes; ++i) {
 
 		// TODO: Move the quadcopter to face the plane i (i>0)
@@ -374,7 +378,7 @@ void ControlUINode::moveQuadcopter(
 		prevYaw = desiredYaw;
 		planeIndex++;
 	}
-	pthread_mutex_unlock(&pose_CS);
+	pthread_mutex_unlock(&command_CS);
 
 	return ;
 
