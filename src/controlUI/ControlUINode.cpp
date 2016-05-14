@@ -324,6 +324,7 @@ void ControlUINode::moveQuadcopter(
 	startTargePtIndex[0] = 0;
 	vector<double> prevPosition(3);
 	double prevYaw = 0;
+	pthread_mutex_lock(&pose_CS);
 	for (i = 0; i < numberOfPlanes; ++i) {
 
 		// TODO: Move the quadcopter to face the plane i (i>0)
@@ -373,6 +374,7 @@ void ControlUINode::moveQuadcopter(
 		prevYaw = desiredYaw;
 		planeIndex++;
 	}
+	pthread_mutex_unlock(&pose_CS);
 
 	return ;
 
@@ -1538,7 +1540,6 @@ void ControlUINode::sortTargetPoints(int numRows, vector<int> numColsPerRow, con
 }
 
 void ControlUINode::getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint, double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw){
-	pthread_mutex_lock(&pose_CS);
 	vector<double> interm_point(4);
 	interm_point[0] = prevPosition[0];
     interm_point[1] = prevPosition[1];
@@ -1560,7 +1561,6 @@ void ControlUINode::getInitialPath(const vector<double> &prevPosition, const vec
 	}
 	interm_point[2] = prevPosition[2]/2+ tPoint[2]/2;
 	xyz_yaw.push_back(interm_point);
-	pthread_mutex_unlock(&pose_CS);	
 	interm_point[2] = tPoint[2];
 	xyz_yaw.push_back(interm_point);
 }
