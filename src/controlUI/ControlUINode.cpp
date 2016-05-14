@@ -133,7 +133,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 			currentCommand = false;
 			commands.pop_front();
             targetPoints.pop_front();
-			pthread_mutex_lock(&command_CS);
+			pthread_mutex_unlock(&command_CS);
 			return;
 		}
 		double x = targetPoint[0];
