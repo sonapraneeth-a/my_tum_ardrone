@@ -56,9 +56,9 @@ ControlUINode::ControlUINode() {
 
 	ransacVerbose = true;
 	useScaleFactor = true;
-	threshold = 0.3;
-	error_threshold = 0.3;
-	recordTime = 5.0; // a second
+	threshold = 0.1;
+	error_threshold = 0.2;
+	recordTime = 3.5; // a second
 	pollingTime = 0.5;
 	record = true;
 	targetSet = false;
@@ -110,8 +110,10 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 	// Goto commands left to be executed
 	
 	pthread_mutex_lock(&command_CS);
+	static int numCommands = 0;
 	if(commands.size() > 0 && !currentCommand) {
 		currentCommand = true;
+		numCommands++;
 		pthread_mutex_lock(&tum_ardrone_CS);
 		tum_ardrone_pub.publish(commands.front());
 		pthread_mutex_unlock(&tum_ardrone_CS);
@@ -119,11 +121,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		printf(" Current target: %lf %lf %lf\n", targetPoint[0], targetPoint[1] , targetPoint[2] );
 	}
 	else if(currentCommand && !recordNow) {
-		static int numCommands = 0;
 		static int planeIndexCurrent = 0;
-		numCommands++;		
-		cout<<"PlaneIndexCurrent:"<<planeIndexCurrent<<"\n";
-		cout<<"Start point index:"<<startTargePtIndex[planeIndexCurrent+1]<<"\n";
 		if(planeIndexCurrent< (numberOfPlanes-1) && numCommands>startTargePtIndex[planeIndexCurrent+1])
 			planeIndexCurrent++;
 
@@ -146,7 +144,6 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		pthread_mutex_unlock(&pose_CS);
 		if(ea < error_threshold) {
 			//printf("reached\n");
-			ROS_INFO("Started Recording bag file at %f %f %f\n", x, y, z);
 			recordNow = true;
 			ros::Duration(3).sleep();
 			last= ros::Time::now();
@@ -162,7 +159,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 				srv.request.enable = true;
 				video.call(srv);
 				notRecording = false;
-				popen("rosbag record /ardrone/image_raw /ardrone/predictedPose --duration=5", "r");
+				popen("rosbag record /ardrone/image_raw /ardrone/predictedPose --duration=3", "r");
 			}
 			else if(!notRecording) {
 
@@ -694,7 +691,7 @@ grid ControlUINode::buildGrid (vector<vector<float> > pPoints) {
 	vector<float> lu;
 	float width, height;
 
-	float squareWidth = 0.8, squareHeight = 0.45, overlap = 0.5;
+	float squareWidth = 0.8, squareHeight = 0.45, overlap = 0.334;
 
 	// Assuming that the plane is always parallel to XZ plane - ? Gotta change this
 	getDimensions(pPoints, lu, width, height);
@@ -1211,9 +1208,9 @@ void ControlUINode::moveDrone (const vector<double> &prevPosition, vector<vector
 			commands.push_back(s);
 			targetPoints.push_back(p);
 		}
+	}
 		if(planeIndex < (numberOfPlanes - 1) )
 			startTargePtIndex[planeIndex+1] = targetPoints.size();	
-	}
 }
 
 
@@ -1509,7 +1506,7 @@ void ControlUINode::getGridSquareUVCorners(const pGridSquare &gs, vector<Point2f
 	uvCorners.push_back(corner4);	
 }
 
-void ControlUINode::sortTargetPoints(int numRows, vector<int> numColsPerRow, const vector< vector<double> > &tPoints, vector< vector<double> > &sortedTPoints){
+void ControlUINode::sortTargetPoints(int numRows, const vector<int> &numColsPerRow, const vector< vector<double> > &tPoints, vector< vector<double> > &sortedTPoints){
 	vector<float> z_coord(numRows);
 	vector<float> sortedZcoord;
 	vector<int> rowStartIndex;
@@ -1522,7 +1519,6 @@ void ControlUINode::sortTargetPoints(int numRows, vector<int> numColsPerRow, con
 	}
 	vector<int> indices;
 	sortData(z_coord, sortedZcoord, indices, false);
-	int numCols = 0;
 	for(int i=0; i<numRows; i++)
 	{
 		int index= rowStartIndex[indices[i]] ;

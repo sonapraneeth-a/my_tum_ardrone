@@ -377,7 +377,7 @@ public:
 	void getPTargetPoints(const pGrid &g, const vector<float> & plane, const vector<Point3f> &uvAxes, vector<vector<double> > &tPoints ); 
 
 	//sort target points according to Z
-	void sortTargetPoints(int numRows, vector<int> numColsPerRow, const vector< vector<double> > &tPoints, vector< vector<double> > &sortedTPoints);
+	void sortTargetPoints(int numRows, const vector<int> &numColsPerRow, const vector< vector<double> > &tPoints, vector< vector<double> > &sortedTPoints);
 
 	//Get UV Grid corners
 	void getGridSquareUVCorners(const pGridSquare &gs, vector<Point2f> &uvCorners);
