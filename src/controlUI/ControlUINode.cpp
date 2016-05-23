@@ -747,7 +747,7 @@ pGrid ControlUINode::buildPGrid(const vector<Point2f> &uvCoordinates){
 	float vertDist2 = sqrt(pow(uCoord[0]-uCoord[3],2)+pow(vCoord[0]-vCoord[3],2));
 	float squareWidth = 0.8;
 	float squareHeight = 0.45;
-	float overlap = 0.5;
+	float overlap = 0.334;
 	float maxR = max(horizDist1, horizDist2);
 	float maxD = max(vertDist1, vertDist2) - squareHeight;
 	uVector[0] /= horizDist1;
