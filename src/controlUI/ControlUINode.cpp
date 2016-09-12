@@ -1,7 +1,17 @@
-/**
-Created on February 19th 2015
-Author : Anirudh Vemula
-*/
+/*****************************************************************************************
+ * ControlUINode.cpp
+ *
+ *       Created on: 19-Feb-2015
+ *    Last Modified: 12-Sep-2016
+ *  Original Author: Anirudh Vemula
+ *   Current Author: Meghshyam Govind Prasad
+ *   Current Author: Sona Praneeth Akula
+ *          Project: Quadcopter
+ *      Description: 
+ *
+ * Date				Author							Modification
+ * 12-Sep-2016	Sona Praneeth Akula	Added		Added comments to the code
+ *****************************************************************************************/
 
 #include "ControlUINode.h"
 #include "ros/ros.h"
@@ -38,20 +48,27 @@ pthread_mutex_t ControlUINode::tum_ardrone_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::command_CS = PTHREAD_MUTEX_INITIALIZER;
 
 
-ControlUINode::ControlUINode() {
+ControlUINode::ControlUINode()
+{
+	// Command channel for sending/receiving commands (goto)
 	command_channel = nh_.resolveName("tum_ardrone/com");
+	// Channel for receiving the keypoints at various levels (1 to 4)
 	keypoint_channel = nh_.resolveName("/keypoint_coord");
+	// Channel for getting the current quadcopter position (x, y, z, roll, pitch, yaw)
 	pose_channel = nh_.resolveName("ardrone/predictedPose");
 
+	// Subscribing for key point channel
 	keypoint_coord_sub = nh_.subscribe(keypoint_channel, 10, &ControlUINode::keyPointDataCb, this);
+	// Subscribing for pose channel
 	pose_sub = nh_.subscribe(pose_channel, 10, &ControlUINode::poseCb, this);
 
 	tum_ardrone_pub = nh_.advertise<std_msgs::String>(command_channel, 50);
 	tum_ardrone_sub = nh_.subscribe(command_channel, 50, &ControlUINode::comCb, this);
 
+	// For recording video
 	video = nh_.serviceClient<ardrone_autonomy::RecordEnable>("ardrone/setrecord");
 
-
+	// Initiating image view class which displays the "drone_controlUI" window
 	image_gui = new ImageView(this);
 
 	ransacVerbose = true;
@@ -72,11 +89,14 @@ ControlUINode::ControlUINode() {
 	// timer_record = nh_.createTimer(ros::Duration(recordTime), &ControlUINode::recordVideo);
 }
 
-ControlUINode::~ControlUINode() {
+ControlUINode::~ControlUINode()
+{
 
 }
 
-void ControlUINode::keyPointDataCb (const tum_ardrone::keypoint_coordConstPtr coordPtr) {
+void
+ControlUINode::keyPointDataCb (const tum_ardrone::keypoint_coordConstPtr coordPtr)
+{
 	//ROS_INFO("Received keypoint data");
 	pthread_mutex_lock(&keyPoint_CS);
 	numPoints = coordPtr->num;
@@ -89,7 +109,9 @@ void ControlUINode::keyPointDataCb (const tum_ardrone::keypoint_coordConstPtr co
 	//fitPlane3d();
 }
 
-void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
+void
+ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr)
+{
 	pthread_mutex_lock(&pose_CS);
 
 	scale = statePtr->scale;
@@ -111,7 +133,8 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 	
 	pthread_mutex_lock(&command_CS);
 	static int numCommands = 0;
-	if(commands.size() > 0 && !currentCommand) {
+	if(commands.size() > 0 && !currentCommand)
+	{
 		currentCommand = true;
 		numCommands++;
 		pthread_mutex_lock(&tum_ardrone_CS);
@@ -120,9 +143,11 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		targetPoint = targetPoints.front();
 		printf(" Current target: %lf %lf %lf\n", targetPoint[0], targetPoint[1] , targetPoint[2] );
 	}
-	else if(currentCommand && !recordNow) {
+	else if(currentCommand && !recordNow)
+	{
 		static int planeIndexCurrent = 0;
-		if(planeIndexCurrent< (numberOfPlanes-1) && numCommands>startTargePtIndex[planeIndexCurrent+1])
+		if(planeIndexCurrent< (numberOfPlanes-1) && 
+			numCommands > startTargePtIndex[planeIndexCurrent+1])
 			planeIndexCurrent++;
 
 		if(numCommands < startTargePtIndex[planeIndexCurrent]+8)
@@ -130,7 +155,7 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 			ros::Duration(1).sleep();
 			currentCommand = false;
 			commands.pop_front();
-            targetPoints.pop_front();
+			targetPoints.pop_front();
 			pthread_mutex_unlock(&command_CS);
 			return;
 		}
@@ -142,32 +167,39 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 		double ea = sqrt(pow(x - x_drone, 2) + pow(y - y_drone, 2) + pow(z - z_drone, 2));
 		//printf("Error %lf\n", ea);
 		pthread_mutex_unlock(&pose_CS);
-		if(ea < error_threshold) {
+		if(ea < error_threshold)
+		{
 			//printf("reached\n");
 			recordNow = true;
 			ros::Duration(3).sleep();
 			last= ros::Time::now();
 		}
-		else {
+		else
+		{
 			recordNow = false;
 		}
 	}
-	else if(recordNow) {
-		if(ros::Time::now() - last < ros::Duration(recordTime)) {
-			if(record && notRecording) {
+	else if(recordNow)
+	{
+		if(ros::Time::now() - last < ros::Duration(recordTime))
+		{
+			if(record && notRecording)
+			{
 				ardrone_autonomy::RecordEnable srv;
 				srv.request.enable = true;
 				video.call(srv);
 				notRecording = false;
 				popen("rosbag record /ardrone/image_raw /ardrone/predictedPose --duration=3", "r");
 			}
-			else if(!notRecording) {
+			else if(!notRecording)
+			{
 
 			}
 		}
-		else {
+		else
+		{
 			ardrone_autonomy::RecordEnable srv;
-            srv.request.enable = false;
+			srv.request.enable = false;
 			video.call(srv);
 			currentCommand = false;
 			notRecording = true;
@@ -177,13 +209,16 @@ void ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr) {
 			ros::Duration(3).sleep();
 		}
 	}
-	else {
+	else
+	{
 		// do nothing
 	}
 	pthread_mutex_unlock(&command_CS);
 }
 
-void ControlUINode::load2dPoints (vector<float> x_img, vector<float> y_img) {
+void
+ControlUINode::load2dPoints (vector<float> x_img, vector<float> y_img)
+{
 	_2d_points.clear();
 	for (int i = 0; i < numPoints; ++i)
 	{
@@ -194,7 +229,9 @@ void ControlUINode::load2dPoints (vector<float> x_img, vector<float> y_img) {
 	}
 }
 
-void ControlUINode::write3DPointsToCSV(vector<vector<float> > &_3d_points) {
+void
+ControlUINode::write3DPointsToCSV(vector<vector<float> > &_3d_points)
+{
 
 	int i, j;
 	int numberOfPoints = _3d_points.size();
@@ -205,19 +242,24 @@ void ControlUINode::write3DPointsToCSV(vector<vector<float> > &_3d_points) {
 	// Open the object in writing mode
 	outFile.open(outFilename, ios::out);
 	// Check if the file is open
-	if (!outFile.is_open()) {
+	if (!outFile.is_open())
+	{
 		cerr << "\nFile " << filename << " cannot be opened for writint.\n";
 		cerr << "Please check if the file is existing and has required permissions ";
 		cerr << " for writing.\n";
 	}
 
-	for (i = 0; i < numberOfPoints; ++i) {
+	for (i = 0; i < numberOfPoints; ++i)
+	{
 		int dimensions = _3d_points[i].size();
-		for (j = 0; j < dimensions; ++j) {
-			if(j!=dimensions-1) {
+		for (j = 0; j < dimensions; ++j)
+		{
+			if(j != dimensions-1)
+			{
 				outFile << _3d_points[i][j] << ", ";
 			}
-			else {
+			else
+			{
 				outFile << _3d_points[i][j] << "\n";
 			}
 		}
@@ -229,19 +271,23 @@ void ControlUINode::write3DPointsToCSV(vector<vector<float> > &_3d_points) {
 
 }
 
-void ControlUINode::load3dPoints (vector<float> x_w, vector<float> y_w, vector<float> z_w) {
+void
+ControlUINode::load3dPoints (vector<float> x_w, vector<float> y_w, vector<float> z_w)
+{
 	pthread_mutex_lock(&pose_CS);
 
 	_3d_points.clear();
 	for (int i = 0; i < numPoints; ++i)
 	{
 		vector<float> p;
-		if(!useScaleFactor) {
+		if(!useScaleFactor)
+		{
 			p.push_back(x_w[i]);
 			p.push_back(y_w[i]);
 			p.push_back(z_w[i]);
 		}
-		else {
+		else
+		{
 			p.push_back(x_w[i]*scale + x_offset);
 			p.push_back(y_w[i]*scale + y_offset);
 			p.push_back(z_w[i]*scale_z + z_offset);
@@ -253,7 +299,9 @@ void ControlUINode::load3dPoints (vector<float> x_w, vector<float> y_w, vector<f
 	write3DPointsToCSV(_3d_points);
 }
 
-void ControlUINode::loadLevels (vector<int> levels) {
+void
+ControlUINode::loadLevels (vector<int> levels)
+{
 	_levels.clear();
 	for (int i = 0; i < numPoints; ++i)
 	{
@@ -261,19 +309,24 @@ void ControlUINode::loadLevels (vector<int> levels) {
 	}
 }
 
-vector<float> ControlUINode::fitPlane3d (vector<int> ccPoints, vector<vector<int> > pointsClicked) {
+vector<float>
+ControlUINode::fitPlane3d (vector<int> ccPoints, vector<vector<int> > pointsClicked)
+{
 
 	vector<vector<float> > _in_points;
 
 	vector<vector<int> > points;
-	for(unsigned int i=0; i<ccPoints.size(); i++) {
+	for(unsigned int i=0; i<ccPoints.size(); i++)
+	{
 		points.push_back(pointsClicked[ccPoints[i]]);
 	}
 
 	pthread_mutex_lock(&keyPoint_CS);
 
-	for(unsigned int i=0; i<_2d_points.size(); i++) {
-		if(liesInside(points, _2d_points[i])) {
+	for(unsigned int i=0; i<_2d_points.size(); i++)
+	{
+		if(liesInside(points, _2d_points[i]))
+		{
 			//printf("%f, %f, %f\n", _3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
 			_in_points.push_back(_3d_points[i]);
 		}
@@ -287,36 +340,43 @@ vector<float> ControlUINode::fitPlane3d (vector<int> ccPoints, vector<vector<int
 	return _3d_plane;
 }
 
-void ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > &pointsClicked, vector<vector<float> >&planeParameters,
-										vector< vector<Point3f> > & continuousBoundingBoxPoints)
+void
+ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > &pointsClicked, 
+									vector<vector<float> >&planeParameters,
+									vector< vector<Point3f> > & continuousBoundingBoxPoints)
 {
 	vector<Point3f> _in_points;
 
-    vector<vector<int> > points;
-    for(unsigned int i=0; i<ccPoints.size(); i++) {
-        points.push_back(pointsClicked[ccPoints[i]]);
-    }
+	vector<vector<int> > points;
+	for(unsigned int i=0; i<ccPoints.size(); i++)
+	{
+		points.push_back(pointsClicked[ccPoints[i]]);
+	}
 
-    pthread_mutex_lock(&keyPoint_CS);
+	pthread_mutex_lock(&keyPoint_CS);
 
-    for(unsigned int i=0; i<_2d_points.size(); i++) {
-        if(liesInside(points, _2d_points[i])) {
-            //printf("%f, %f, %f\n", _3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
+	for(unsigned int i=0; i<_2d_points.size(); i++)
+	{
+		if(liesInside(points, _2d_points[i]))
+		{
+			//printf("%f, %f, %f\n", _3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
 			Point3f featurePt;
 			featurePt.x = _3d_points[i][0];
 			featurePt.y = _3d_points[i][1];
 			featurePt.z = _3d_points[i][2];
-            _in_points.push_back(featurePt);
-        }
-    }
+			_in_points.push_back(featurePt);
+		}
+	}
 
-    pthread_mutex_unlock(&keyPoint_CS);
+	pthread_mutex_unlock(&keyPoint_CS);
 	findMultiplePlanes(_in_points, planeParameters, continuousBoundingBoxPoints);
 }
 
-void ControlUINode::moveQuadcopter(
+void 
+ControlUINode::moveQuadcopter(
 		const vector< vector<float> > &planeParameters,
-		const vector< vector<Point3f> > &continuousBoundingBoxPoints) {
+		const vector< vector<Point3f> > &continuousBoundingBoxPoints)
+{
 
 	numberOfPlanes = planeParameters.size();
 	int i, j;
@@ -329,7 +389,8 @@ void ControlUINode::moveQuadcopter(
 	vector<double> prevPosition(3);
 	double prevYaw = 0;
 	pthread_mutex_lock(&command_CS);
-	for (i = 0; i < numberOfPlanes; ++i) {
+	for (i = 0; i < numberOfPlanes; ++i)
+	{
 
 		// TODO: Move the quadcopter to face the plane i (i>0)
 
@@ -384,12 +445,16 @@ void ControlUINode::moveQuadcopter(
 
 }
 
-void ControlUINode::printGrid(const pGrid &g, const vector<Point3f> &uvAxes, const vector<float> &plane){
+void
+ControlUINode::printGrid(const pGrid &g, const vector<Point3f> &uvAxes, const vector<float> &plane)
+{
 	vector<Point2f> uvCoordinates;
 	vector<Point3f> xyzCorners;
 	cout<<"[ Debug ] UV Grid \n";
-	for(unsigned int i=0; i<g.rowSquares.size(); i++) {
-		for(unsigned int j=0; j<g.rowSquares[i].size(); j++) {
+	for(unsigned int i=0; i<g.rowSquares.size(); i++)
+	{
+		for(unsigned int j=0; j<g.rowSquares[i].size(); j++)
+		{
 			float u = g.rowSquares[i][j].u;
 			float v = g.rowSquares[i][j].v;
 			Point2f uv(u,v);
@@ -398,48 +463,66 @@ void ControlUINode::printGrid(const pGrid &g, const vector<Point3f> &uvAxes, con
 	}
 	
 	AllUVToXYZCoordinates(uvCoordinates, uvAxes, plane[3], xyzCorners);
-	cout<<uvCoordinates<<"\n";
-	cout<<xyzCorners<<"\n";	
+	cout << uvCoordinates<<"\n";
+	cout << xyzCorners<<"\n";	
 }
 
 
 
-void ControlUINode::Loop () {
-	while(nh_.ok()) {
+void
+ControlUINode::Loop ()
+{
+	while(nh_.ok())
+	{
 		ros::spinOnce();
 	}
 }
 
-void ControlUINode::comCb (const std_msgs::StringConstPtr str) {
+void
+ControlUINode::comCb (const std_msgs::StringConstPtr str)
+{
 
 }
 
-float ControlUINode::distance (vector<int> p1, vector<float> p2) {
+float
+ControlUINode::distance (vector<int> p1, vector<float> p2)
+{
 	return sqrt((p2[0]-p1[0])*(p2[0]-p1[0]) + (p2[1]-p1[1])*(p2[1]-p1[1]));
 }
 
-float ControlUINode::distance3D (vector<float> p1, vector<float> p2) {
-	return sqrt((p2[0]-p1[0])*(p2[0]-p1[0]) + (p2[1]-p1[1])*(p2[1]-p1[1]) + (p2[2]-p1[2])*(p2[2]-p1[2]));
+float
+ControlUINode::distance3D (vector<float> p1, vector<float> p2)
+{
+	return sqrt((p2[0]-p1[0])*(p2[0]-p1[0]) + 
+				(p2[1]-p1[1])*(p2[1]-p1[1]) + 
+				(p2[2]-p1[2])*(p2[2]-p1[2]));
 }
 
-vector<float> ControlUINode::searchNearest (vector<int> pt, bool considerAllLevels) {
+vector<float>
+ControlUINode::searchNearest (vector<int> pt, bool considerAllLevels)
+{
 
 	pthread_mutex_lock(&keyPoint_CS);
 
 	float min = -1;
 	vector<float> minPt;
 
-	if(!considerAllLevels) {
+	if(!considerAllLevels)
+	{
 		for (unsigned int i=0; i<_2d_points.size(); i++)
 		{
-			if(_levels[i]==0) {
-				if(min==-1) {
+			if(_levels[i]==0)
+			{
+				if(min==-1)
+				{
 					min = distance(pt, _2d_points[i]);
 					minPt = _3d_points[i];
 				}
-				else {
+				else
+				{
 					float s = distance(pt, _2d_points[i]);
-					if(s<min) {
+					if(s<min)
+					{
 						min = s;
 						minPt = _3d_points[i];
 					}
@@ -447,16 +530,20 @@ vector<float> ControlUINode::searchNearest (vector<int> pt, bool considerAllLeve
 			}
 		}
 	}
-	else {
+	else
+	{
 		for (unsigned int i=0; i<_2d_points.size(); i++)
 		{
-			if(min==-1) {
+			if(min==-1)
+			{
 				min = distance(pt, _2d_points[i]);
 				minPt = _3d_points[i];
 			}
-			else {
+			else
+			{
 				float s = distance(pt, _2d_points[i]);
-				if(s<min) {
+				if(s<min)
+				{
 					min = s;
 					minPt = _3d_points[i];
 				}
@@ -470,7 +557,10 @@ vector<float> ControlUINode::searchNearest (vector<int> pt, bool considerAllLeve
 	return minPt;
 }
 
-bool ControlUINode::get2DPoint (vector<float> pt, vector<int> &p, bool considerAllLevels) {
+bool
+ControlUINode::get2DPoint (vector<float> pt, vector<int> &p, 
+							bool considerAllLevels)
+{
 
 	pthread_mutex_lock(&keyPoint_CS);
 
@@ -481,24 +571,30 @@ bool ControlUINode::get2DPoint (vector<float> pt, vector<int> &p, bool considerA
 	float minDist = 10000000.0;
 	int min = -1;
 
-	if(!considerAllLevels) {
+	if(!considerAllLevels)
+	{
 		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
-			if(_levels[i]==0 && distance3D(pt, _3d_points[i]) < threshold) {
+			if(_levels[i]==0 && distance3D(pt, _3d_points[i]) < threshold)
+			{
 				float s = distance3D(pt, _3d_points[i]);
-				if(s<minDist) {
+				if(s<minDist)
+				{
 					minDist = s;
 					min = i;
 				}
 			}
 		}
 	}
-	else {
+	else
+	{
 		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
-			if(distance3D(pt, _3d_points[i]) < threshold) {
+			if(distance3D(pt, _3d_points[i]) < threshold)
+			{
 				float s = distance3D(pt, _3d_points[i]);
-				if(s<minDist) {
+				if(s<minDist)
+				{
 					minDist = s;
 					min = i;
 				}
@@ -506,7 +602,8 @@ bool ControlUINode::get2DPoint (vector<float> pt, vector<int> &p, bool considerA
 		}
 	}
 
-	if(min!=-1) {
+	if(min!=-1)
+	{
 		found = true;
 		p.push_back((int)_2d_points[min][0]);
 		p.push_back((int)_2d_points[min][1]);
@@ -518,7 +615,10 @@ bool ControlUINode::get2DPoint (vector<float> pt, vector<int> &p, bool considerA
 	return found;
 }
 
-bool ControlUINode::get2DPointNearest (vector<float> pt, vector<int> &p, bool considerAllLevels) {
+bool
+ControlUINode::get2DPointNearest (vector<float> pt, vector<int> &p, 
+									bool considerAllLevels)
+{
 	pthread_mutex_lock(&keyPoint_CS);
 
 	// ROS_INFO("Total num %d\n", numPoints);
@@ -528,24 +628,29 @@ bool ControlUINode::get2DPointNearest (vector<float> pt, vector<int> &p, bool co
 	float minDist = 10000000.0;
 	int min = -1;
 
-	if(!considerAllLevels) {
+	if(!considerAllLevels)
+	{
 		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
-			if(_levels[i]==0) {
+			if(_levels[i]==0)
+			{
 				float s = distance3D(pt, _3d_points[i]);
-				if(s<minDist) {
+				if(s<minDist)
+				{
 					minDist = s;
 					min = i;
 				}
 			}
 		}
 	}
-	else {
+	else
+	{
 		for (unsigned int i = 0; i < _3d_points.size(); ++i)
 		{
 			//if(distance3D(pt, _3d_points[i]) < 0.05) {
 				float s = distance3D(pt, _3d_points[i]);
-				if(s<minDist) {
+				if(s<minDist)
+				{
 					minDist = s;
 					min = i;
 				}
@@ -553,7 +658,8 @@ bool ControlUINode::get2DPointNearest (vector<float> pt, vector<int> &p, bool co
 		}
 	}
 
-	if(min!=-1) {
+	if(min!=-1)
+	{
 		found = true;
 		p.push_back((int)_2d_points[min][0]);
 		p.push_back((int)_2d_points[min][1]);
@@ -565,16 +671,22 @@ bool ControlUINode::get2DPointNearest (vector<float> pt, vector<int> &p, bool co
 	return found;
 }
 
-bool ControlUINode::equal(vector<float> p1, vector<float> p2) {
-	if(distance3D(p1, p2) < 0.001) {
+bool
+ControlUINode::equal(vector<float> p1, vector<float> p2)
+{
+	if(distance3D(p1, p2) < 0.001)
+	{
 		return true;
 	}
-	else {
+	else
+	{
 		return false;
 	}
 }
 
-int ControlUINode::getNumKP(bool considerAllLevels) {
+int
+ControlUINode::getNumKP(bool considerAllLevels)
+{
 	int c = 0;
 	for (int i = 0; i < numPoints; ++i)
 	{
@@ -586,7 +698,9 @@ int ControlUINode::getNumKP(bool considerAllLevels) {
 	return c;
 }
 
-void ControlUINode::saveKeyPointInformation (int numFile) {
+void
+ControlUINode::saveKeyPointInformation (int numFile)
+{
 	pthread_mutex_lock(&keyPoint_CS);
 
 	//char * name = itoa(numFile);
@@ -596,17 +710,21 @@ void ControlUINode::saveKeyPointInformation (int numFile) {
 
 	ofstream fp(s.c_str());
 
-	fp<<numPoints<<endl;
-	fp<<endl;
-	for(unsigned int i=0; i<_3d_points.size(); i++) {
-		fp<<_3d_points[i][0]<<","<<_3d_points[i][1]<<","<<_3d_points[i][2]<<","<<_levels[i]<<endl;
+	fp << numPoints << endl;
+	fp << endl;
+	for(unsigned int i=0; i<_3d_points.size(); i++)
+	{
+		fp << _3d_points[i][0] << ", " << _3d_points[i][1]
+				<< ", " << _3d_points[i][2] << ", " << _levels[i] << endl;
 	}
 	fp.close();
 
 	pthread_mutex_unlock(&keyPoint_CS);
 }
 
-vector<float> ControlUINode::translatePlane (float translateDistance) {
+vector<float>
+ControlUINode::translatePlane (float translateDistance)
+{
 
 	vector<float> translatedPlane;
 
@@ -622,22 +740,26 @@ vector<float> ControlUINode::translatePlane (float translateDistance) {
 	unitNorm.push_back(c/norm);
 
 	vector<float> pointLyingOnPlane;
-	if(b!=0) {
+	if(b != 0)
+	{
 		pointLyingOnPlane.push_back(0);
 		pointLyingOnPlane.push_back(-1/b);
 		pointLyingOnPlane.push_back(0);
 	}
-	else if(a!=0) {
+	else if(a != 0)
+	{
 		pointLyingOnPlane.push_back(-1/a);
 		pointLyingOnPlane.push_back(0);
 		pointLyingOnPlane.push_back(0);
 	}
-	else if(c!=0) {
+	else if(c != 0)
+	{
 		pointLyingOnPlane.push_back(0);
 		pointLyingOnPlane.push_back(0);
 		pointLyingOnPlane.push_back(-1/c);
 	}
-	else {
+	else
+	{
 		ROS_INFO("Invalid Plane");
 	}
 
@@ -647,14 +769,16 @@ vector<float> ControlUINode::translatePlane (float translateDistance) {
 	vectorConnectingOriginToPoint.push_back(-pointLyingOnPlane[2]);
 
 	int dir = sign(innerProduct(vectorConnectingOriginToPoint, unitNorm));
-	if(dir==1) {
+	if(dir == 1)
+	{
 		//correct side
 		translatedPlane.push_back(a);
 		translatedPlane.push_back(b);
 		translatedPlane.push_back(c);
 		translatedPlane.push_back(1 - translateDistance);
 	}
-	else if(dir==-1){
+	else if(dir == -1)
+	{
 		//opposite side
 		/*unitNorm[0] = -unitNorm[0];
 		unitNorm[1] = -unitNorm[1];
@@ -663,9 +787,9 @@ vector<float> ControlUINode::translatePlane (float translateDistance) {
 		translatedPlane.push_back(b);
 		translatedPlane.push_back(c);
 		translatedPlane.push_back(1 + translateDistance);
-
 	}
-	else {
+	else
+	{
 		// origin lies on the plane
 		ROS_INFO("Origin lies on the plane");
 		translatedPlane.push_back(a);
@@ -678,16 +802,21 @@ vector<float> ControlUINode::translatePlane (float translateDistance) {
 
 }
 
-vector<vector<float> > ControlUINode::projectPoints (vector<int> ccPoints, vector<vector<float> > keyPoints) {
+vector< vector<float> >
+ControlUINode::projectPoints (vector<int> ccPoints, vector<vector<float> > keyPoints)
+{
 	vector<vector<float> > pPoints;
-	for(unsigned int i=0; i<ccPoints.size(); i++) {
+	for(unsigned int i=0; i<ccPoints.size(); i++)
+	{
 		vector<float> v = projectPoint(_3d_plane, keyPoints[ccPoints[i]]);
 		pPoints.push_back(v);
 	}
 	return pPoints;
 }
 
-grid ControlUINode::buildGrid (vector<vector<float> > pPoints) {
+grid
+ControlUINode::buildGrid (vector<vector<float> > pPoints)
+{
 	vector<float> lu;
 	float width, height;
 
@@ -700,10 +829,10 @@ grid ControlUINode::buildGrid (vector<vector<float> > pPoints) {
 	gridSquare gs(lu, squareWidth, squareHeight);
 	g.add(gs);
 	//gs.debugPrint();
-	while(g.translate(gs)) {
+	while(g.translate(gs))
+	{
 		gs = g.getLatest();
 		//gs.debugPrint();
-
 	}
 
 	//ROS_INFO("Number of rows in grid : %d", g.row+1);
@@ -721,17 +850,21 @@ grid ControlUINode::buildGrid (vector<vector<float> > pPoints) {
 	getPDimensions (pPoints, lu, rd, dd, maxD, maxR);
 }*/
 
-pGrid ControlUINode::buildPGrid(const vector<Point2f> &uvCoordinates){
+pGrid
+ControlUINode::buildPGrid(const vector<Point2f> &uvCoordinates)
+{
 	vector<float> uCoord, vCoord;
 	vector<Point2f> sortedUVCoordinates;
 	sortUVCorners(uvCoordinates, sortedUVCoordinates);
 	int j;
 	// Make the X Co-ordinates of plane bounding box points
-	for (j = 0; j < 4; ++j) {
+	for (j = 0; j < 4; ++j)
+	{
 		uCoord.push_back(sortedUVCoordinates[j].x);
 	}
 	// Make the Y Co-ordinates of plane bouding box points
-	for (j = 0; j < 4; ++j) {
+	for (j = 0; j < 4; ++j)
+	{
 		vCoord.push_back(sortedUVCoordinates[j].y);
 	}
 	vector<float> uVector(2), vVector(2);
@@ -758,34 +891,37 @@ pGrid ControlUINode::buildPGrid(const vector<Point2f> &uvCoordinates){
 	pGrid grid(uCoord[0], vCoord[0], uVector, vVector, squareWidth, squareHeight, overlap, maxR, maxD);
 	pGridSquare gridSquare = pGridSquare(uCoord[0], vCoord[0], squareWidth, squareHeight, uVector, vVector);
 	grid.add(gridSquare);
-	while (grid.translate(gridSquare)) {
+	while (grid.translate(gridSquare))
+	{
 		gridSquare = grid.getLatest();
 	}
 	return grid;
 }
 
-void ControlUINode::calibrate(){
+void
+ControlUINode::calibrate()
+{
 	cameraMatrix = Mat(3,3, DataType<float>::type);
 	/*
-    cameraMatrix.at<float>(0,0) = 374.6706070969281;
-    cameraMatrix.at<float>(0,1) = 0;
-    cameraMatrix.at<float>(0,2) = 320.5;
-    cameraMatrix.at<float>(1,0) = 0;
-    cameraMatrix.at<float>(1,1) = 374.6706070969281;
-    cameraMatrix.at<float>(1,2) = 180.5;
-    cameraMatrix.at<float>(2,0) = 0;
-    cameraMatrix.at<float>(2,1) = 0;
-    cameraMatrix.at<float>(2,2) = 1;
+	cameraMatrix.at<float>(0,0) = 374.6706070969281;
+	cameraMatrix.at<float>(0,1) = 0;
+	cameraMatrix.at<float>(0,2) = 320.5;
+	cameraMatrix.at<float>(1,0) = 0;
+	cameraMatrix.at<float>(1,1) = 374.6706070969281;
+	cameraMatrix.at<float>(1,2) = 180.5;
+	cameraMatrix.at<float>(2,0) = 0;
+	cameraMatrix.at<float>(2,1) = 0;
+	cameraMatrix.at<float>(2,2) = 1;
 	*/
 	cameraMatrix.at<float>(0,0) = 565.710890694431;
-    cameraMatrix.at<float>(0,1) = 0;
-    cameraMatrix.at<float>(0,2) = 329.70046366652;
-    cameraMatrix.at<float>(1,0) = 0;
-    cameraMatrix.at<float>(1,1) = 565.110297594854;
-    cameraMatrix.at<float>(1,2) = 169.873085097623;
-    cameraMatrix.at<float>(2,0) = 0;
-    cameraMatrix.at<float>(2,1) = 0;
-    cameraMatrix.at<float>(2,2) = 1;
+	cameraMatrix.at<float>(0,1) = 0;
+	cameraMatrix.at<float>(0,2) = 329.70046366652;
+	cameraMatrix.at<float>(1,0) = 0;
+	cameraMatrix.at<float>(1,1) = 565.110297594854;
+	cameraMatrix.at<float>(1,2) = 169.873085097623;
+	cameraMatrix.at<float>(2,0) = 0;
+	cameraMatrix.at<float>(2,1) = 0;
+	cameraMatrix.at<float>(2,2) = 1;
 
 
 	distCoeffs = Mat::zeros(5,1,DataType<float>::type);
@@ -795,7 +931,8 @@ void ControlUINode::calibrate(){
 	pthread_mutex_lock(&keyPoint_CS);
 	assert(_3d_points.size() == _2d_points.size());
 	int numPts = _3d_points.size();
-	for(int i=0; i<numPts; i++){
+	for(int i = 0; i < numPts; i++)
+	{
 		Vec3f obj_pt(_3d_points[i][0], _3d_points[i][1], _3d_points[i][2]);
 		Vec2f img_pt(_2d_points[i][0], _2d_points[i][1]);
 		object_points.push_back(obj_pt);
@@ -810,11 +947,13 @@ void ControlUINode::calibrate(){
 	calibrated= true;
 }
 
-void ControlUINode::project3DPointsOnImage(const vector<Point3f> &worldPts, vector<Point2f > & imagePts){
+void
+ControlUINode::project3DPointsOnImage(const vector<Point3f> &worldPts, vector<Point2f > & imagePts)
+{
 /*
 	Mat cameraMatrix(3,3,DataType<float>::type);
-    // Setting camera matrix for vga quality
-    //From calibration done on our drone
+	// Setting camera matrix for vga quality
+	//From calibration done on our drone
 	vector<Point3f> transformedWorldPts;
 	for(int i=0; i<worldPts.size(); i++){
 		Point3f pt = worldPts[i];
@@ -825,37 +964,37 @@ void ControlUINode::project3DPointsOnImage(const vector<Point3f> &worldPts, vect
 		transformedWorldPts.push_back(trPoint);
 	}
 //Gazebo K: [374.6706070969281, 0.0, 320.5, 0.0, 374.6706070969281, 180.5, 0.0, 0.0, 1.0]
-    cameraMatrix.at<float>(0,0) = 374.6706070969281;
-    cameraMatrix.at<float>(0,1) = 0;
-    cameraMatrix.at<float>(0,2) = 320.5;
-    cameraMatrix.at<float>(1,0) = 0;
-    cameraMatrix.at<float>(1,1) = 374.6706070969281;
-    cameraMatrix.at<float>(1,2) = 180.5;
-    cameraMatrix.at<float>(2,0) = 0;
-    cameraMatrix.at<float>(2,1) = 0;
-    cameraMatrix.at<float>(2,2) = 1;
+	cameraMatrix.at<float>(0,0) = 374.6706070969281;
+	cameraMatrix.at<float>(0,1) = 0;
+	cameraMatrix.at<float>(0,2) = 320.5;
+	cameraMatrix.at<float>(1,0) = 0;
+	cameraMatrix.at<float>(1,1) = 374.6706070969281;
+	cameraMatrix.at<float>(1,2) = 180.5;
+	cameraMatrix.at<float>(2,0) = 0;
+	cameraMatrix.at<float>(2,1) = 0;
+	cameraMatrix.at<float>(2,2) = 1;
 
 
-    cameraMatrix.at<float>(0,0) = 565.710890694431;
-    cameraMatrix.at<float>(0,1) = 0;
-    cameraMatrix.at<float>(0,2) = 329.70046366652;
-    cameraMatrix.at<float>(1,0) = 0;
-    cameraMatrix.at<float>(1,1) = 565.110297594854;
-    cameraMatrix.at<float>(1,2) = 169.873085097623;
-    cameraMatrix.at<float>(2,0) = 0;
-    cameraMatrix.at<float>(2,1) = 0;
-    cameraMatrix.at<float>(2,2) = 1;
+	cameraMatrix.at<float>(0,0) = 565.710890694431;
+	cameraMatrix.at<float>(0,1) = 0;
+	cameraMatrix.at<float>(0,2) = 329.70046366652;
+	cameraMatrix.at<float>(1,0) = 0;
+	cameraMatrix.at<float>(1,1) = 565.110297594854;
+	cameraMatrix.at<float>(1,2) = 169.873085097623;
+	cameraMatrix.at<float>(2,0) = 0;
+	cameraMatrix.at<float>(2,1) = 0;
+	cameraMatrix.at<float>(2,2) = 1;
 
 
 	Mat distCoeffs = Mat::zeros(5,1,DataType<float>::type);
-    // Setting distortion coefficients
-    //From calibration done on our drone
+	// Setting distortion coefficients
+	//From calibration done on our drone
 
-    distCoeffs.at<float>(0) = -0.516089772391501;
-    distCoeffs.at<float>(1) = 0.285181914111246;
-    distCoeffs.at<float>(2) = -0.000466469917823537;
-    distCoeffs.at<float>(3) = 0.000864792975814983;
-    distCoeffs.at<float>(4) = 0;
+	distCoeffs.at<float>(0) = -0.516089772391501;
+	distCoeffs.at<float>(1) = 0.285181914111246;
+	distCoeffs.at<float>(2) = -0.000466469917823537;
+	distCoeffs.at<float>(3) = 0.000864792975814983;
+	distCoeffs.at<float>(4) = 0;
 
 
 	Mat R = getRotationMatrix(roll,pitch, yaw);
@@ -872,10 +1011,12 @@ void ControlUINode::project3DPointsOnImage(const vector<Point3f> &worldPts, vect
 	cv::projectPoints(worldPts, rvecs[0], tvecs[0], cameraMatrix, distCoeffs, imagePts);
 	int numPoints = imagePts.size();
 	//cout<<"Projected points:"<<numPoints<<"\n";
-	//cout<<imagePts<<"\n";
+	//cout << imagePts<<"\n";
 }
 
-vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> plane) {
+vector< vector<double> >
+ControlUINode::getTargetPoints(grid g, vector<float> plane)
+{
 
 	g.print(plane);
 
@@ -939,8 +1080,8 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 	distCoeffs.at<double>(3) = -0.0063942451330052;
 	distCoeffs.at<double>(4) = 0;
 	*/
-	Mat rvec(3,1,DataType<double>::type);
-	Mat tvec(3,1,DataType<double>::type);
+	Mat rvec(3, 1, DataType<double>::type);
+	Mat tvec(3, 1, DataType<double>::type);
 
 
 
@@ -948,7 +1089,8 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 
 
 	bool forward = true; // Need to iterate forward or backward
-	for(unsigned int i=0; i < g.rowSquares.size()-1; i++) {
+	for(unsigned int i = 0; i < g.rowSquares.size()-1; i++)
+	{
 
 
 		/** In drone coordinate system,
@@ -965,8 +1107,10 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 		// Iterating across rows
 		//ROS_INFO("Starting %dth row", i);
 		//ROS_INFO("Size of %dth row is %d", i, g.rowSquares[i].size());
-		if(forward) {
-			for(unsigned int j=0; j < g.rowSquares[i].size(); j++) {
+		if(forward)
+		{
+			for(unsigned int j=0; j < g.rowSquares[i].size(); j++)
+			{
 				//ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				gridSquare gs = g.rowSquares[i][j];
@@ -996,7 +1140,7 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 				objPoints.push_back(center);
 
 				//gs.printCoord();
-				//cout<<objPoints<<endl;
+				//cout << objPoints << endl;
 
 				Mat objPoints_mat(9,1, CV_64FC3);
 				for(int i=0; i<9; i++)
@@ -1014,8 +1158,8 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 
 				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 
-				// cout<<"rvec : "<<rvec<<endl;
-				// cout<<"tvec : "<<tvec<<endl;
+				// cout<<"rvec : "<<rvec << endl;
+				// cout<<"tvec : "<<tvec << endl;
 
 				Mat rot(3,3, DataType<double>::type);
 				Rodrigues(rvec, rot);
@@ -1025,7 +1169,7 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 
 				tvec = -rotinv * tvec;
 
-				//cout<<"rotated tvec : "<<tvec<<endl;
+				//cout<<"rotated tvec : "<<tvec << endl;
 
 				vector<double> pt;
 				pt.push_back(tvec.at<double>(0));
@@ -1040,35 +1184,37 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 				tPoints_z.push_back(pt);
 			}
 		}
-		else {
-			for(int j = g.rowSquares[i].size()-1; j>=0 ; j--) {
+		else
+		{
+			for(int j = g.rowSquares[i].size()-1; j >= 0 ; j--)
+			{
 				//ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				gridSquare gs = g.rowSquares[i][j];
 				Point3d corner1 = Point3d(gs.u, - gs.v, getY(gs.u, gs.v, plane));
-                                Point3d corner2 = Point3d(gs.u + gs.width, - gs.v, getY(gs.u + gs.width, gs.v, plane));
-                                Point3d corner3 = Point3d(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane));
-                                Point3d corner4 = Point3d(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane));
-                                Point3d mid1 = (corner1 + corner2)*0.5;
-                                mid1.z = getY(mid1.x, mid1.y, plane);
-                                Point3d mid2 = (corner2 + corner3)*0.5;
-                                mid2.z = getY(mid2.x, mid2.y, plane);
-                                Point3d mid3 = (corner3 + corner4)*0.5;
-                                mid3.z = getY(mid3.x, mid3.y, plane);
-                                Point3d mid4 = (corner4 + corner1)*0.5;
-                                mid4.z = getY(mid4.x, mid4.y, plane);
-                                Point3d center = (mid1 + mid3)*0.5;
-                                center.z = getY(center.x, center.y,plane)*0.5;
+				Point3d corner2 = Point3d(gs.u + gs.width, - gs.v, getY(gs.u + gs.width, gs.v, plane));
+				Point3d corner3 = Point3d(gs.u + gs.width, - (gs.v - gs.height), getY(gs.u + gs.width, gs.v - gs.height, plane));
+				Point3d corner4 = Point3d(gs.u, - (gs.v - gs.height), getY(gs.u, gs.v - gs.height, plane));
+				Point3d mid1 = (corner1 + corner2)*0.5;
+				mid1.z = getY(mid1.x, mid1.y, plane);
+				Point3d mid2 = (corner2 + corner3)*0.5;
+				mid2.z = getY(mid2.x, mid2.y, plane);
+				Point3d mid3 = (corner3 + corner4)*0.5;
+				mid3.z = getY(mid3.x, mid3.y, plane);
+				Point3d mid4 = (corner4 + corner1)*0.5;
+				mid4.z = getY(mid4.x, mid4.y, plane);
+				Point3d center = (mid1 + mid3)*0.5;
+				center.z = getY(center.x, center.y,plane)*0.5;
 
-                                objPoints.push_back(corner1);
-                                objPoints.push_back(mid1);
-                                objPoints.push_back(corner2);
-                                objPoints.push_back(mid2);
-                                objPoints.push_back(corner3);
-                                objPoints.push_back(mid3);
-                                objPoints.push_back(corner4);
-                                objPoints.push_back(mid4);
-                                objPoints.push_back(center);
+				objPoints.push_back(corner1);
+				objPoints.push_back(mid1);
+				objPoints.push_back(corner2);
+				objPoints.push_back(mid2);
+				objPoints.push_back(corner3);
+				objPoints.push_back(mid3);
+				objPoints.push_back(corner4);
+				objPoints.push_back(mid4);
+				objPoints.push_back(center);
 
 				Mat objPoints_mat(9,1, CV_64FC3);
 				for(int i=0; i<9; i++)
@@ -1087,8 +1233,8 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 
 
-				// cout<<"rvec : "<<rvec<<endl;
-				// cout<<"tvec : "<<tvec<<endl;
+				// cout<<"rvec : "<<rvec << endl;
+				// cout<<"tvec : "<<tvec << endl;
 
 				Mat rot(3,3, DataType<double>::type);
 				Rodrigues(rvec, rot);
@@ -1098,7 +1244,7 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 
 				tvec = -rotinv * tvec;
 
-				//cout<<"rotated tvec : "<<tvec<<endl;
+				//cout<<"rotated tvec : "<<tvec << endl;
 
 				vector<double> pt;
 				pt.push_back(tvec.at<double>(0));
@@ -1124,7 +1270,11 @@ vector<vector<double> > ControlUINode::getTargetPoints(grid g, vector<float> pla
 	return tPoints;
 }
 
-void ControlUINode::moveDrone (const vector<double> &prevPosition, vector<vector<double> > tPoints, double prevYaw, double desiredYaw) {
+void
+ControlUINode::moveDrone (const vector<double> &prevPosition, 
+							vector<vector<double> > tPoints, 
+							double prevYaw, double desiredYaw)
+{
 	double drone_length = 0.6;
 	for (unsigned int i = 0; i < tPoints.size(); ++i)
 	{
@@ -1132,19 +1282,20 @@ void ControlUINode::moveDrone (const vector<double> &prevPosition, vector<vector
 		p[1] = p[1] - drone_length;
 
 		char buf[100];
-		if(i == 0){
+		if(i == 0)
+		{
 			vector<vector <double > > xyz_yaw;
 			getInitialPath(prevPosition, p, prevYaw, desiredYaw, xyz_yaw);
 			for(int j=0; j<xyz_yaw.size(); j++){
 				vector<double> interm_point;
 				interm_point = xyz_yaw[j];
 				snprintf(buf, 100, "c goto %lf %lf %lf %lf", interm_point[0], interm_point[1], interm_point[2], interm_point[3]);
-	            std_msgs::String s;
-    	        s.data = buf;
-        	    ROS_INFO("Message: ");
-            	ROS_INFO(buf);
-	            commands.push_back(s);
-    	        targetPoints.push_back(interm_point);
+				std_msgs::String s;
+				s.data = buf;
+				ROS_INFO("Message: ");
+				ROS_INFO(buf);
+				commands.push_back(s);
+				targetPoints.push_back(interm_point);
 			}
 			/*
 			pthread_mutex_lock(&pose_CS);
@@ -1155,51 +1306,52 @@ void ControlUINode::moveDrone (const vector<double> &prevPosition, vector<vector
 			interm_point[2] = z_drone;
 
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", x_drone, half_y, z_drone, yaw);
-	        std_msgs::String s;
-	        s.data = buf;
-    	    ROS_INFO("Message: ");
-        	ROS_INFO(buf);
+			std_msgs::String s;
+			s.data = buf;
+			ROS_INFO("Message: ");
+			ROS_INFO(buf);
 			commands.push_back(s);
 			targetPoints.push_back(interm_point);
 
 			interm_point[1] = p[1];
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", x_drone, p[1], z_drone, yaw);
-            std_msgs::String s1;
-            s1.data = buf;
-            ROS_INFO("Message: ");
-            ROS_INFO(buf);
+			std_msgs::String s1;
+			s1.data = buf;
+			ROS_INFO("Message: ");
+			ROS_INFO(buf);
 			commands.push_back(s1);
 			targetPoints.push_back(interm_point);
 
 			interm_point[0] = p[0];
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], z_drone, yaw);
-            std_msgs::String s2;
-            s2.data = buf;
-            ROS_INFO("Message: ");
-            ROS_INFO(buf);
+			std_msgs::String s2;
+			s2.data = buf;
+			ROS_INFO("Message: ");
+			ROS_INFO(buf);
 			commands.push_back(s2);
 			targetPoints.push_back(interm_point);
 
 			interm_point[2] = p[2];
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], yaw);
-            std_msgs::String s3;
-            s3.data = buf;
-            ROS_INFO("Message: ");
-            ROS_INFO(buf);
+			std_msgs::String s3;
+			s3.data = buf;
+			ROS_INFO("Message: ");
+			ROS_INFO(buf);
 			commands.push_back(s3);
 			targetPoints.push_back(p);
 
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], desiredYaw);
-            std_msgs::String s4;
-            s4.data = buf;
-            ROS_INFO("Message: ");
-            ROS_INFO(buf);
-            commands.push_back(s4);
-            targetPoints.push_back(p);
+			std_msgs::String s4;
+			s4.data = buf;
+			ROS_INFO("Message: ");
+			ROS_INFO(buf);
+			commands.push_back(s4);
+			targetPoints.push_back(p);
 			pthread_mutex_unlock(&pose_CS);
 			*/
 		}
-		else {
+		else
+		{
 			snprintf(buf, 100, "c goto %lf %lf %lf %lf", p[0], p[1], p[2], desiredYaw);
 			std_msgs::String s;
 			s.data = buf;
@@ -1210,12 +1362,15 @@ void ControlUINode::moveDrone (const vector<double> &prevPosition, vector<vector
 		}
 	}
 		if(planeIndex < (numberOfPlanes - 1) )
-			startTargePtIndex[planeIndex+1] = targetPoints.size();	
+			startTargePtIndex[planeIndex+1] = targetPoints.size();
 }
 
 
-void ControlUINode::checkPos(const ros::TimerEvent&) {
-	if(targetSet) {
+void
+ControlUINode::checkPos(const ros::TimerEvent&)
+{
+	if(targetSet)
+	{
 		double x = targetPoint[0];
 		double y = targetPoint[1];
 		double z = targetPoint[2];
@@ -1246,7 +1401,11 @@ void ControlUINode::checkPos(const ros::TimerEvent&) {
 // 	}
 // }
 //
-void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane, const vector<Point3f> &uvAxes, vector<vector<double> > &sortedTPoints) {
+void
+ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane,
+																const vector<Point3f> &uvAxes, 
+																vector< vector<double> > &sortedTPoints)
+{
 
 		// TODO: Copy getTargetPoints into new function. - Done
 		// NOTE: Y and Z swapped oin camera co-ordinates
@@ -1306,10 +1465,13 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 
 	bool forward = true; // Need to iterate forward or backward
 	cout<<"\nXYZ corners:\n";
-	for(unsigned int i=0; i < g.rowSquares.size()-1; i++) {
+	for(unsigned int i=0; i < g.rowSquares.size()-1; i++)
+	{
 
-		if(forward) {
-			for(unsigned int j=0; j < g.rowSquares[i].size(); j++) {
+		if(forward)
+		{
+			for(unsigned int j=0; j < g.rowSquares[i].size(); j++)
+			{
 	//ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				pGridSquare gs = g.rowSquares[i][j];
@@ -1318,7 +1480,7 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 				getGridSquareUVCorners(gs, uvCorners);
 				AllUVToXYZCoordinates(uvCorners, uvAxes, plane[3], xyzCorners);
 				sortXYZCorners(xyzCorners, sortedXYZCorners);
-				cout<<sortedXYZCorners<<"\n";
+				cout << sortedXYZCorners<<"\n";
 
 				Point3d corner1 = Point3d(sortedXYZCorners[0].x, -sortedXYZCorners[0].z, sortedXYZCorners[0].y);
 				Point3d corner2 = Point3d(sortedXYZCorners[1].x, -sortedXYZCorners[1].z, sortedXYZCorners[1].y);
@@ -1346,7 +1508,7 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 				objPoints.push_back(center);
 	
 				//gs.printCoord();
-				//cout<<objPoints<<endl;
+				//cout << objPoints << endl;
 
 				Mat objPoints_mat(9,1, CV_64FC3);
 				for(int i=0; i<9; i++)
@@ -1364,8 +1526,8 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 
 				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 
-				// cout<<"rvec : "<<rvec<<endl;
-				// cout<<"tvec : "<<tvec<<endl;
+				// cout<<"rvec : "<<rvec << endl;
+				// cout<<"tvec : "<<tvec << endl;
 
 				Mat rot(3,3, DataType<double>::type);
 				Rodrigues(rvec, rot);
@@ -1375,7 +1537,7 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 
 				tvec = -rotinv * tvec;
 
-				//cout<<"rotated tvec : "<<tvec<<endl;
+				//cout<<"rotated tvec : "<<tvec << endl;
 
 				vector<double> pt;
 				pt.push_back(tvec.at<double>(0));
@@ -1390,8 +1552,10 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 				tPoints_z.push_back(pt);
 			}
 		}
-		else {
-			for(int j = g.rowSquares[i].size()-1; j>=0 ; j--) {
+		else
+		{
+			for(int j = g.rowSquares[i].size()-1; j>=0 ; j--)
+			{
 				//ROS_INFO("Accessing %dth square of %dth row", j, i);
 				objPoints.clear();
 				pGridSquare gs = g.rowSquares[i][j];
@@ -1400,27 +1564,27 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 				getGridSquareUVCorners(gs, uvCorners);
 				AllUVToXYZCoordinates(uvCorners, uvAxes, plane[3], xyzCorners);
 				sortXYZCorners(xyzCorners, sortedXYZCorners);
-				cout<<sortedXYZCorners<<"\n";
+				cout << sortedXYZCorners<<"\n";
 
 				Point3d corner1 = Point3d(sortedXYZCorners[0].x, -sortedXYZCorners[0].z, sortedXYZCorners[0].y);
 				Point3d corner2 = Point3d(sortedXYZCorners[1].x, -sortedXYZCorners[1].z, sortedXYZCorners[1].y);
 				Point3d corner3 = Point3d(sortedXYZCorners[2].x, -sortedXYZCorners[2].z, sortedXYZCorners[2].y);
 				Point3d corner4 = Point3d(sortedXYZCorners[3].x, -sortedXYZCorners[3].z, sortedXYZCorners[3].y);
 
-	            Point3d mid1 = (corner1 + corner2)*0.5;
+				Point3d mid1 = (corner1 + corner2)*0.5;
 				mid1.z = getY(mid1.x, -mid1.y, plane);
 				Point3d mid2 = (corner2 + corner3)*0.5;
 				mid2.z = getY(mid2.x, -mid2.y, plane);
-	            Point3d mid3 = (corner3 + corner4)*0.5;
+				Point3d mid3 = (corner3 + corner4)*0.5;
 				mid3.z = getY(mid3.x, -mid3.y, plane);
 				Point3d mid4 = (corner4 + corner1)*0.5;
 				mid4.z = getY(mid4.x, -mid4.y, plane);
 				Point3d center = (mid1 + mid3)*0.5;
 				center.z = getY(center.x, -center.y,plane);
-                                
+								
 				objPoints.push_back(corner1);
-    	        objPoints.push_back(mid1);
-	            objPoints.push_back(corner2);
+				objPoints.push_back(mid1);
+				objPoints.push_back(corner2);
 				objPoints.push_back(mid2);
 				objPoints.push_back(corner3);
 				objPoints.push_back(mid3);
@@ -1453,8 +1617,8 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 
 				solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
 
-				// cout<<"rvec : "<<rvec<<endl;
-				// cout<<"tvec : "<<tvec<<endl;
+				// cout<<"rvec : "<<rvec << endl;
+				// cout<<"tvec : "<<tvec << endl;
 
 				Mat rot(3,3, DataType<double>::type);
 				Rodrigues(rvec, rot);
@@ -1464,7 +1628,7 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 
 				tvec = -rotinv * tvec;
 	
-				//cout<<"rotated tvec : "<<tvec<<endl;
+				//cout<<"rotated tvec : "<<tvec << endl;
 				vector<double> pt;
 				pt.push_back(tvec.at<double>(0));
 				pt.push_back(tvec.at<double>(2));
@@ -1495,27 +1659,34 @@ void ControlUINode::getPTargetPoints(const pGrid &g, const vector<float> & plane
 	//print3dPoints(tPoints_z);
 }
 
-void ControlUINode::getGridSquareUVCorners(const pGridSquare &gs, vector<Point2f> &uvCorners){
+void
+ControlUINode::getGridSquareUVCorners(const pGridSquare &gs, vector<Point2f> &uvCorners)
+{
 	Point2f corner1 = Point2f(gs.u, gs.v);
-	Point2f corner2 = Point2f(gs.u+gs.width, gs.v);			
+	Point2f corner2 = Point2f(gs.u+gs.width, gs.v);
 	Point2f corner3 = Point2f(gs.u+gs.width, gs.v - gs.height);
 	Point2f corner4 = Point2f(gs.u, gs.v-gs.height);
-	uvCorners.push_back(corner1);	
-	uvCorners.push_back(corner2);	
-	uvCorners.push_back(corner3);	
-	uvCorners.push_back(corner4);	
+	uvCorners.push_back(corner1);
+	uvCorners.push_back(corner2);
+	uvCorners.push_back(corner3);
+	uvCorners.push_back(corner4);
 }
 
-void ControlUINode::sortTargetPoints(int numRows, const vector<int> &numColsPerRow, const vector< vector<double> > &tPoints, vector< vector<double> > &sortedTPoints){
+void
+ControlUINode::sortTargetPoints(int numRows, const vector<int> &numColsPerRow, 
+																const vector< vector<double> > &tPoints, 
+																vector< vector<double> > &sortedTPoints)
+{
 	vector<float> z_coord(numRows);
 	vector<float> sortedZcoord;
 	vector<int> rowStartIndex;
 	int rowStart = 0;
-	for(int i=0; i<numRows; i++){
+	for(int i = 0; i < numRows; i++)
+	{
 		rowStartIndex.push_back(rowStart);
 		int index = rowStart;
 		z_coord[i] = tPoints[index][2];
-		rowStart += numColsPerRow[i];		
+		rowStart += numColsPerRow[i];
 	}
 	vector<int> indices;
 	sortData(z_coord, sortedZcoord, indices, false);
@@ -1535,18 +1706,22 @@ void ControlUINode::sortTargetPoints(int numRows, const vector<int> &numColsPerR
 		}
 		else //otherwise need to reverse the order
 		{
-			for(int j=numCols-1; j>=0; j--){
+			for(int j = numCols-1; j >= 0; j--)
+			{
 				sortedTPoints.push_back(rowTPoints[j]);
 			}
 		}
 	}
 }
 
-void ControlUINode::getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint, double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw){
+void
+ControlUINode::getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint, 
+															double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw)
+{
 	vector<double> interm_point(4);
 	interm_point[0] = prevPosition[0];
-    interm_point[1] = prevPosition[1];
-    interm_point[2] = prevPosition[2];
+	interm_point[1] = prevPosition[1];
+	interm_point[2] = prevPosition[2];
 	interm_point[3] = 0;	
 	for(int i=0; i<6; i++)
 	{

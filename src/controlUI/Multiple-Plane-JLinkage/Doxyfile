@@ -58,7 +58,7 @@ PROJECT_LOGO           =
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/docs
+OUTPUT_DIRECTORY       = docs
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -741,7 +741,7 @@ WARN_FORMAT            = "$file:$line: $text"
 # messages should be written. If left blank the output is written to standard
 # error (stderr).
 
-WARN_LOGFILE           = /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/Log/doxygenErrorLog.log
+WARN_LOGFILE           = //Log/doxygenErrorLog.log
 
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
@@ -753,20 +753,23 @@ WARN_LOGFILE           = /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWo
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/readingData.hpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/readingData.cpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/makeBoundingRects.hpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/makeBoundingRects.cpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/main.cpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/conversion.hpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/conversion.cpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/calculateIntersections.hpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/calculateIntersections.cpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/allHeaders.hpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/additionalSteps.hpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/additionalSteps.cpp \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/README.md
+INPUT                  = ./ \
+                         ./multiplePlanes.hpp \
+                         ./multiplePlanes.cpp \
+                         ./readingData.hpp \
+                         ./readingData.cpp \
+                         ./makeBoundingRects.hpp \
+                         ./makeBoundingRects.cpp \
+                         ./conversion.hpp \
+                         ./conversion.cpp \
+                         ./calculateIntersections.hpp \
+                         ./calculateIntersections.cpp \
+                         ./allHeaders.hpp \
+                         ./additionalSteps.hpp \
+                         ./additionalSteps.cpp \
+                         ./utilities.hpp \
+                         ./utilities.cpp \
+                         ./README.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -787,6 +790,7 @@ INPUT_ENCODING         = UTF-8
 # *.qsf, *.as and *.js.
 
 FILE_PATTERNS          = *.cpp \
+                         *.h \
                          *.hpp \
                          *.php5 \
                          *.m \
@@ -821,11 +825,13 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/Matlab \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/Log \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/images \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/docs \
-                         /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/Debug
+EXCLUDE                = ./Matlab \
+                         ./Log \
+                         ./images \
+                         ./docs \
+                         ./Debug \
+                         ./JLinkage \
+                         ./Multiple-Plane-JLinkage.bkp
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1055,7 +1061,7 @@ GENERATE_HTML          = YES
 # The default directory is: html.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_OUTPUT            = /home/sonapraneeth/DriveSync/Dropbox/Projects/EclipseWorkspace/Multiple-Plane-JLinkage/docs/html
+HTML_OUTPUT            = html
 
 # The HTML_FILE_EXTENSION tag can be used to specify the file extension for each
 # generated HTML page (for example: .htm, .php, .asp).
@@ -1092,7 +1098,7 @@ HTML_HEADER            = ./docs/html/myCode/html/new_header.html
 # that doxygen normally uses.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_FOOTER            = 
+HTML_FOOTER            = ./docs/html/myCode/html/new_footer.html
 
 # The HTML_STYLESHEET tag can be used to specify a user-defined cascading style
 # sheet that is used by each HTML page. It can be used to fine-tune the look of
@@ -1115,7 +1121,7 @@ HTML_STYLESHEET        =
 # see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = ./docs/html/myCode/html/new_stylesheet.css
+HTML_EXTRA_STYLESHEET  = ./docs/html/myCode/css/style.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
