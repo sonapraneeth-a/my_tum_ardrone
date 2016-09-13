@@ -431,6 +431,7 @@ ImageView::on_key_down(int key)
 		}
 		//vector<float> translatedPlane = node->translatePlane (translateDistance);
 	}
+	/* Below are the keys to be implemented properly fro mtp stage 01 */
 	// g - Navigating the planes using the planned path and collecting the video footage
 	if(key == 103)
 	{
