@@ -348,14 +348,14 @@ ControlUINode::fitMultiplePlanes3d (vector<int> &ccPoints, vector<vector<int> > 
 	vector<Point3f> _in_points;
 
 	vector<vector<int> > points;
-	for(unsigned int i=0; i<ccPoints.size(); i++)
+	for(unsigned int i = 0; i < ccPoints.size(); i++)
 	{
 		points.push_back(pointsClicked[ccPoints[i]]);
 	}
 
 	pthread_mutex_lock(&keyPoint_CS);
 
-	for(unsigned int i=0; i<_2d_points.size(); i++)
+	for(unsigned int i = 0; i < _2d_points.size(); i++)
 	{
 		if(liesInside(points, _2d_points[i]))
 		{
@@ -430,7 +430,7 @@ ControlUINode::moveQuadcopter(
 			prevPosition[1] = y_drone;
 			prevPosition[2] = z_drone;
 			prevYaw = yaw;
-		}		
+		}
 		moveDrone(prevPosition, pTargetPoints, prevYaw, desiredYaw);
 		int numTargetPoints = pTargetPoints.size();
 		prevPosition[0] = pTargetPoints[numTargetPoints-1][0];
@@ -1289,7 +1289,8 @@ ControlUINode::moveDrone (const vector<double> &prevPosition,
 			for(int j=0; j<xyz_yaw.size(); j++){
 				vector<double> interm_point;
 				interm_point = xyz_yaw[j];
-				snprintf(buf, 100, "c goto %lf %lf %lf %lf", interm_point[0], interm_point[1], interm_point[2], interm_point[3]);
+				snprintf(buf, 100, "c goto %lf %lf %lf %lf", 
+					interm_point[0], interm_point[1], interm_point[2], interm_point[3]);
 				std_msgs::String s;
 				s.data = buf;
 				ROS_INFO("Message: ");

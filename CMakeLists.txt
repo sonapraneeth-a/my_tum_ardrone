@@ -1,6 +1,8 @@
 #
 # Author: Jakob Engel <jajuengel@gmail.com>
 # Contributor: Stefan Wilkes <stefan.wilkes@gmail.com>
+# Modified by: Meghshyam Govind Prasad <meghshyam@gmail.com>
+# Modified by: Sona Praneeth Akula <praneethakulasona@gmail.com>
 #
 cmake_minimum_required(VERSION 2.8.3)
 project(tum_ardrone)
@@ -137,7 +139,7 @@ link_directories(
   ${CMAKE_BINARY_DIR}/thirdparty/src/thirdparty/libcvd/lib 
   ${CMAKE_BINARY_DIR}/thirdparty/src/thirdparty/gvars3/lib 
 )
-set(PTAM_LIBRARIES GL glut cvd GVars3 blas lapack)
+set(PTAM_LIBRARIES GL glut GLU cvd GVars3 blas lapack)
 add_definitions(-DKF_REPROJ)
 
 # build!
@@ -245,6 +247,19 @@ set(MULTIPLEPLANEJLINKAGE_HEADER_FILES
     src/controlUI/Multiple-Plane-JLinkage/readingData.hpp
 	${JLINKAGE_HEADER_FILES})
 
+set(TOPVIEW_SOURCE_FILES
+    src/controlUI/TopView-GUI/Line/Line2.cpp
+    src/controlUI/TopView-GUI/DebugUtility/DebugUtility.cpp
+    src/controlUI/TopView-GUI/LogUtility/LogUtility.cpp
+    src/controlUI/TopView-GUI/TopView/TopView.cpp)
+
+set(TOPVIEW_HEADER_FILES
+    src/controlUI/TopView-GUI/AllHeaders.hpp
+    src/controlUI/TopView-GUI/Line/Line2.hpp
+    src/controlUI/TopView-GUI/DebugUtility/DebugUtility.hpp
+    src/controlUI/TopView-GUI/LogUtility/LogUtility.hpp
+    src/controlUI/TopView-GUI/TopView/TopView.hpp)
+
 set(CONTROLUI_SOURCE_FILES
     src/controlUI/main_controlUI.cpp
     src/controlUI/ControlUINode.cpp
@@ -252,7 +267,8 @@ set(CONTROLUI_SOURCE_FILES
     src/controlUI/GLWindow2.cc
     src/controlUI/GLWindowMenu.cc
     src/controlUI/ImageView.cpp
-    ${MULTIPLEPLANEJLINKAGE_SOURCE_FILES})
+    ${MULTIPLEPLANEJLINKAGE_SOURCE_FILES}
+    ${TOPVIEW_SOURCE_FILES})
 
 set(CONTROLUI_HEADER_FILES
     src/controlUI/ControlUINode.h
@@ -262,10 +278,17 @@ set(CONTROLUI_HEADER_FILES
     src/controlUI/GLWindowMenu.h
     src/controlUI/ImageView.h
     src/controlUI/helperFunctions.h
-    ${MULTIPLEPLANEJLINKAGE_HEADER_FILES})
+    ${MULTIPLEPLANEJLINKAGE_HEADER_FILES}
+    ${TOPVIEW_HEADER_FILES})
 
 include_directories(src/controlUI/Multiple-Plane-JLinkage/JLinkage/)
 include_directories(src/controlUI/Multiple-Plane-JLinkage/)
+## Newly added include directories
+include_directories(src/controlUI/TopView-GUI/)
+include_directories(src/controlUI/TopView-GUI/Line/)
+include_directories(src/controlUI/TopView-GUI/DebugUtility/)
+include_directories(src/controlUI/TopView-GUI/LogUtility/)
+include_directories(src/controlUI/TopView-GUI/TopView/)
 find_package(MRPT REQUIRED slam;vision;gui;topography)
 #find_package(CGAL QUIET COMPONENTS Core)
 

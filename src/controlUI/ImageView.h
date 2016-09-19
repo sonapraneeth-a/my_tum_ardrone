@@ -33,6 +33,14 @@
 #include "helperFunctions.h"
 
 
+#include "Line2.hpp"
+#include "AllHeaders.hpp"
+#include "TopView.hpp"
+#include "DebugUtility.hpp"
+#include "LogUtility.hpp"
+#include "makeBoundingRects.hpp"
+
+
 // CGAL specific
 /*#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/point_generators_3.h>
@@ -114,9 +122,9 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		int numKeyPointsDetected;
 
 		// 2d image points clicked
-		std::vector<std::vector<int> > pointsClicked;
+		std::vector< std::vector<int> > pointsClicked;
 		// the 3d keypoints of control node for nearest keypoints
-		std::vector<std::vector<float> > keyPointsNearest;
+		std::vector< std::vector<float> > keyPointsNearest;
 		// corners of the convex hull
 		std::vector<int> ccPoints;
 		// corners of multiple planes bounding boxes in 3D
@@ -136,7 +144,7 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		// Distance by which the extracted plane should be translated
 		float translateDistance;
 		// 
-		std::vector<std::vector<float> > projectedPoints;
+		std::vector< std::vector<float> > projectedPoints;
 
 	public:
 
@@ -265,6 +273,16 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		 * @return
 		 */
 		void extractBoundingRect();
+
+		void readInfo(string filename,
+					vector< vector<float> > &sortedPlaneParameters,
+					vector< vector<Point3f> > &boundingBoxPoints);
+
+		/*void split(	const string &s,
+					char delim,
+					vector<float> &elems);*/
+		void split(	const string &s,
+					vector<float> &elems);
 
 };
 

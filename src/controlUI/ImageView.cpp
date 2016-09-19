@@ -2,7 +2,7 @@
  * ImageView.cpp
  *
  *       Created on: 21-Feb-2015
- *    Last Modified: 12-Sep-2016
+ *    Last Modified: 19-Sep-2016
  *  Original Author: Anirudh Vemula
  *   Current Author: Meghshyam Govind Prasad
  *   Current Author: Sona Praneeth Akula
@@ -10,7 +10,8 @@
  *      Description: 
  *
  * Date				Author							Modification
- * 12-Sep-2016	Sona Praneeth Akula	Added		Added comments to the code
+ * 12-Sep-2016	Sona Praneeth Akula			* Added comments to the code
+ * 19-Sep-2016	Sona Praneeth Akula			* Added code for on_key_down(); key n, g
  *****************************************************************************************/
 
 
@@ -456,6 +457,81 @@ ImageView::on_key_down(int key)
 			node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);
 		}
 	}
+	// Key c
+	if(key == 99)
+	{
+		/* Launches GUI: Return approx. angles and orientations */
+		/* Angle with which	quadcopter has to rotate to orient itself to the new plane */
+		std::vector< double > main_angles;
+		/* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
+		std::vector< RotateDirection > main_direction;
+		/* Initiating the GUI */
+		TopView *top = new TopView();
+		top->init();
+		/* GUI has been closed here */
+		cout << "Calling the Main GUI\n";
+		/* Get the directions, angles and number of planes */
+		top->getDirections(main_direction);
+		top->getAngles(main_angles);
+		/* Printing the information to the terminal */
+		cout << "Number of planes: " << top->getNumberOfPlanes() << "\n";
+		cout << "Max Height of the plane: " << top->getMaxHeightOfPlane() << "\n";
+		cout << "Surface Drawn: " << top->getTypeOfSurface() << "\n";
+		cout << "Angles: ";
+		for (int i = 0; i < main_angles.size(); ++i)
+		{
+			cout << main_angles[i] << " ";
+		}
+		cout << "\n";
+		cout << "Directions: ";
+		for (int i = 0; i < main_direction.size(); ++i)
+		{
+			if(main_direction[i] == 0)
+				cout << "CLOCKWISE" << " ";
+			else if(main_direction[i] == 1)
+				cout << "ANTI-CLOCKWISE" << " ";
+		}
+		// node->getMeTheMap(main_angles, main_directions);
+	}
+	// Key n
+	// Uses the points written from a file (obtained from key g)
+	if(key == 110)
+	{
+		string inputDirectory = "./";
+		string filename = inputDirectory + "Plane_3D_Points.txt";
+		vector< vector<float> > sortedPlaneParameters;
+		vector< vector<Point3f> > boundingBoxPoints;
+		readInfo(filename, sortedPlaneParameters, boundingBoxPoints);
+		cout << "Plane Parameters\n";
+		for (int i = 0; i < sortedPlaneParameters.size(); ++i)
+		{
+			int param = sortedPlaneParameters[i].size();
+			for (int j = 0; j < param; ++j)
+			{
+				cout << sortedPlaneParameters[i][j] << " ";
+			}
+			cout << "\n";
+		}
+		cout << "Bounding Box Points\n";
+		for (int i = 0; i < boundingBoxPoints.size(); ++i)
+		{
+			int param = boundingBoxPoints[i].size();
+			for (int j = 0; j < param; ++j)
+			{
+				cout << boundingBoxPoints[i][j] << "\n";
+			}
+			cout << "\n";
+		}
+		// Get the bounding box points
+		getContinuousBoundingBox ( boundingBoxPoints, sortedPlaneParameters,
+								continuousBoundingBoxPoints);
+		// Path planning: Cover multiple planes
+		if(renderRect)
+		{
+			renderRect = false;  // While moving the quadcopter we don't want bounding box to appear
+			node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);
+		}
+	}
 }
 
 void
@@ -605,4 +681,87 @@ ImageView::extractBoundingRect()
 	bPoints.push_back(minYIndex);
 	bPoints.push_back(maxXIndex);
 	bPoints.push_back(maxYIndex);
+}
+
+void
+ImageView::readInfo(string filename,
+					vector< vector<float> > &sortedPlaneParameters,
+					vector< vector<Point3f> > &boundingBoxPoints)
+{
+	sortedPlaneParameters.clear();
+	boundingBoxPoints.clear();
+	ifstream plane_info;
+	plane_info.open(filename.c_str(), std::ifstream::in);
+	string line;
+	vector<Point3f> box_points;
+	Point3f location;
+	vector<float> copyVector;
+	string plane_string("Plane-Parameters");
+	string box_string("Bounding-Box-Points");
+	if (plane_info.is_open())
+	{
+		while ( getline (plane_info, line) )
+		{
+			/*cout << "Line: " << line << "\n";
+			cout << "1-Compare: " << line.compare(plane_string) << "\n";
+			cout << "2-Compare: " << line.compare(box_string) << "\n";*/
+			if(!line.empty() && line.compare(plane_string)==1)
+			{
+				getline(plane_info, line);
+				split(line, copyVector);
+				sortedPlaneParameters.push_back(copyVector);
+				copyVector.clear();
+			}
+			if(!line.empty() && line.compare(box_string)==1)
+			{
+				for (int i = 1; i <= 4; ++i)
+				{
+					getline(plane_info, line);
+					split(line, copyVector);
+					Point3f point;
+					point.x = copyVector[0];
+					point.y = copyVector[1];
+					point.z = copyVector[2];
+					box_points.push_back(point);
+					copyVector.clear();
+				}
+				boundingBoxPoints.push_back(box_points);
+				box_points.clear();
+			}
+		}
+	}
+	else
+	{
+		cerr << "[ DEBUG] File " << filename << " doesn't open\n";
+		return ;
+	}
+	plane_info.close();
+}
+
+/*void
+ImageView::split(	const string &s,
+					char delim,
+					vector<float> &elems)
+{
+	stringstream ss(s);
+	string item;
+	while (getline(ss, item, delim))
+	{
+		elems.push_back(stof(item));
+	}
+}*/
+
+void
+ImageView::split(	const string &s,
+					vector<float> &elems)
+{
+	istringstream ss(s);
+	while( ! ss.eof() )
+	{
+		float tmp_f;
+		if ( ss >> tmp_f )
+		{
+			elems.push_back(tmp_f);
+		}
+	}
 }
