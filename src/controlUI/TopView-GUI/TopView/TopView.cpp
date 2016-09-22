@@ -327,7 +327,7 @@ TopView::checkMenu(float x, float y)
 		glutDestroyWindow(_window);
 		glutLeaveMainLoop();
 		stopSystem();
-		cout << "Exiting App";
+		cout << "[ INFO] Exiting TopView Application...";
 		_exit_app = true;
 		return ;
 	}
@@ -427,8 +427,8 @@ TopView::calculateAngles()
 	else
 	{
 		if(_points.size() == 0)
-			cout << "There is no drawing\n";
-		cout << "There is only a single line\n";
+			cout << "[ WARNING] There is no drawing\n";
+		cout << "[ WARNING] There is only a single line\n";
 	}
 	// For calculating the angle between last line and first line for polygon
 	if(drawing_option == POLYGON)
@@ -449,7 +449,11 @@ TopView::calculateAngles()
 		direction.push_back(src_to_dest.dir);
 	}
 	_number_of_planes = angles.size();
-	if(drawing_option == POLYLINE)
+	if( drawing_option == POLYLINE && _points.size() > 2)
+	{
+		_number_of_planes++;
+	}
+	else if( drawing_option == POLYGON && _points.size() > 1)
 	{
 		_number_of_planes++;
 	}
@@ -1017,7 +1021,7 @@ void
 TopView::startSystem()
 {
 	run_status = true;
-	cout << "TopView Start\n";
+	cout << "[ INFO] Starting TopView...\n";
 	start();
 }
 
@@ -1025,14 +1029,14 @@ void
 TopView::stopSystem()
 {
 	run_status = false;
-	cout << "TopView Stop\n";
+	cout << "[ INFO] Stopping TopView...\n";
 	join();
 }
 
 void
 TopView::run()
 {
-	cout << "TopView GUI Initiated\n";
+	cout << "[ INFO] Initiating TopView GUI...\n";
 	init();
 	/*while(run_status)
 	{

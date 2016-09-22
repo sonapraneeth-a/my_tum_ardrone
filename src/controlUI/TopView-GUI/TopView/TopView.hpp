@@ -31,7 +31,7 @@ enum VIEWING_DIRECTION {FRONT, BACK, OUT, IN}; //< Direction of viewing the surf
 enum SURFACES {OPEN, CLOSED}; //< Whether the surface is open/closed
 
 
-class TopView
+class TopView: private CVD::Thread
 {
 	private:
 		std::vector< Point2f > _points; //< points of the polygon/polyline
