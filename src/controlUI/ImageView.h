@@ -51,6 +51,7 @@
 class ControlUINode;
 struct grid;
 struct gridSquare;
+class TopView;
 
 /**
  * @brief @todo 

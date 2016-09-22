@@ -3,10 +3,10 @@
  */
 
 /*****************************************************************************************
- * TopViewGUI.cpp
+ * TopView.cpp
  *
  *     Created on: 13-Sep-2016
- *  Last Modified: 19-Sep-2016
+ *  Last Modified: 21-Sep-2016
  *         Author: Sona Praneeth Akula
  *        Project: Data_Structures_and_Algorithms
  *        Description: 
@@ -16,6 +16,7 @@
  * 17-Sep-2016	Sona Praneeth Akula		* Ported the code to Class
  * 19-Sep-2016	Sona Praneeth Akula		* Moved the code to more organized blocks
  										* Fixed minor GUI issues
+ * 21-Sep-2016	Sona Praneeth Akula		* Added threading support for TopView class
  *****************************************************************************************/
 
 #include "TopView.hpp"
@@ -43,6 +44,8 @@ TopView::TopView()
 	_viewing_direction = FRONT;
 	draw_mode[0] = "Open-Surface";
 	draw_mode[1] = "Closed-Surface";
+	_exit_app = false;
+	run_status = false;
 }
 
 /**
@@ -130,7 +133,7 @@ TopView::setMatrixMode(GLenum mode)
 
 TopView::~TopView()
 {
-
+	cout << "TopView Destroyed\n";
 }
 
 void
@@ -346,8 +349,11 @@ TopView::checkMenu(float x, float y)
 		x_coord.clear();
 		y_coord.clear();
 		points.clear();
+		stopSystem();
 		glutDestroyWindow(_window);
 		glutLeaveMainLoop();
+		cout << "Exiting App\n";
+		_exit_app = true;
 		return ;
 	}
 	else if( (x >= 660.0) && (x <= 680.0) && (y >= 520.0) && (y <= 530.0) )
@@ -953,4 +959,44 @@ TopView::menuGenerateButtonBoxes()
 	message_start_points.push_back( Point2f(475.0, 545.0) );
 	/* Quit */
 	message_start_points.push_back( Point2f(625.0, 545.0) );
+}
+
+
+void
+TopView::startSystem()
+{
+	run_status = true;
+	cout << "TopView Start\n";
+	start();
+}
+
+void
+TopView::stopSystem()
+{
+	run_status = false;
+	cout << "TopView Stop\n";
+	join();
+}
+
+void
+TopView::run()
+{
+	cout << "TopView Run Begins\n";
+	while(run_status)
+	{
+		cout << "TopView Run\n";
+		init();
+	}
+}
+
+bool
+TopView::getExitStatus()
+{
+	return _exit_app;
+}
+
+void
+TopView::destroy()
+{
+	delete this;
 }

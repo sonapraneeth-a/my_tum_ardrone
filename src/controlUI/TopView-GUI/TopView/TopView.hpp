@@ -6,7 +6,7 @@
  * TopView.hpp
  *
  *     Created on: 13-Sep-2016
- *  Last Modified: 19-Sep-2016
+ *  Last Modified: 21-Sep-2016
  *         Author: Sona Praneeth Akula
  *        Project: Data_Structures_and_Algorithms
  *    Description:
@@ -15,6 +15,7 @@
  * 13-Sep-2016	Sona Praneeth Akula
  * 17-Sep-2016	Sona Praneeth Akula		* Fixed the error for callbacks
  * 										* Completed the porting to Object Oriented Design
+ * 21-Sep-2016	Sona Praneeth Akula		* Added necessary thread headers
  *****************************************************************************************/
 #ifndef TOPVIEW_HPP_
 #define TOPVIEW_HPP_
@@ -22,13 +23,14 @@
 #include "../Line/Line2.hpp"
 #include "../AllHeaders.hpp"
 #include "../DebugUtility/DebugUtility.hpp"
+#include "cvd/thread.h"
 
 enum SHAPES {POLYLINE, POLYGON}; //< Shapes currently available for drawing
 enum VIEWING_DIRECTION {FRONT, BACK, OUT, IN}; //< Direction of viewing the surface. BOTTOM indicates front
 enum SURFACES {OPEN, CLOSED}; //< Whether the surface is open/closed
 
 
-class TopView
+class TopView: private CVD::Thread
 {
 	private:
 		std::vector< float > x_coord; //< x co-ordinates of points in points vector
@@ -58,6 +60,7 @@ class TopView
 		int _number_of_planes; //< Number of planes drawn on the screen
 		int _type_of_surface;
 		int _viewing_direction;
+		bool _exit_app;
 		/* Initiating variables for GUI (if needed) */
 		int _argc;
 		char **_argv;
@@ -104,6 +107,7 @@ class TopView
 		int drawing_option; //< Default drawing option set to POLYLINE
 
 		string draw_mode[2]; //< Current available drawing modes
+		bool run_status;
 
 		TopView();
 
@@ -112,6 +116,11 @@ class TopView
 		TopView(int window_height, int window_width);
 
 		void init();
+
+		/* */
+		void startSystem();
+		void run();
+		void stopSystem();
 
 		/* Callback Functions for glut */
 		void originalScreen();
@@ -130,6 +139,7 @@ class TopView
 		void myObjectDrawing();
 		void checkMenu(float x, float y);
 		void myDisplay(GLenum mode);
+		void destroy();
 
 		/* Drawing Buttons */
 		void menuGenerateButtonBoxes();
@@ -156,6 +166,7 @@ class TopView
 		int getNumberOfPlanes();
 		int getTypeOfSurface();
 		int getMaxHeightOfPlane();
+		bool getExitStatus();
 
 		/* Destructor */
 		~TopView();

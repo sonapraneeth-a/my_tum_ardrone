@@ -2,7 +2,7 @@
  * ImageView.cpp
  *
  *       Created on: 21-Feb-2015
- *    Last Modified: 19-Sep-2016
+ *    Last Modified: 22-Sep-2016
  *  Original Author: Anirudh Vemula
  *   Current Author: Meghshyam Govind Prasad
  *   Current Author: Sona Praneeth Akula
@@ -11,7 +11,9 @@
  *
  * Date				Author							Modification
  * 12-Sep-2016	Sona Praneeth Akula			* Added comments to the code
- * 19-Sep-2016	Sona Praneeth Akula			* Added code for on_key_down(); key n, g
+ * 19-Sep-2016	Sona Praneeth Akula			* Added code for on_key_down(); key c, g
+ * 21-Sep-2016	Sona Praneeth Akula			* Added threading to TopView
+ * 22-Sep-2016	Sona Praneeth Akula			* Added code to destroy TopView once its job is done
  *****************************************************************************************/
 
 
@@ -467,16 +469,22 @@ ImageView::on_key_down(int key)
 		std::vector< RotateDirection > main_direction;
 		/* Initiating the GUI */
 		TopView *top = new TopView();
-		top->init();
+		top->startSystem();
 		/* GUI has been closed here */
-		cout << "Calling the Main GUI\n";
+		cout << "Calling the GUI for drawing top view sketch of the surface\n";
+		while(!(top->getExitStatus()))
+		{}
 		/* Get the directions, angles and number of planes */
 		top->getDirections(main_direction);
 		top->getAngles(main_angles);
 		/* Printing the information to the terminal */
 		cout << "Number of planes: " << top->getNumberOfPlanes() << "\n";
-		cout << "Max Height of the plane: " << top->getMaxHeightOfPlane() << "\n";
-		cout << "Surface Drawn: " << top->getTypeOfSurface() << "\n";
+		cout << "Max Height of the plane (as estimated by the user): " << top->getMaxHeightOfPlane() << "\n";
+		if(top->getTypeOfSurface() == 0)
+			cout << "Surface Drawn: " << "Open Surface" << "\n";
+		if(top->getTypeOfSurface() == 1)
+			cout << "Surface Drawn: " << "Closed Surface" << "\n";
+		//top->destroy();
 		cout << "Angles: ";
 		for (int i = 0; i < main_angles.size(); ++i)
 		{
@@ -491,7 +499,13 @@ ImageView::on_key_down(int key)
 			else if(main_direction[i] == 1)
 				cout << "ANTI-CLOCKWISE" << " ";
 		}
+		cout << "\n";
 		// node->getMeTheMap(main_angles, main_directions);
+		// Land the quadcopter on completion of the task
+		cout << "Bounding Box Points collected\n";
+		cout << "Landing the quadcopter\n";
+		node->sendLand();
+		cout << "Quadcopter has landed. Task of collecting points completed\n";
 	}
 	// Key n
 	// Uses the points written from a file (obtained from key g)
