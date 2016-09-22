@@ -16,7 +16,9 @@
  * 17-Sep-2016	Sona Praneeth Akula		* Ported the code to Class
  * 19-Sep-2016	Sona Praneeth Akula		* Moved the code to more organized blocks
  										* Fixed minor GUI issues
- * 21-Sep-2016	Sona Praneeth Akula		* Added threading support for TopView class
+ * 21-Sep-2016	Sona Praneeth Akula		* Fixed the code for angle issues
+ 										* Added mouse pointer position on screen whenever the mouse 
+ 										 pointer is on the drawing area
  *****************************************************************************************/
 
 #include "TopView.hpp"
@@ -32,20 +34,6 @@ TopView* TopView::_instance = NULL;
 TopView::TopView()
 {
 	_number_of_planes = 0; //< Currently number of planes are 0
-	drawing_option = POLYLINE; //< Default drawing option set to POLYLINE
-	menu_box_width = 140;
-	menu_box_height = 20;
-	_window_height = 600; //< Height of the GUI
-	_window_width = 800; //< Width of the GUI
-	_draw_screen_height = 360; //< Height of the drawing area
-	_draw_screen_width = 640; // Width of the drawing area
-	_max_plane_height = 9; // Max allowed default plane height. Can go upto 15
-	_type_of_surface = OPEN;
-	_viewing_direction = FRONT;
-	draw_mode[0] = "Open-Surface";
-	draw_mode[1] = "Closed-Surface";
-	_exit_app = false;
-	run_status = false;
 }
 
 /**
@@ -86,6 +74,7 @@ TopView::init()
 	this->setupOriginalScreenCallback();
 	this->setupMouseClickCallback();
 	this->setupMotionCallback();
+	this->setupHoverCallback();
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 	/* https://www.opengl.org/resources/libraries/glut/spec3/node14.html */
 	glutMainLoop();
@@ -133,7 +122,7 @@ TopView::setMatrixMode(GLenum mode)
 
 TopView::~TopView()
 {
-	cout << "TopView Destroyed\n";
+
 }
 
 void
@@ -142,54 +131,44 @@ TopView::myMouse(int button, int state, int x, int y)
 	int yy;
 	yy = glutGet(GLUT_WINDOW_HEIGHT);
 	y = yy - y; /* In Glut, Y coordinate increases from top to bottom */
-	temp_x_coord.clear();
-	temp_y_coord.clear();
-	temp_points.clear();
+	_temp_points.clear();
 	originalScreen();
-	if(points.size() == 0)
+	if( (x >= 20.0) && (x <= 780.0) && (y >= 100.0) && (y <= 550.0) )
+	{
+		drawMousePosition(x-20.0, yy-y);
+	}
+	if(_points.size() == 0)
 	{
 		if( (button == GLUT_LEFT_BUTTON) && (state == GLUT_DOWN) )
 		{
 			DEBUG_MSG << "[ MOUSE] Left Mouse Button Down\n";
-			if( (x >= 20.0) && (x <= 780.0) && (y >= 30.0) && (y <= 500.0) )
+			if( (x >= 20.0) && (x <= 780.0) && (y >= 50.0) && (y <= 500.0) )
 			{
-				x_coord.push_back(x);
-				y_coord.push_back(y);
-				temp_x_coord.push_back(x);
-				temp_y_coord.push_back(y);
-				points.push_back(Point2f(x, y));
-				temp_points.push_back(Point2f(x, y));
+				_points.push_back(Point2f(x, y));
+				_temp_points.push_back(Point2f(x, y));
 				DEBUG_MSG << "LBD0: x: " << x << ", y: " << y << "\n";
 			}
 			else
 			{
 				DEBUG_MSG << "LBD0: Point not in range: (" << x << ", " << y << ")\n";
-				//checkMenu(x, y);
 			}
 		}
-		//checkMenu(x, y);
 	}
 	if( (button == GLUT_LEFT_BUTTON) && (state == GLUT_UP) )
 	{
 		DEBUG_MSG << "[ MOUSE] Left Mouse Button Up\n";
-		if( (x >= 20.0) && (x <= 780.0) && (y >= 30.0) && (y <= 500.0) )
+		if( (x >= 20.0) && (x <= 780.0) && (y >= 50.0) && (y <= 500.0) )
 		{
-			x_coord.push_back(x);
-			y_coord.push_back(y);
-			temp_x_coord.push_back(x);
-			temp_y_coord.push_back(y);
-			points.push_back(Point2f(x, y));
-			temp_points.push_back(Point2f(x, y));
+			_points.push_back(Point2f(x, y));
+			_temp_points.push_back(Point2f(x, y));
 			DEBUG_MSG << "LBD: x: " << x << ", y: " << y << "\n";
 		}
 		else
 		{
 			DEBUG_MSG << "LBU: Point not in range: (" << x << ", " << y << ")\n";
-			//	checkMenu(x, y);
 		}
 		checkMenu(x, y);
 	}
-	// glutPostRedisplay();
 }
 
 void
@@ -210,30 +189,34 @@ TopView::myPressedMove(int x, int y)
 	glPointSize(5.0);
 	originalScreen();
 	DEBUG_MSG << "MP: " << x << ", " << yy << ", " << y << ", " << yy-y << "\n";
-	//myObjectDrawing();
 	if( !( (x >= 20.0) && (x <= 780.0) ) )
 	{
 		if( x < 20.0) x = 20.0;
 		if( x > 780.0) x = 780.0;
 	}
-	if( !( (y >= 100.0) && (y <= 570.0) ) )
+	if( !( (y >= 100.0) && (y <= 550.0) ) )
 	{
 		if( y < 100.0) y = 100.0;
-		if( y > 570.0) y = 570.0;
+		if( y > 550.0) y = 550.0;
 	}
 	glBegin(GL_POINTS);
 		glColor3f(0.0f, 0.0f, 0.0f);
 		glPointSize(20.0);
-		glVertex2f( temp_points[0].x, temp_points[0].y );
+		glVertex2f( _points.back().x, _points.back().y );
 		glVertex2f( x, yy - y );
 	glEnd();
 	glBegin(GL_LINES);
 		glColor3f(0.0f, 0.0f, 0.0f);
 		glPointSize(20.0);
-		glVertex2f( temp_points[0].x, temp_points[0].y );
+		glVertex2f( _points.back().x, _points.back().y );
 		glVertex2f( x, yy - y );
 	glEnd();
 	myObjectDrawingTemp();
+	if( (x >= 20.0) && (x <= 780.0) && (y >= 100.0) && (y <= 550.0) )
+	{
+		drawMousePosition(x-20.0, yy-y);
+	}
+	_temp_points.push_back(Point2f(x-20.0, yy-y));
 	glFlush();
 }
 
@@ -252,9 +235,9 @@ TopView::checkMenu(float x, float y)
 	if( (x >= 170.0) && (x <= 300.0) && (y >= 515.0) && (y <= 535.0) )
 	{
 		DEBUG_MSG << "[ ACTION] Draw Open Surface\n";
-		drawing_option = POLYLINE;
-		_type_of_surface = OPEN;
-		_viewing_direction = FRONT;
+		drawing_option = SHAPES::POLYLINE;
+		_type_of_surface = SURFACES::OPEN;
+		_viewing_direction = VIEWING_DIRECTION::FRONT;
 		originalScreen();
 		myDisplay(GL_LINE_STRIP);
 		glFlush();
@@ -263,9 +246,9 @@ TopView::checkMenu(float x, float y)
 	else if( (x >= 20.0) && (x <= 150.0) && (y >= 515.0) && (y <= 535.0) )
 	{
 		DEBUG_MSG << "[ ACTION] Draw Closed Surface\n";
-		drawing_option = POLYGON;
-		_type_of_surface = CLOSED;
-		_viewing_direction = OUT;
+		drawing_option = SHAPES::POLYGON;
+		_type_of_surface = SURFACES::CLOSED;
+		_viewing_direction = VIEWING_DIRECTION::OUT;
 		originalScreen();
 		myDisplay(GL_LINE_LOOP);
 		glFlush();
@@ -283,20 +266,14 @@ TopView::checkMenu(float x, float y)
 	{
 		originalScreen();
 		DEBUG_MSG << "[ ACTION] Delete Last Line\n";
-		cout << "PointsB: " << points.size() << "\n";
-		if (points.size() > 2)
+		if (_points.size() > 2)
 		{
-			x_coord.pop_back();
-			y_coord.pop_back();
-			points.pop_back();
+			_points.pop_back();
 		}
-		else if (points.size() == 2)
+		else if (_points.size() == 2)
 		{
-			x_coord.clear();
-			y_coord.clear();
-			points.clear();
+			_points.clear();
 		}
-		cout << "PointsA: " << points.size() << "\n";
 		myObjectDrawing();
 		glFlush();
 		glutPostRedisplay();
@@ -314,26 +291,26 @@ TopView::checkMenu(float x, float y)
 	{
 		DEBUG_MSG << "[ ACTION] Changing the viewing direction\n";
 		DEBUG_MSG << "VD: " << _viewing_direction << "\n";
-		if(_type_of_surface == OPEN)
+		if(_type_of_surface == SURFACES::OPEN)
 		{
-			if(_viewing_direction == FRONT)
+			if(_viewing_direction == VIEWING_DIRECTION::FRONT)
 			{
-				_viewing_direction = BACK;
+				_viewing_direction = VIEWING_DIRECTION::BACK;
 			}
 			else
 			{
-				_viewing_direction = FRONT;
+				_viewing_direction = VIEWING_DIRECTION::FRONT;
 			}
 		}
 		else
 		{
-			if(_viewing_direction == IN)
+			if(_viewing_direction == VIEWING_DIRECTION::IN)
 			{
-				_viewing_direction = OUT;
+				_viewing_direction = VIEWING_DIRECTION::OUT;
 			}
 			else
 			{
-				_viewing_direction = IN;
+				_viewing_direction = VIEWING_DIRECTION::IN;
 			}
 		}
 		originalScreen();
@@ -346,13 +323,11 @@ TopView::checkMenu(float x, float y)
 		DEBUG_MSG << "[ CLICK_ACTION] Quitting the application\n";
 		calculateAngles();
 		originalScreen();
-		x_coord.clear();
-		y_coord.clear();
-		points.clear();
-		stopSystem();
+		_points.clear();
 		glutDestroyWindow(_window);
 		glutLeaveMainLoop();
-		cout << "Exiting App\n";
+		stopSystem();
+		cout << "Exiting App";
 		_exit_app = true;
 		return ;
 	}
@@ -388,7 +363,6 @@ TopView::checkMenu(float x, float y)
 		glFlush();
 		glutPostRedisplay();
 	}
-	// glFlush();
 }
 
 /**
@@ -397,9 +371,9 @@ TopView::checkMenu(float x, float y)
 void
 TopView::myObjectDrawing()
 {
-	if(drawing_option == POLYLINE)
+	if(drawing_option == SHAPES::POLYLINE)
 		myDisplay(GL_LINE_STRIP);
-	else if(drawing_option == POLYGON)
+	else if(drawing_option == SHAPES::POLYGON)
 		myDisplay(GL_LINE_LOOP);
 	else
 		DEBUG_MSG << "Wrong Direction\n";
@@ -411,9 +385,9 @@ TopView::myObjectDrawing()
 void
 TopView::myObjectDrawingTemp()
 {
-	if(drawing_option == POLYLINE)
+	if(drawing_option == SHAPES::POLYLINE)
 		myDisplay(GL_LINE_STRIP);
-	else if(drawing_option == POLYGON)
+	else if(drawing_option == SHAPES::POLYGON)
 		myDisplay(GL_LINE_STRIP);
 	else
 		DEBUG_MSG << "Wrong Direction\n";
@@ -427,42 +401,52 @@ TopView::calculateAngles()
 {
 	angles.clear();
 	direction.clear();
+	Point2f point1, point2, point3;
 	// Reference: http://www.math-principles.com/2013/07/derivation-angle-between-two-lines.html
 	DEBUG_MSG << _viewing_direction << "\n";
-	if( points.size() >= 3 )
+	if( _points.size() >= 3 )
 	{
-		for (int i = 1; i < points.size()-1; ++i)
+		for (int i = 1; i < _points.size()-1; ++i)
 		{
-			Line2f line1(points[i-1], points[i]);
-			Line2f line2(points[i], points[i+1]);
+			point1 = _points[i-1];
+			point2 = _points[i];
+			point3 = _points[i+1];
+			point1.x = point1.x - 20.0;
+			point1.y = point1.y - 50.0;
+			point2.x = point2.x - 20.0;
+			point2.y = point2.y - 50.0;
+			point3.x = point3.x - 20.0;
+			point3.y = point3.y - 50.0;
+			Line2f line1(point1, point2);
+			Line2f line2(point2, point3);
 			Orientation src_to_dest = line1.perp().calculateOrientation(drawing_option, _viewing_direction, line2.perp());
 			angles.push_back(src_to_dest.angle);
 			direction.push_back(src_to_dest.dir);
-			/*angles.push_back(line1.angleBetweenLines(_viewing_direction, line2));
-			direction.push_back(line1.rotate(line2));*/
 		}
 	}
 	else
 	{
+		if(_points.size() == 0)
+			cout << "There is no drawing\n";
 		cout << "There is only a single line\n";
 	}
 	// For calculating the angle between last line and first line for polygon
 	if(drawing_option == POLYGON)
 	{
-		Line2f line1(points[points.size()-2], points[points.size()-1]);
-		Line2f line2(points[points.size()-1], points[0]);
+		point1 = _points[_points.size()-2];
+		point2 = _points[_points.size()-1];
+		point3 = _points[0];
+		point1.x = point1.x - 20.0;
+		point1.y = point1.y - 50.0;
+		point2.x = point2.x - 20.0;
+		point2.y = point2.y - 50.0;
+		point3.x = point3.x - 20.0;
+		point3.y = point3.y - 50.0;
+		Line2f line1(point1, point2);
+		Line2f line2(point2, point3);
 		Orientation src_to_dest = line1.perp().calculateOrientation(drawing_option, _viewing_direction, line2.perp());
 		angles.push_back(src_to_dest.angle);
 		direction.push_back(src_to_dest.dir);
-		/*angles.push_back(line1.angleBetweenLines(_viewing_direction, line2));
-		direction.push_back(line1.rotate(line2));*/
-		Line2f line3(points[points.size()-1], points[0]);
-		Line2f line4(points[0], points[1]);
-		src_to_dest = line3.perp().calculateOrientation(drawing_option, _viewing_direction, line4.perp());
-		angles.push_back(src_to_dest.angle);
-		direction.push_back(src_to_dest.dir);
-		/*angles.push_back(line3.angleBetweenLines(_viewing_direction, line4));
-		direction.push_back(line3.rotate(line4));*/
 	}
 	_number_of_planes = angles.size();
 	if(drawing_option == POLYLINE)
@@ -499,32 +483,47 @@ TopView::calculateAngles()
 	}
 	outFile << "\n";
 	outFile << "Points-for-" << draw_mode[drawing_option] << "\n";
-	for (int i = 0; i < points.size(); ++i)
+	for (int i = 0; i < _points.size(); ++i)
 	{
-		outFile << "(" << points[i].x << ", " << points[i].y << ")\n";
+		point1 = _points[i];
+		point1.x = point1.x - 20.0;
+		point1.y = point1.y - 50.0;
+		outFile << "(" << point1.x << ", " << point1.y << ")\n";
 	}
 	if(drawing_option == POLYGON)
 	{
-		outFile << "(" << points[0].x << ", " << points[0].y << ")\n";
+		point1 = _points[0];
+		point1.x = point1.x - 20.0;
+		point1.y = point1.y - 50.0;
+		outFile << "(" << point1.x << ", " << point1.y << ")\n";
+	}
+	outFile << "\n";
+	outFile << "Lines-for-" << draw_mode[drawing_option] << "\n";
+	for (int i = 1; i < _points.size(); ++i)
+	{
+		point1 = _points[i-1];
+		point2 = _points[i];
+		point1.x = point1.x - 20.0;
+		point1.y = point1.y - 50.0;
+		point2.x = point2.x - 20.0;
+		point2.y = point2.y - 50.0;
+		outFile << "(" << point1.x << ", " << point1.y << "); "
+				<< "(" << point2.x << ", " << point2.y << ")\n";
+	}
+	if(drawing_option == POLYGON)
+	{
+		point2 = _points[_points.size()-1];
+		point3 = _points[0];
+		point2.x = point2.x - 20.0;
+		point2.y = point2.y - 50.0;
+		point3.x = point3.x - 20.0;
+		point3.y = point3.y - 50.0;
+		outFile << "(" << point2.x << ", " << point2.y << "); "
+				<< "(" << point3.x << ", " << point3.y << ")\n";
 	}
 	outFile << "\n";
 	// Close the file
 	outFile.close();
-	/*cout << "Angles: ";
-	for (int i = 0; i < angles.size(); ++i)
-	{
-		cout << angles[i] << " ";
-	}
-	cout << "\n";
-	cout << "Directions: ";
-	for (int i = 0; i < direction.size(); ++i)
-	{
-		if(direction[i] == 0)
-			cout << "CLOCKWISE" << " ";
-		else if(direction[i] == 1)
-			cout << "ANTI-CLOCKWISE" << " ";
-	}
-	cout << "\n";*/
 }
 
 /**
@@ -600,9 +599,7 @@ TopView::drawMessage(string display_message, float x, float y)
 void
 TopView::clearScreen()
 {
-	x_coord.clear();
-	y_coord.clear();
-	points.clear();
+	_points.clear();
 	originalScreen();
 }
 
@@ -616,19 +613,19 @@ TopView::myDisplay(GLenum mode)
 {
 	DEBUG_MSG << "[FUNC] myDisplay Function\n";
 
-	if(points.size() >= 1)
+	if(_points.size() >= 1)
 	{
 		DEBUG_MSG << "Current Points in the points buffer\n";
-		for (size_t i = 0; i < points.size(); i += 1)
+		for (size_t i = 0; i < _points.size(); i += 1)
 		{
-			DEBUG_MSG << "(" << points[i].x << ", " << points[i].y << "); ";
+			DEBUG_MSG << "(" << _points[i].x << ", " << _points[i].y << "); ";
 		}
 		DEBUG_MSG << "\n";
 		//cout << points.size() << "\n";
-		if(points.size() >= 1)
-			drawPoints(points);
-		if(points.size() >= 2)
-			drawLines(mode, points);
+		if(_points.size() >= 1)
+			drawPoints(_points);
+		if(_points.size() >= 2)
+			drawLines(mode, _points);
 	}
 }
 
@@ -673,78 +670,78 @@ TopView::getMaxHeightOfPlane()
 void
 TopView::menuDrawOpenSurface()
 {
-	menu_box_points.clear();
+	_menu_box_points.clear();
 	/* Drawing the button "Draw Polylines" */
-	makeButton(menu_box_button_points[OPEN_SURFACE], 
-				message_start_points[OPEN_SURFACE], 
+	makeButton(_menu_box_button_points[MENU_OPTIONS::OPEN_SURFACE], 
+				_message_start_points[MENU_OPTIONS::OPEN_SURFACE], 
 				"Draw Open Surface");
-	menu_box_points.clear();
+	_menu_box_points.clear();
 }
 
 void
 TopView::menuDrawClosedSurface()
 {
-	menu_box_points.clear();
+	_menu_box_points.clear();
 	/* Drawing the button "Draw Polygons" */
-	makeButton(menu_box_button_points[CLOSED_SURFACE], 
-				message_start_points[CLOSED_SURFACE], 
+	makeButton(_menu_box_button_points[MENU_OPTIONS::CLOSED_SURFACE], 
+				_message_start_points[MENU_OPTIONS::CLOSED_SURFACE], 
 				"Draw Closed Surface");
-	menu_box_points.clear();
+	_menu_box_points.clear();
 }
 
 void
 TopView::menuQuitApplication()
 {
-	menu_box_points.clear();
+	_menu_box_points.clear();
 	/* Drawing the button "Quit" */
-	makeButton(menu_box_button_points[QUIT], 
-				message_start_points[QUIT], 
+	makeButton(_menu_box_button_points[MENU_OPTIONS::QUIT], 
+				_message_start_points[MENU_OPTIONS::QUIT], 
 				"Quit");
-	menu_box_points.clear();
+	_menu_box_points.clear();
 }
 
 void
 TopView::menuCompletedDrawing()
 {
-	menu_box_points.clear();
+	_menu_box_points.clear();
 	/* Drawing the button "Completed Drawing" */
-	makeButton(menu_box_button_points[COMPLETED_DRAWING], 
-				message_start_points[COMPLETED_DRAWING], 
+	makeButton(_menu_box_button_points[MENU_OPTIONS::COMPLETED_DRAWING], 
+				_message_start_points[MENU_OPTIONS::COMPLETED_DRAWING], 
 				"Completed Drawing");
-	menu_box_points.clear();
+	_menu_box_points.clear();
 }
 
 void
 TopView::menuChangeViewingDirection()
 {
-	menu_box_points.clear();
+	_menu_box_points.clear();
 	/* Drawing the button "Change Direction" */
-	makeButton(menu_box_button_points[CHANGE_DIRECTION], 
-				message_start_points[CHANGE_DIRECTION], 
+	makeButton(_menu_box_button_points[MENU_OPTIONS::CHANGE_DIRECTION], 
+				_message_start_points[MENU_OPTIONS::CHANGE_DIRECTION], 
 				"Change Direction");
-	menu_box_points.clear();
+	_menu_box_points.clear();
 }
 
 void
 TopView::menuClearScreen()
 {
-	menu_box_points.clear();
+	_menu_box_points.clear();
 	/* Drawing the button "Clear Screen" */
-	makeButton(menu_box_button_points[CLEAR_SCREEN], 
-				message_start_points[CLEAR_SCREEN], 
+	makeButton(_menu_box_button_points[MENU_OPTIONS::CLEAR_SCREEN], 
+				_message_start_points[MENU_OPTIONS::CLEAR_SCREEN], 
 				"Clear Screen");
-	menu_box_points.clear();
+	_menu_box_points.clear();
 }
 
 void
 TopView::menuDeleteLastLine()
 {
-	menu_box_points.clear();
+	_menu_box_points.clear();
 	/* Drawing the button "Delete Last Line" */
-	makeButton(menu_box_button_points[DELETE_LAST_LINE], 
-				message_start_points[DELETE_LAST_LINE], 
+	makeButton(_menu_box_button_points[MENU_OPTIONS::DELETE_LAST_LINE], 
+				_message_start_points[MENU_OPTIONS::DELETE_LAST_LINE], 
 				"Delete Last Line");
-	menu_box_points.clear();
+	_menu_box_points.clear();
 }
 
 void
@@ -769,15 +766,15 @@ TopView::menuShowDrawingMode()
 {
 	/* */
 	string draw_message = "Drawing ";
-	if(drawing_option == POLYLINE)
+	if(drawing_option == SHAPES::POLYLINE)
 	{
-		draw_message += draw_mode[POLYLINE];
+		draw_message += draw_mode[SHAPES::POLYLINE];
 		DEBUG_MSG << draw_message << "\n";
 		drawMessage(draw_message, 600.0, 10.0);
 	}
-	else if(drawing_option == POLYGON)
+	else if(drawing_option == SHAPES::POLYGON)
 	{
-		draw_message += draw_mode[POLYGON];
+		draw_message += draw_mode[SHAPES::POLYGON];
 		DEBUG_MSG << draw_message << "\n";
 		drawMessage(draw_message, 600.0, 10.0);
 	}
@@ -808,9 +805,9 @@ TopView::menuShowViewingDirection()
 	direction_points.clear();*/
 	/* */
 	string direction_message = "Viewing Direction: ";
-	if(_type_of_surface == OPEN)
+	if(_type_of_surface == SURFACES::OPEN)
 	{
-		if(_viewing_direction == FRONT)
+		if(_viewing_direction == VIEWING_DIRECTION::FRONT)
 		{
 			direction_message += "Front";
 		}
@@ -821,7 +818,7 @@ TopView::menuShowViewingDirection()
 	}
 	else
 	{
-		if(_viewing_direction == IN)
+		if(_viewing_direction == VIEWING_DIRECTION::IN)
 		{
 			direction_message += "Inside";
 		}
@@ -857,8 +854,8 @@ TopView::menuDrawDrawingScreen()
 	/* */
 	std::vector< Point2f > drawing_screen;
 	drawing_screen.push_back( Point2f(20.0, 500.0) );
-	drawing_screen.push_back( Point2f(20.0, 30.0) );
-	drawing_screen.push_back( Point2f(780.0, 30.0) );
+	drawing_screen.push_back( Point2f(20.0, 50.0) );
+	drawing_screen.push_back( Point2f(780.0, 50.0) );
 	drawing_screen.push_back( Point2f(780.0, 500.0) );
 	drawing_screen.push_back( Point2f(20.0, 500.0) );
 	drawLines(GL_LINE_STRIP, drawing_screen);
@@ -886,81 +883,135 @@ TopView::menuGenerateButtonBoxes()
 	/*** Menu Button Boxes ***/
 	/** Bottom Menu **/
 	/* Closed Surface */
-	menu_box_points.push_back( Point2f(20.0, 535.0) );
-	menu_box_points.push_back( Point2f(20.0, 515.0) );
-	menu_box_points.push_back( Point2f(150.0, 515.0) );
-	menu_box_points.push_back( Point2f(150.0, 535.0) );
-	menu_box_points.push_back( Point2f(20.0, 535.0) );
-	menu_box_button_points.push_back(menu_box_points);
-	menu_box_points.clear();
+	_menu_box_points.push_back( Point2f(20.0, 535.0) );
+	_menu_box_points.push_back( Point2f(20.0, 515.0) );
+	_menu_box_points.push_back( Point2f(150.0, 515.0) );
+	_menu_box_points.push_back( Point2f(150.0, 535.0) );
+	_menu_box_points.push_back( Point2f(20.0, 535.0) );
+	_menu_box_button_points.push_back(_menu_box_points);
+	_menu_box_points.clear();
 	/* Open Surface */
-	menu_box_points.push_back( Point2f(170.0, 535.0) );
-	menu_box_points.push_back( Point2f(170.0, 515.0) );
-	menu_box_points.push_back( Point2f(300.0, 515.0) );
-	menu_box_points.push_back( Point2f(300.0, 535.0) );
-	menu_box_points.push_back( Point2f(170.0, 535.0) );
-	menu_box_button_points.push_back(menu_box_points);
-	menu_box_points.clear();
+	_menu_box_points.push_back( Point2f(170.0, 535.0) );
+	_menu_box_points.push_back( Point2f(170.0, 515.0) );
+	_menu_box_points.push_back( Point2f(300.0, 515.0) );
+	_menu_box_points.push_back( Point2f(300.0, 535.0) );
+	_menu_box_points.push_back( Point2f(170.0, 535.0) );
+	_menu_box_button_points.push_back(_menu_box_points);
+	_menu_box_points.clear();
 	/** Top Menu **/
 	/* Change Viewing Direction */
-	menu_box_points.push_back( Point2f(20.0, 560.0) );
-	menu_box_points.push_back( Point2f(20.0, 540.0) );
-	menu_box_points.push_back( Point2f(150.0, 540.0) );
-	menu_box_points.push_back( Point2f(150.0, 560.0) );
-	menu_box_points.push_back( Point2f(20.0, 560.0) );
-	menu_box_button_points.push_back(menu_box_points);
-	menu_box_points.clear();
+	_menu_box_points.push_back( Point2f(20.0, 560.0) );
+	_menu_box_points.push_back( Point2f(20.0, 540.0) );
+	_menu_box_points.push_back( Point2f(150.0, 540.0) );
+	_menu_box_points.push_back( Point2f(150.0, 560.0) );
+	_menu_box_points.push_back( Point2f(20.0, 560.0) );
+	_menu_box_button_points.push_back(_menu_box_points);
+	_menu_box_points.clear();
 	/* Delete Last Line */
-	menu_box_points.push_back( Point2f(170.0, 560.0) );
-	menu_box_points.push_back( Point2f(170.0, 540.0) );
-	menu_box_points.push_back( Point2f(300.0, 540.0) );
-	menu_box_points.push_back( Point2f(300.0, 560.0) );
-	menu_box_points.push_back( Point2f(170.0, 560.0) );
-	menu_box_button_points.push_back(menu_box_points);
-	menu_box_points.clear();
+	_menu_box_points.push_back( Point2f(170.0, 560.0) );
+	_menu_box_points.push_back( Point2f(170.0, 540.0) );
+	_menu_box_points.push_back( Point2f(300.0, 540.0) );
+	_menu_box_points.push_back( Point2f(300.0, 560.0) );
+	_menu_box_points.push_back( Point2f(170.0, 560.0) );
+	_menu_box_button_points.push_back(_menu_box_points);
+	_menu_box_points.clear();
 	/* Completed Drawing */
-	menu_box_points.push_back( Point2f(320.0, 560.0) );
-	menu_box_points.push_back( Point2f(320.0, 540.0) );
-	menu_box_points.push_back( Point2f(450.0, 540.0) );
-	menu_box_points.push_back( Point2f(450.0, 560.0) );
-	menu_box_points.push_back( Point2f(320.0, 560.0) );
-	menu_box_button_points.push_back(menu_box_points);
-	menu_box_points.clear();
+	_menu_box_points.push_back( Point2f(320.0, 560.0) );
+	_menu_box_points.push_back( Point2f(320.0, 540.0) );
+	_menu_box_points.push_back( Point2f(450.0, 540.0) );
+	_menu_box_points.push_back( Point2f(450.0, 560.0) );
+	_menu_box_points.push_back( Point2f(320.0, 560.0) );
+	_menu_box_button_points.push_back(_menu_box_points);
+	_menu_box_points.clear();
 	/* Clear Screen */
-	menu_box_points.push_back( Point2f(470.0, 560.0) );
-	menu_box_points.push_back( Point2f(470.0, 540.0) );
-	menu_box_points.push_back( Point2f(600.0, 540.0) );
-	menu_box_points.push_back( Point2f(600.0, 560.0) );
-	menu_box_points.push_back( Point2f(470.0, 560.0) );
-	menu_box_button_points.push_back(menu_box_points);
-	menu_box_points.clear();
+	_menu_box_points.push_back( Point2f(470.0, 560.0) );
+	_menu_box_points.push_back( Point2f(470.0, 540.0) );
+	_menu_box_points.push_back( Point2f(600.0, 540.0) );
+	_menu_box_points.push_back( Point2f(600.0, 560.0) );
+	_menu_box_points.push_back( Point2f(470.0, 560.0) );
+	_menu_box_button_points.push_back(_menu_box_points);
+	_menu_box_points.clear();
 	/* Quit */
-	menu_box_points.push_back( Point2f(620.0, 560.0) );
-	menu_box_points.push_back( Point2f(620.0, 540.0) );
-	menu_box_points.push_back( Point2f(750.0, 540.0) );
-	menu_box_points.push_back( Point2f(750.0, 560.0) );
-	menu_box_points.push_back( Point2f(620.0, 560.0) );
-	menu_box_button_points.push_back(menu_box_points);
-	menu_box_points.clear();
+	_menu_box_points.push_back( Point2f(620.0, 560.0) );
+	_menu_box_points.push_back( Point2f(620.0, 540.0) );
+	_menu_box_points.push_back( Point2f(750.0, 540.0) );
+	_menu_box_points.push_back( Point2f(750.0, 560.0) );
+	_menu_box_points.push_back( Point2f(620.0, 560.0) );
+	_menu_box_button_points.push_back(_menu_box_points);
+	_menu_box_points.clear();
 	/*** Menu Button Message Start Points ***/
 	/** Bottom Menu **/
 	/* Closed Surface */
-	message_start_points.push_back( Point2f(25.0, 520.0) );
+	_message_start_points.push_back( Point2f(25.0, 520.0) );
 	/* Open Surface */
-	message_start_points.push_back( Point2f(175.0, 520.0) );
+	_message_start_points.push_back( Point2f(175.0, 520.0) );
 	/** Top Menu **/
 	/* Change Viewing Direction */
-	message_start_points.push_back( Point2f(25.0, 545.0) );
+	_message_start_points.push_back( Point2f(25.0, 545.0) );
 	/* Delete Last Line */
-	message_start_points.push_back( Point2f(175.0, 545.0) );
+	_message_start_points.push_back( Point2f(175.0, 545.0) );
 	/* Completed Drawing */
-	message_start_points.push_back( Point2f(325.0, 545.0) );
+	_message_start_points.push_back( Point2f(325.0, 545.0) );
 	/* Clear Screen */
-	message_start_points.push_back( Point2f(475.0, 545.0) );
+	_message_start_points.push_back( Point2f(475.0, 545.0) );
 	/* Quit */
-	message_start_points.push_back( Point2f(625.0, 545.0) );
+	_message_start_points.push_back( Point2f(625.0, 545.0) );
 }
 
+void
+TopView::myMouseHover(int x, int y)
+{
+	glClearColor(1.0f, 1.0f, 1.0f, 0.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	int yy = glutGet(GLUT_WINDOW_HEIGHT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(0.0, this->_window_width, 0.0, this->_window_height);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glPointSize(5.0);
+	originalScreen();
+	if( (x >= 20.0) && (x <= 780.0) && (y >= 100.0) && (y <= 550.0) )
+	{
+		drawMousePosition(x-20.0, 550.0-y);
+	}
+	myObjectDrawing();
+	glFlush();
+}
+
+void
+TopView::drawMousePosition(int x, int y)
+{
+	stringstream ss;
+	ss.str(std::string());
+	ss << "Mouse Position: (" << x << ", " << y << ")";
+	Point3f msg_color(0.0, 0.0, 0.0);
+	drawMessage(ss.str(), msg_color, 600.0, 30.0);
+}
+
+/**
+ * @brief Draw the message on the screen
+ * @param [string] display_message - Message to be displayed
+ * @param [Point3f] x - Color of the message
+ * @param [float] x - X co-ordinate of the point where the text starts
+ * @param [float] y - Y co-ordinate of the point where the text starts
+ */
+void
+TopView::drawMessage(string display_message, Point3f color, float x, float y)
+{
+	glColor3f(color.x, color.y, color.z);
+	glRasterPos2f(x, y);
+	for(int i = 0; i < display_message.size(); i++)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, display_message[i]);
+	}
+}
+
+int
+TopView::getViewingDirection()
+{
+	return _viewing_direction;
+}
 
 void
 TopView::startSystem()
@@ -981,12 +1032,13 @@ TopView::stopSystem()
 void
 TopView::run()
 {
-	cout << "TopView Run Begins\n";
-	while(run_status)
+	cout << "TopView GUI Initiated\n";
+	init();
+	/*while(run_status)
 	{
 		cout << "TopView Run\n";
 		init();
-	}
+	}*/
 }
 
 bool

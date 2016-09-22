@@ -403,8 +403,8 @@ Line2f::calculateOrientation(int drawing_option, int viewing_direction, const Li
 	Orientation answer;
 	angle = curr_line.angleBetweenLines(dest_line.shiftTo(curr_line.start));
 	/*cout << curr_line;
-	cout << dest_line;*/
-	cout << "\n";
+	cout << dest_line;
+	cout << "\n";*/
 	if(angle < 0.0)
 	{
 		if(fabs(angle) > 180.0)

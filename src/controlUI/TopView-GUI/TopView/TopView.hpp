@@ -15,7 +15,8 @@
  * 13-Sep-2016	Sona Praneeth Akula
  * 17-Sep-2016	Sona Praneeth Akula		* Fixed the error for callbacks
  * 										* Completed the porting to Object Oriented Design
- * 21-Sep-2016	Sona Praneeth Akula		* Added necessary thread headers
+ * 21-Sep-2016	Sona Praneeth Akula		* Added new function prototypes and removed unnecessary 
+ 											variables
  *****************************************************************************************/
 #ifndef TOPVIEW_HPP_
 #define TOPVIEW_HPP_
@@ -30,40 +31,36 @@ enum VIEWING_DIRECTION {FRONT, BACK, OUT, IN}; //< Direction of viewing the surf
 enum SURFACES {OPEN, CLOSED}; //< Whether the surface is open/closed
 
 
-class TopView: private CVD::Thread
+class TopView
 {
 	private:
-		std::vector< float > x_coord; //< x co-ordinates of points in points vector
-		std::vector< float > y_coord; //< y co-ordinates of points in points vector
-		std::vector< float > temp_x_coord; //< Temporary variables to store x coord the end of line
-		std::vector< float > temp_y_coord; //< Temporay variables to store the x coord end of line
-		std::vector< Point2f > points; //< points of the polygon/polyline
-		std::vector< Point2f > temp_points;
+		std::vector< Point2f > _points; //< points of the polygon/polyline
+		std::vector< Point2f > _temp_points;
 
 		/* For Menu Buttons */
-		std::vector< Point2f > menu_box_points;
-		std::vector< vector<Point2f> > menu_box_button_points;
-		std::vector< Point2f > message_start_points;
+		std::vector< Point2f > _menu_box_points;
+		std::vector< vector<Point2f> > _menu_box_button_points;
+		std::vector< Point2f > _message_start_points;
 		enum MENU_OPTIONS {CLOSED_SURFACE, OPEN_SURFACE, CHANGE_DIRECTION,
 				DELETE_LAST_LINE, COMPLETED_DRAWING, CLEAR_SCREEN, QUIT};
-		Point2f message_start;
-		string menu_text;
-		int menu_box_width;
-		int menu_box_height;
+		Point2f _message_start;
+		string _menu_text;
+		int _menu_box_width = 140;
+		int _menu_box_height = 20;
 
-		int _window_height; //< Height of the GUI
-		int _window_width; //< Width of the GUI
-		int _draw_screen_height; //< Height of the drawing area
-		int _draw_screen_width; // Width of the drawing area
-		int _max_plane_height; // Max allowed default plane height. Can go upto 15
+		int _window_height = 600; //< Height of the GUI
+		int _window_width = 800; //< Width of the GUI
+		int _draw_screen_height = 360; //< Height of the drawing area
+		int _draw_screen_width = 640; // Width of the drawing area
+		int _max_plane_height = 9; // Max allowed default plane height. Can go upto 15
 		int _window; //< Indicator for the GUI window
 		int _number_of_planes; //< Number of planes drawn on the screen
-		int _type_of_surface;
-		int _viewing_direction;
-		bool _exit_app;
+		int _type_of_surface = SURFACES::OPEN;
+		int _viewing_direction = VIEWING_DIRECTION::FRONT;
+		bool _exit_app = false;
 		/* Initiating variables for GUI (if needed) */
-		int _argc;
-		char **_argv;
+		char *_argv[2] = { "Top-View-Program", "" };
+		int _argc = 1;
 
 		void myObjectDrawingTemp();
 
@@ -99,15 +96,26 @@ class TopView: private CVD::Thread
 			_instance = this;
 			::glutMouseFunc(TopView::mouseClickCallback);
 		}
+		/* Mouse motion (hover) callback */
+		static void hoverCallback(int x, int y)
+		{
+			_instance->myMouseHover(x, y);
+		}
+		void setupHoverCallback()
+		{
+			_instance = this;
+			::glutPassiveMotionFunc(TopView::hoverCallback);
+		}
+
 
 	public:
 		vector<double> angles; //< Angles with which quadcopter has to rotate to align itself with new plane
 		vector<RotateDirection> direction; //< Direction with which quadcopter has to rotate to align itself with new plane
 
-		int drawing_option; //< Default drawing option set to POLYLINE
+		int drawing_option = SHAPES::POLYLINE; //< Default drawing option set to POLYLINE
 
-		string draw_mode[2]; //< Current available drawing modes
-		bool run_status;
+		string draw_mode[2] = {"Open-Surface", "Closed-Surface"}; //< Current available drawing modes
+		bool run_status = false;
 
 		TopView();
 
@@ -117,7 +125,7 @@ class TopView: private CVD::Thread
 
 		void init();
 
-		/* */
+		/* Threading functions */
 		void startSystem();
 		void run();
 		void stopSystem();
@@ -126,13 +134,16 @@ class TopView: private CVD::Thread
 		void originalScreen();
 		void myMouse(int button, int state, int x, int y);
 		void myPressedMove(int x, int y);
+		void myMouseHover(int x, int y);
 
 		/* Helper functions for GUI and calculations */
 		void setMatrixMode(GLenum mode);
 		void drawLines(GLenum mode, vector< Point2f > points);
 		void drawMessage(string display_message, float x, float y);
+		void drawMessage(string display_message, Point3f color, float x, float y);
 		void makeButton(vector<Point2f> button_box, Point2f msg_start, string button_text);
 		void drawPoints(float x, float y);
+		void drawMousePosition(int x, int y);
 		void drawPoints(vector< Point2f > points);
 		void clearScreen();
 		void myDrawing();
@@ -166,6 +177,7 @@ class TopView: private CVD::Thread
 		int getNumberOfPlanes();
 		int getTypeOfSurface();
 		int getMaxHeightOfPlane();
+		int getViewingDirection();
 		bool getExitStatus();
 
 		/* Destructor */
