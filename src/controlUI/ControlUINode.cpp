@@ -32,6 +32,9 @@
 #include "Multiple-Plane-JLinkage/utilities.hpp"
 #include "Multiple-Plane-JLinkage/makeBoundingRects.hpp"
 
+#include "std_msgs/String.h"
+#include "std_msgs/Empty.h"
+
 #include <string>
 #include <fstream>
 #include <stdlib.h>
@@ -56,6 +59,8 @@ ControlUINode::ControlUINode()
 	keypoint_channel = nh_.resolveName("/keypoint_coord");
 	// Channel for getting the current quadcopter position (x, y, z, roll, pitch, yaw)
 	pose_channel = nh_.resolveName("ardrone/predictedPose");
+	// Channel for landing the quadcopter
+	land_channel = nh_.resolveName("ardrone/land");
 
 	// Subscribing for key point channel
 	keypoint_coord_sub = nh_.subscribe(keypoint_channel, 10, &ControlUINode::keyPointDataCb, this);
@@ -64,6 +69,7 @@ ControlUINode::ControlUINode()
 
 	tum_ardrone_pub = nh_.advertise<std_msgs::String>(command_channel, 50);
 	tum_ardrone_sub = nh_.subscribe(command_channel, 50, &ControlUINode::comCb, this);
+	land_pub	   = nh_.advertise<std_msgs::Empty>(land_channel,1);
 
 	// For recording video
 	video = nh_.serviceClient<ardrone_autonomy::RecordEnable>("ardrone/setrecord");
@@ -1717,14 +1723,14 @@ ControlUINode::sortTargetPoints(int numRows, const vector<int> &numColsPerRow,
 
 void
 ControlUINode::getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint, 
-															double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw)
+								double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw)
 {
 	vector<double> interm_point(4);
 	interm_point[0] = prevPosition[0];
 	interm_point[1] = prevPosition[1];
 	interm_point[2] = prevPosition[2];
-	interm_point[3] = 0;	
-	for(int i=0; i<6; i++)
+	interm_point[3] = 0;
+	for(int i = 0; i < 6; i++)
 	{
 		int m = i/2 +1;
 		int n = 2 - i/2;
@@ -1744,3 +1750,9 @@ ControlUINode::getInitialPath(const vector<double> &prevPosition, const vector<d
 	xyz_yaw.push_back(interm_point);
 }
 
+void
+ControlUINode::sendLand()
+{
+	//if(isControlling)
+	land_pub.publish(std_msgs::Empty());
+}

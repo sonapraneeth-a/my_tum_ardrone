@@ -445,7 +445,8 @@ class ControlUINode
 		ros::Time lastKeyStamp;
 		ros::Subscriber tum_ardrone_sub;
 		ros::Publisher tum_ardrone_pub;
-
+		ros::Publisher land_pub;
+		std::string land_channel;
 		ros::NodeHandle nh_;
 
 		ros::ServiceClient video;
@@ -833,6 +834,9 @@ class ControlUINode
 		 */
 		void
 		checkPos (const ros::TimerEvent&);
+
+		void
+		sendLand();
 
 		// Records the video for a fixed amount of time
 		// bool recordVideo ();
