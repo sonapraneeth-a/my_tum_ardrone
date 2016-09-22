@@ -25,6 +25,11 @@
 #include <list>
 #include <opencv2/core/core.hpp>
 
+#include "Line2.hpp"
+#include "AllHeaders.hpp"
+#include "TopView.hpp"
+#include "DebugUtility.hpp"
+#include "LogUtility.hpp"
 
 #include <vector>
 #include <string>
@@ -527,8 +532,8 @@ class ControlUINode
 
 		/**
 		 * @brief Constructor for ControlUINode
-		 * @details Callbacks called from Constructor -> ControlUINode::keyPointDataCb, 
-		 * 					&ControlUINode::poseCb, ControlUINode::comCb
+		 * @details Callbacks called from Constructor -> keyPointDataCb, 
+		 * 					&poseCb, comCb
 		 * @param
 		 * @return
 		 */
@@ -840,6 +845,88 @@ class ControlUINode
 
 		// Records the video for a fixed amount of time
 		// bool recordVideo ();
+
+
+		/*** NEWER FUNCTIONS ***/
+		/**
+		 * @brief Move the drone to the destination point
+		 * @details
+		 * @param [vector<double>] dest_point - Final Destination of quadcopter
+		 * 									Includes yaw in the vector
+		 * @return
+		 */
+		void
+		moveDroneToPosition(vector<double> dest_point);
+
+		/**
+		 * @brief Move the drone to the destination point via a set of points
+		 * @details
+		 * @param [vector< vector<double> >] dest_points - Points to where quadcopter has to travel
+		 * 									Includes yaw in the vector
+		 * @return
+		 */
+		void
+		moveDroneViaSetOfPoints(vector< vector<double> > dest_points);
+
+		/**
+		 * @brief Generates the set of points (smoothly distributed) which drone has to follow to move from start to end
+		 * @details
+		 * @param [in] [vector< double >] start - Starting position of quadcopter @todo-me (With/Without yaw?) I suppose with yaw
+		 * @param [in] [vector< double >] end - Ending position of quadcopter (With/Without yaw?)
+		 * @param [out] [vector< vector<double> >] end - Intermediate points from start to end (With/Without yaw?)
+		 * @return
+		 */
+		void
+		designPathForDrone(const vector< double > &start, 
+							const vector< double > &end, 
+							vector< vector<double> > &path);
+
+		/**
+		 * @brief Get the bounding box points of each plane by autonomously navigating the quadcopter
+		 *
+		 */
+		void
+		getMeTheMap(const vector< double > &angles,
+									const vector< RotateDirection > directions,
+									int max_height_of_plane);
+
+		/**
+		 * @brief Cover the current plane visible to the quadcopter camera
+		 * @details 
+		 * @param [int] plane_num - Which plane you're covering
+		 * @param [float] max_height - Maximum height of the plane
+		 * @param [Point3f] current_pos_of_drone - Current position in 3D of the quadcopter
+		 * @return
+		 */
+		void
+		CoverTheCurrentPlane (int plane_num, float max_height);
+
+
+		/**
+		 * @brief Calculate the optimal position of quadcopter such that it can see the top and bottom
+		 * 			edge of the plane
+		 * @details
+		 * @param
+		 * @return
+		 */
+		bool
+		AdjustToSeeCurrentPlane(float focal_length,
+												float min_height_of_plane, 
+												float max_height_of_plane);
+
+		/**
+		 * @brief Move the quadcopter to the next plane such that it can see the left edge of the new plane
+		 * @param [RotateDirection] Rotation Direction Of Quadcopter: CLOCKWISE, COUNTERCLOCKWISE
+		 */
+		void
+		MoveQuadcopterToNextPlane(RotateDirection dir);
+
+		/**
+		 * @brief Calculate distance from the plane to see the height
+		 * @param [int] max_height_of_plane
+		 */
+		float
+		getDistanceToSeePlane(int max_height_of_plane);
 };
 
 

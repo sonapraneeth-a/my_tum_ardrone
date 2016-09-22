@@ -35,6 +35,7 @@
 
 #include "Line2.hpp"
 #include "AllHeaders.hpp"
+#include <map>
 #include "TopView.hpp"
 #include "DebugUtility.hpp"
 #include "LogUtility.hpp"
@@ -179,14 +180,14 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		 * @brief Performs certain functions when a certain key is pressed
 		 * @details Key r -> Need to reset all the entire points to initial state
 		 * 					Key t -> Toggles rendering polygon. Calls
-		 * 						ImageView::extractBoundingPoly();
-		 * 					Key b -> Calls ImageView::extractBoundingRect();
+		 * 						extractBoundingPoly();
+		 * 					Key b -> Calls extractBoundingRect();
 		 * 					Key s -> Save all the keypoint information. Calls
 		 * 						ControlUINode::saveKeyPointInformation(numFile);
 		 * 					Key r -> Need to reset all the entire points to initial state. Turn off all rendering
 		 * 					Key d -> Empty pointsClicked and keyPointsNearest vectors
 		 * 					Key space -> Send control commands to drone. TODO need to implement
-		 * 					Key e -> Extract multiple planes. Calls ImageView::extractBoundingPoly();,
+		 * 					Key e -> Extract multiple planes. Calls extractBoundingPoly();,
 		 * 						ControlUINode::fitMultiplePlanes3d() . It prints the continuous bounding box
 		 * 						points
 		 * 					Key g -> While moving the quadcopter we don’t want bounding box to appear. Set
@@ -275,15 +276,42 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		 */
 		void extractBoundingRect();
 
+		/*** NEWER FUNCTIONS ***/
+
 		void readInfo(string filename,
 					vector< vector<float> > &sortedPlaneParameters,
 					vector< vector<Point3f> > &boundingBoxPoints);
 
-		/*void split(	const string &s,
+		void
+		WriteInfoToFile(const vector<Point3f> &bounding_box_points, 
+					const vector<float> &plane_parameters, 
+					int plane_num, string filename);
+
+		void split(	const string &s,
 					char delim,
-					vector<float> &elems);*/
+					vector<float> &elems);
+
 		void split(	const string &s,
 					vector<float> &elems);
+
+		/**
+		 * @brief Get the bounding box points for currently visible planes.
+		 * @details Get the 2d points and corresponding plane labels
+		 * @param [in] [vector< Point3f >] points - 3d world co-ordinates
+		 * @param [in] [map< float, float >] 3d_to_2d - Mapping from 3d world co-ordinates to 2d image co-ordinates
+		 * @param [out] [vector< vector<float> >] feature_2d_points - 2d image co-ordinates
+		 * @param [out] [vector<int>] labels - Output labels for the feature_2d_points
+		 * @param [out] sortedPlaneParameters - plane parameters corresponding to plane i after arranging the points by
+		 * 					their distance from X axis
+		 */
+		int
+		findMultiplePlanesIn2D(
+				const vector<Point3f> &points,
+				const map<float, float> &_3d_to_2d_map,
+				vector<Point2f> &feature_2d_points,
+				vector<int> &labels,
+				vector< vector<float> > &sortedPlaneParameters,
+				vector<Point2f> boundPoints);
 
 };
 

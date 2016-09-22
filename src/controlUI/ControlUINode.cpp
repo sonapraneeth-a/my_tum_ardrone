@@ -2,7 +2,7 @@
  * ControlUINode.cpp
  *
  *       Created on: 19-Feb-2015
- *    Last Modified: 12-Sep-2016
+ *    Last Modified: 21-Sep-2016
  *  Original Author: Anirudh Vemula
  *   Current Author: Meghshyam Govind Prasad
  *   Current Author: Sona Praneeth Akula
@@ -10,7 +10,8 @@
  *      Description: 
  *
  * Date				Author							Modification
- * 12-Sep-2016	Sona Praneeth Akula	Added		Added comments to the code
+ * 12-Sep-2016	Sona Praneeth Akula			* Added comments to the code
+ * 21-Sep-2016	Sona Praneeth Akula			* Added code to land the quadcopter
  *****************************************************************************************/
 
 #include "ControlUINode.h"
@@ -1750,9 +1751,489 @@ ControlUINode::getInitialPath(const vector<double> &prevPosition, const vector<d
 	xyz_yaw.push_back(interm_point);
 }
 
+/***
+	New additions to the code
+***/
+
 void
 ControlUINode::sendLand()
 {
 	//if(isControlling)
 	land_pub.publish(std_msgs::Empty());
 }
+
+/**
+ * @brief Move the drone to the destination point
+ * @details
+ * @param [vector<double>] dest_point - Final Destination of quadcopter
+ * 									Includes yaw in the vector
+ * @return
+ */
+void
+ControlUINode::moveDroneToPosition(vector<double> dest_point)
+{
+	char buf[100];
+	commands.clear();
+	targetPoints.clear();
+	snprintf(buf, 100, "c goto %lf %lf %lf %lf", 
+		dest_point[0], dest_point[1], dest_point[2], dest_point[3]);
+	std_msgs::String s;
+	s.data = buf;
+	ROS_INFO("Message: ");
+	ROS_INFO(buf);
+	commands.push_back(s);
+	targetPoints.push_back(dest_point);
+}
+
+/**
+ * @brief Move the drone to the destination point via a set of points
+ * @details
+ * @param [vector< vector<double> >] dest_points - Points to where quadcopter has to travel
+ * 									Includes yaw in the vector
+ * @return
+ */
+void
+ControlUINode::moveDroneViaSetOfPoints(vector< vector<double> > dest_points)
+{
+	char buf[100];
+	commands.clear();
+	targetPoints.clear();
+	for (int i = 0; i < dest_points.size(); ++i)
+	{
+		snprintf(buf, 100, "c goto %lf %lf %lf %lf", 
+			dest_points[i][0], dest_points[i][1], dest_points[i][2], dest_points[i][3]);
+		std_msgs::String s;
+		s.data = buf;
+		ROS_INFO("Message: ");
+		ROS_INFO(buf);
+		commands.push_back(s);
+		targetPoints.push_back(dest_points[i]);
+	}
+}
+
+/**
+ * @brief Generates the set of points (smoothly distributed) which drone has to follow to move from start to end
+ * @details
+ * @param [in] [vector< double >] start - Starting position of quadcopter @todo-me (With/Without yaw?) I suppose with yaw
+ * @param [in] [vector< double >] end - Ending position of quadcopter (With/Without yaw?)
+ * @param [out] [vector< vector<double> >] end - Intermediate points from start to end (With/Without yaw?)
+ * @return
+ */
+void
+ControlUINode::designPathForDrone(const vector< double > &start, 
+					const vector< double > &end, 
+					vector< vector<double> > &path)
+{
+	// See getInitialPath for help
+	vector<double> start_3d_pos, end_3d_pos;
+	for (int i = 0; i < 3; ++i)
+	{
+		start_3d_pos.push_back(start[i]);
+		end_3d_pos.push_back(end[i]);
+	}
+	getInitialPath(start_3d_pos, end_3d_pos, 
+								start[3], end[3], path);
+}
+
+/**
+ * @brief Get the bounding box points of each plane by autonomously navigating the quadcopter
+ *
+ */
+void
+ControlUINode::getMeTheMap(const vector< double > &angles,
+							const vector< RotateDirection > directions,
+							int max_height_of_plane)
+{
+	vector<float> current_pos_of_drone, start_pos, end_pos;
+	int plane_num = 01;
+	int max_height = max_height_of_plane;
+	// if(directions.size()==0)
+	// {
+	// 	CoverTheCurrentPlane(plane_num, max_height);
+	// }
+	// else
+	// {
+	// 	CoverTheCurrentPlane(plane_num, max_height);
+	// 	/* directions*/
+	// 	int number_of_rotations = directions.size();
+	// 	for(int i = 1; i <= number_of_rotations; i++)
+	// 	{
+	// 		current_pos_of_drone.clear();
+	// 		MoveQuadcopterToNextPlane(directions[i]);
+	// 		plane_num++;
+	// 		CoverTheCurrentPlane(plane_num, max_height);
+	// 	}
+	// }
+	sendLand();
+}
+
+// /**
+//  * @brief Cover the current plane visible to the quadcopter camera
+//  * @details 
+//  * @param [int] plane_num - Which plane you're covering
+//  * @param [float] max_height - Maximum height of the plane
+//  * @param [Point3f] current_pos_of_drone - Current position in 3D of the quadcopter
+//  * @return
+//  */
+// void
+// ControlUINode::CoverTheCurrentPlane (int plane_num, float max_height)
+// {
+// 	// @todo-meghshyam Please check the implementation of locks
+// 	pthread_mutex_lock(&pose_CS);
+// 	// To check if the plane is covered completely
+// 	bool planeCovered = false;
+// 	float max_height_of_plane = max_height;
+// 	// @todo-meghshyam @todo-sir, 3m. Is this sufficient?
+// 	// @todo-meghshyam @todo-sir What is the max distance allowed for the quadcopter
+// 	// from any plane? Based on that we can fix the min_height and max_height in TopView
+// 	// GUI and here
+// 	float min_height_of_plane = 3;
+// 	/* As obtained from ControlUINode.cpp Line 429 */
+// 	while (!planeCovered)
+// 	{
+// 		// Number of points clicked on the screen 
+// 		image_gui->numPointsClicked = 0;
+// 		// Number of Key points detected
+// 		image_gui->numKeyPointsDetected = 0;
+// 		// Vector containing the co-ordinates of points clicked on the screen. 2d image points
+// 		// vector< vector<int> >
+// 		image_gui->pointsClicked.clear();
+// 		// the 3d keypoints of control node for nearest keypoints
+// 		// vector< vector<float> >
+// 		image_gui->keyPointsNearest.clear();
+// 		image_gui->renderPoly = false;
+// 		image_gui->renderRect = false;
+// 		// New variable which renders the plane whose points will be captured in 
+// 		// boundingBox
+// 		image_gui->renderSignificantPlane = false;
+// 		/* Adjust the quadcopter to see the top and bottom edge of current plane (plane in view) */
+// 		/* Returns TRUE if the plane in view is covered completely, else FALSE*/
+// 		bool flag = AdjustToSeeCurrentPlane(focal_length,
+// 											min_height_of_plane,
+// 											max_height_of_plane );
+// 		/* Mark the bounding points for the plane to be scanned */
+// 		/* Output: vector<Point2f> pointsClicked */
+// 		/* Loop until 4 points are clicked on the image */
+// 		// @todo-sir @todo-meghshyam Is this a good method to stop the system until 
+// 		// all 4 points are clicked
+// 		while(pointsClicked.size()!=4) {}
+// 		// @todo-sir Get the bounding box points of the leftmost-plane/significant-plane from the marked points
+// 		image_gui->extractBoundingPoly();
+// 		image_gui->renderSignificantPlane = true; // @todo-me See 288-328 for implemtation
+// 		// @todo-meghshyam @todo-sir How should Render it on Image GUI -> renderFrame()???
+// 		// @todo-me Only render rectangle of significant plane
+// 		image_gui->renderFrame();
+// 		int size = image_gui->continuousBoundingBoxPoints.size();
+// 		assert(size == image_gui->planeParameters.size());
+// 		for (int i = 0; i < size; ++i)
+// 		{
+// 			image_gui->continuousBoundingBoxPoints[i].clear();
+// 			image_gui->planeParameters[i].clear();
+// 		}
+// 		image_gui->continuousBoundingBoxPoints.clear();
+// 		image_gui->planeParameters.clear();
+// 		// Calls JLinkage and finds all planes within the clicked region
+// 		// @todo-me @todo-sir Also return the most significant plane found
+// 		int significantPlaneIndex = 0;
+// 		fitMultiplePlanes3d(image_gui->ccPoints, image_gui->pointsClicked, 
+// 			image_gui->planeParameters, image_gui->continuousBoundingBoxPoints);
+// 		/* CURRENTLY MIGHT NOT BE REQUIRED 
+// 		// Gather the points for the marked plane by moving the quadcopter towards the left edge of the plane 
+// 		// and towards the right edge of the plane from there 
+// 		if(flag)
+// 			GatherPoints(pointsClicked, dir);
+// 		else
+// 			GatherPoints(pointsClicked, COUNTERCLOCKWISE);
+// 		// Write the 3D map to the file Plane_3D_Points.txt
+// 		string file_name = "Plane_3D_2D_Points.csv";
+// 		WritePointsToFile(_3d_points, _2d_points, file_name);
+// 		vector<Point3f> points_travel;
+// 		Point3f left_end_of_plane = ;
+// 		Point3f right_end_of_plane = ;
+// 		node->moveDrone(points_travel); */
+// 		/* Write the bounding box points to file Plane_Info.txt */
+// 		/* Write the plane parameters to the same file */
+// 		string file_name = "Plane_Info.txt";
+// 		// bounding_box_points[0] - corresponds to the points of the leftmost plane
+// 		// Write points of significant plane to file
+// 		// @todo-me So indices might change form 0 to something else. Please NOTE
+// 		WriteInfoToFile(image_gui->continuousBoundingBoxPoints[significantPlaneIndex], 
+// 			image_gui->planeParameters[significantPlaneIndex], plane_num, file_name);
+// 		if (flag)
+// 		{
+// 			planeCovered = true;
+// 		}
+// 		else
+// 		{
+// 			/* @todo-me Shift by some amount to see the next part of the same plane */
+// 			// @todo-meghshyam According to makeBoundingRects.cpp (202-205) UV are pushed in bl, br, tl, tr
+// 			// So I assume XYZ are stored in the same manner
+// 			Point3f top_right = image_gui->continuousBoundingBoxPoints[2];
+// 			Point3f top_left = image_gui->continuousBoundingBoxPoints[3];
+// 			int width_of_3d_plane = fabs(sqrt( (top_right.x - top_left.x)*(top_right.x - top_left.x) +
+// 												(top_right.y - top_left.y)*(top_right.y - top_left.y) + 
+// 												(top_right.z - top_left.z)*(top_right.z - top_left.z) ));
+// 			/* I think 1/4 of width of the plane is better */
+// 			/* Push that position to vector */
+// 			vector<float> new_pos_of_drone;
+// 			// @todo-sir @todo-meghshyam Currently the plane is not yet covered so second plane is not in the picture
+// 			// Get the final destination of quadcopter and use getInitialPath() for moving quadcopter
+// 			new_pos_of_drone.push_back(x_drone + width_of_3d_plane/4); // heuristic
+// 			new_pos_of_drone.push_back(y_drone);
+// 			new_pos_of_drone.push_back(z_drone);
+// 			new_pos_of_drone.push_back(yaw);
+// 			vector< vector<double> > path;
+// 			// @todo-meghshyam Check the implementation of lock
+// 			pthread_mutex_lock(&command_CS);
+// 			designPathForDrone(current_pos_of_drone, new_pos_of_drone, path);
+// 			node->moveDrone(path);
+// 			pthread_mutex_unlock(&command_CS);
+// 			planeCovered = false;
+// 		}
+// 	}
+// 	pthread_mutex_unlock(&pose_CS);
+// }
+
+// /**
+//  * @brief Calculate the optimal position of quadcopter such that it can see the top and bottom
+//  * 			edge of the plane
+//  * @details
+//  * @param
+//  * @return
+//  */
+// bool
+// ControlUINode::AdjustToSeeCurrentPlane(float focal_length,
+// 						float min_height_of_plane, float max_height_of_plane)
+// {
+// 	bool flag = true; // flag indicates whether or not the plane is covered completely
+// 	// @todo-sir Using focal length and max_height to calculate position
+// 	double aspect_ratio = 16/9; // @todo-meghshyam 640/360. Is it right?
+// 	// @todo-meghshyam @todo-sir How do I calculate the distance from the plane at which quadcopter should stay? How is this achieved?
+// 	float ac_dis_plane = getDistanceToSeePlane(max_height_of_plane); // The distance, the quadcopter is expected to be from the plane to see the entire plane height
+// 	vector<float> new_pos_of_drone;
+// 	vector<float> plane_parameters;
+// 	plane_parameters = fitPlane3d(); // NOTE: Not fitMultiplePlane3D() because we are currently seeing only 1 plane
+// 	float a = plane_parameters[0];
+// 	float b = plane_parameters[1];
+// 	float c = plane_parameters[2];
+// 	float d = plane_parameters[3];
+// 	float x0 = x_drone;
+// 	float y0 = y_drone;
+// 	float z0 = z_drone;
+// 	float quad_dis_plane = fabs(a*x0+b*y0+c*z0+d)/sqrt(a*a+b*b+c*c); // Current distance of quadcoter from the plane
+// 	pos.clear();
+// 	if(quad_dis_plane > ac_dis_plane)
+// 	{
+// 		// @todo-sir @todo-meghshyam What distance should the quadcopter move?
+// 		new_pos_of_drone.push_back(x_drone);
+// 		new_pos_of_drone.push_back(y_drone + );
+// 		new_pos_of_drone.push_back(z_drone);
+// 	}
+// 	else
+// 	{
+// 		new_pos_of_drone.push_back(x_drone);
+// 		new_pos_of_drone.push_back(y_drone - );
+// 		new_pos_of_drone.push_back(z_drone);
+// 	}
+// 	vector< vector<double> > xyz_yaw;
+// 	// @todo-meghshyam Please check the use of locks
+// 	pthread_mutex_lock(&pose_CS);
+// 	vector<float> current_pos_of_drone;
+// 	current_pos_of_drone.clear();
+// 	current_pos_of_drone.push_back(x_drone);
+// 	current_pos_of_drone.push_back(y_drone);
+// 	current_pos_of_drone.push_back(z_drone);
+// 	current_pos_of_drone.push_back(yaw);
+// 	pthread_mutex_unlock(&pose_CS);
+// 	pthread_mutex_lock(&command_CS);
+// 	getInitialPath(current_pos_of_drone, new_pos_of_drone, yaw, yaw, xyz_yaw);
+// 	node->moveDrone(xyz_yaw);
+// 	pthread_mutex_unlock(&command_CS);
+// 	vector< vector<Point3f> > bounding_box_points;
+// 	vector< vector<Point2f> > image_bounding_box_points;
+// 	// @todo-me @todo-meghshyam Here there are no clicked points, we need to send all the _3d_points
+// 	// Need to change the function signature
+// 	fitMultiplePlanes3d(image_gui->ccPoints, image_gui->pointsClicked, 
+// 			image_gui->planeParameters, image_gui->continuousBoundingBoxPoints);
+// 	project3DPointsOnImage(bounding_box_points, image_bounding_box_points);
+// 	// @todo-meghshyam According to makeBoundingRects.cpp (202-205) UV are pushed in 
+// 	// bottom-left, bottom-right, top-left, top-right
+// 	// So I assume XYZ are stored in the same manner
+// 	// Right edge start is towards the bottom of the screen
+// 	// Right edge end is towards the top of the screen
+// 	Line2f right_edge(image_bounding_box_points[1], image_bounding_box_points[2]); 
+// 	// @todo-sir @todo-meghshyam check this
+// 	if( (right_edge.start.x >= 340.0 && right_edge.start.y <= 10.0) &&
+// 		(right_edge.end.x >= 620.0 && right_edge.end.y >= 340.0) )
+// 	{
+// 		flag = true;
+// 	}
+// 	else
+// 	{
+// 		flag = false;
+// 	}
+// 	return flag;
+// }
+
+// /**
+//  * @brief Move the quadcopter to the next plane such that it can see the left edge of the new plane
+//  * @param [RotateDirection] Rotation Direction Of Quadcopter: CLOCKWISE, COUNTERCLOCKWISE
+//  */
+// void
+// ControlUINode::MoveQuadcopterToNextPlane(RotateDirection dir)
+// {
+// 	pthread_mutex_lock(&pose_CS);
+// 	vector<float> current_pos_of_drone;
+// 	current_pos_of_drone.clear();
+// 	current_pos_of_drone.push_back(x_drone);
+// 	current_pos_of_drone.push_back(y_drone);
+// 	current_pos_of_drone.push_back(z_drone);
+// 	current_pos_of_drone.push_back(yaw);
+// 	pthread_mutex_unlock(&pose_CS);
+// 	if(dir == CLOCKWISE)
+// 	{
+// 		vector<float> pos;
+// 		for(int i = 0; i < current_pos_of_drone.size(); i++)
+// 		{
+// 			pos.push_back(current_pos_of_drone[i]);
+// 		}
+// 		// Changing the yaw by 5 degrees
+// 		// @todo-meghshyam What is the sign for clockwise and counter-clockwise rotation
+// 		// [MGP] -ve anti-clockwise , +ve clockwise
+// 		pos[3] = yaw-5; // heuristic
+// 		node->moveDrone(pos);
+// 	}
+// 	vector< vector<Point2f> > boundPoints;
+// 	// Get multiple planes in 2D points and as well as their boundingPoints
+// 	findMultiplePlanesIn2D(_3d_points);
+// 	while ( boundPoints.size() != 1 )
+// 	{
+// 		vector< vector<float> > planeParameters;
+// 		vector< vector<Point3f> > continuousBoundingBoxPoints;
+// 		findMultiplePlanes(_in_points, planeParameters, continuousBoundingBoxPoints);
+// 		vector<float> pos; pos.clear();
+// 		double desiredYaw = 0;
+// 		Point3f projectedNormal(planeParameters[i][0], planeParameters[i][1], 0);
+// 		Point3f yAxis(0,1,0);
+// 		desiredYaw= findAngle(projectedNormal, yAxis);
+// 		desiredYaw= desiredYaw*180/M_PI;
+// 		float theta = desiredYaw;// @todo-1 How much should I rotate to align the quadcopter with next plane
+// 		//[MGP] find out the normal of the major plane, the angle of the projected normal (on XY plane) with y-axis is yaw
+// 		//Check COntrolUINode.cpp to get desiredYaw
+// 		pos.push_back(x_drone);
+// 		pos.push_back(y_drone);
+// 		pos.push_back(z_drone);
+// 		// @todo-1 Is this right?
+// 		// [MGP] you need to change the yaw gradually, above angle is absolute
+// 		if(dir == CLOCKWISE)
+// 			pos.push_back(yaw-theta);
+// 		else
+// 			pos.push_back(yaw+theta);
+// 		node->moveDrone(pos);
+// 		pos.clear();
+// 		// @todo-1 What distance should quadcopter traverse along z axis ie, horizontally 
+// 		// [MGP] z axis is vertical axix in quadcopter coordinate frame
+// 		pos.push_back(x_drone+distance);
+// 		pos.push_back(y_drone);
+// 		pos.push_back(z_drone);
+// 		pos.push_back(yaw);
+// 		node->moveDrone(pos);
+// 		pos.clear();
+// 		findMultiplePlanesIn2D(_3d_points);
+// 	}
+// 	bool leftEdgeOfPlaneVisible = false;
+// 	// @todo-2 Get the left edge of the plane
+// 	// @todo-1 Based on how we generate bounding box points get the left edge of the detected plane in 2D
+// 	// Looks like it's correct from makeBoundingRects.cpp
+// 	Line2f left_edge(bounding_box_points[0], bounding_box_points[3]); // If I'm not wrong!!!
+// 	//[MGP] it depends how you are storing (start and order) bounding box points 
+// 	//if starting  with left-top and in clockwise direction then it is right)
+// 	//[MGP] I have changed it from 4 to 3
+// 	if(left_edge.start - 360 >= 0.0 && left_edge.end >= 20.0)
+// 	{
+// 		leftEdgeOfPlaneVisible = true;
+// 	}
+// 	else
+// 	{
+// 		leftEdgeOfPlaneVisible = false;
+// 	}
+// 	while (!leftEdgeOfPlaneVisible)
+// 	{
+// 		vector<float> pos; pos.clear();
+// 		float distance = ;// @todo-1 What is this value? [MGP] See my earlier comment on similar question
+// 		pos.push_back(x_drone-distance);
+// 		pos.push_back(y_drone);
+// 		pos.push_back(z_drone);
+// 		pos.push_back(yaw);
+// 		node->moveDrone(pos);
+// 		findMultiplePlanesIn2D(_3d_points);
+// 		// @todo-1 Based on how we generate bounding box points get the left edge of the detected plane in 2D
+// 		// [MGP] see above comment
+// 		Line2f left_edge(bounding_box_points[0], bounding_box_points[3]); // If I'm not wrong!!!
+// 		if(left_edge.start - 360 >= 00.0 && left_edge.end >= 20.0)
+// 		{
+// 			leftEdgeOfPlaneVisible = true;
+// 		}
+// 		else
+// 		{
+// 			leftEdgeOfPlaneVisible = false;
+// 		}
+// 	}
+// 	pthread_mutex_unlock(pose_CS);
+// }
+
+// void
+// ControlUINode::sendLand()
+// {
+// 	//if(isControlling)
+// 	land_pub.publish(std_msgs::Empty());
+// }
+
+// float
+// getDistanceToSeePlane(int max_height_of_plane)
+// {
+// 	// @todo-meghshyam Do I have to do the calibration once again???
+// 	Mat cameraMatrix(3, 3, DataType<double>::type);
+// 	// Setting camera matrix for vga quality
+// 	// From calibration done on our drone
+// 	cameraMatrix.at<double>(0,0) = 565.710890694431;
+// 	cameraMatrix.at<double>(0,1) = 0;
+// 	cameraMatrix.at<double>(0,2) = 329.70046366652;
+// 	cameraMatrix.at<double>(1,0) = 0;
+// 	cameraMatrix.at<double>(1,1) = 565.110297594854;
+// 	cameraMatrix.at<double>(1,2) = 169.873085097623;
+// 	cameraMatrix.at<double>(2,0) = 0;
+// 	cameraMatrix.at<double>(2,1) = 0;
+// 	cameraMatrix.at<double>(2,2) = 1;
+
+// 	Mat distCoeffs(5, 1, DataType<double>::type);
+// 	// Setting distortion coefficients
+// 	// From calibration done on our drone
+// 	distCoeffs.at<double>(0) = -0.516089772391501;
+// 	distCoeffs.at<double>(1) = 0.285181914111246;
+// 	distCoeffs.at<double>(2) = -0.000466469917823537;
+// 	distCoeffs.at<double>(3) = 0.000864792975814983;
+// 	distCoeffs.at<double>(4) = 0;
+
+// 	//Something to do with older version of opencv which gets linked by mrpt
+// 	Mat dummy;
+// 	undistortPoints(imgPoints_mat, dummy, cameraMatrix, distCoeffs);
+// 	Mat rot_guess = Mat::eye(3,3, CV_64F);
+// 	Rodrigues(rot_guess, rvec);
+// 	tvec.at<double>(0)  = -(center.x-0.6*plane[0]);
+// 	tvec.at<double>(1)  = -(center.y+0.6*plane[2]);
+// 	tvec.at<double>(2)  = -(center.z - 0.6*plane[1]);
+// 	solvePnP(objPoints_mat, imgPoints_mat, cameraMatrix, distCoeffs, rvec, tvec, true, CV_ITERATIVE);
+// 	Mat rot(3,3, DataType<double>::type);
+// 	Rodrigues(rvec, rot);
+// 	Mat rotinv;
+// 	transpose(rot, rotinv);
+// 	tvec = -rotinv * tvec;
+// 	vector<double> pt;
+// 	pt.push_back(tvec.at<double>(0));
+// 	pt.push_back(tvec.at<double>(2));
+// 	pt.push_back(-tvec.at<double>(1));
+// 	tPoints.push_back(pt);
+
+
+// }

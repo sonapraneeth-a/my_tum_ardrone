@@ -478,13 +478,21 @@ ImageView::on_key_down(int key)
 		top->getDirections(main_direction);
 		top->getAngles(main_angles);
 		/* Printing the information to the terminal */
-		cout << "Number of planes: " << top->getNumberOfPlanes() << "\n";
+		int number_of_planes = top->getNumberOfPlanes();
+		if(number_of_planes == 0)
+		{
+			cout << "[ ERROR] No diagram drawn\n";
+		}
+		else
+		{
+			cout << "Number of planes: " << number_of_planes << "\n";
+		}
 		cout << "Max Height of the plane (as estimated by the user): " << top->getMaxHeightOfPlane() << "\n";
 		if(top->getTypeOfSurface() == 0)
 			cout << "Surface Drawn: " << "Open Surface" << "\n";
 		if(top->getTypeOfSurface() == 1)
 			cout << "Surface Drawn: " << "Closed Surface" << "\n";
-		//top->destroy();
+		top->destroy();
 		cout << "Angles: ";
 		for (int i = 0; i < main_angles.size(); ++i)
 		{
@@ -500,12 +508,20 @@ ImageView::on_key_down(int key)
 				cout << "ANTI-CLOCKWISE" << " ";
 		}
 		cout << "\n";
-		// node->getMeTheMap(main_angles, main_directions);
-		// Land the quadcopter on completion of the task
-		cout << "Bounding Box Points collected\n";
-		cout << "Landing the quadcopter\n";
-		node->sendLand();
-		cout << "Quadcopter has landed. Task of collecting points completed\n";
+		if(number_of_planes > 0)
+		{
+			// node->getMeTheMap(main_angles, main_directions);
+			// Land the quadcopter on completion of the task
+			cout << "Bounding Box Points collected\n";
+			cout << "Landing the quadcopter\n";
+			node->sendLand();
+		}
+		else
+		{
+			cout << "[ ERROR] No diagram drawn. So, landing the quadcopter\n";
+			node->sendLand();
+		}
+		cout << "[ INFO] Quadcopter has landed.\n";
 	}
 	// Key n
 	// Uses the points written from a file (obtained from key g)
@@ -657,6 +673,9 @@ ImageView::extractBoundingPoly()
 
 }
 
+
+/*** NEWER FUNCTIONS ***/
+
 void
 ImageView::extractBoundingRect()
 {
@@ -752,19 +771,6 @@ ImageView::readInfo(string filename,
 	plane_info.close();
 }
 
-/*void
-ImageView::split(	const string &s,
-					char delim,
-					vector<float> &elems)
-{
-	stringstream ss(s);
-	string item;
-	while (getline(ss, item, delim))
-	{
-		elems.push_back(stof(item));
-	}
-}*/
-
 void
 ImageView::split(	const string &s,
 					vector<float> &elems)
@@ -779,3 +785,207 @@ ImageView::split(	const string &s,
 		}
 	}
 }
+
+/**
+ * @brief Write the plane parameters and bounding box points of all planes to file
+ * @details See points_00.csv for details of the written file
+ * @param [vector<Point3f>] bounding_box_points - Bounding box points of the plane
+ * @param [vector<float>] plane_parameters - (a, b, c, d) of the plane
+ * @param [int] plane_num - Plane number whose points are written to file
+ * @param [string] file_name - Name of the file to which the points are written
+ */
+void
+ImageView::WriteInfoToFile(const vector<Point3f> &bounding_box_points, 
+			const vector<float> &plane_parameters, 
+			int plane_num, string filename)
+{
+	int num_bounding_box_points = bounding_box_points.size();
+	const char* outFilename = filename.c_str();
+	ofstream outFile;
+	// Open the object in writing and appending mode
+	outFile.open(outFilename, ios::app);
+	// Check if the file is open
+	if (!outFile.is_open())
+	{
+		cerr << "\nFile " << filename << " cannot be opened for writing.\n";
+		cerr << "Please check if the file is existing and has required permissions ";
+		cerr << " for writing.\n";
+	}
+	outFile << "Plane " << std::setfill ('0') << std::setw (2) << to_string(plane_num) << "\n";
+	outFile << "Bounding-Box-Points\n";
+	for (int i = 0; i < num_bounding_box_points; ++i)
+	{
+		outFile << bounding_box_points[i].x << " "
+			<< bounding_box_points[i].y << " "
+			<< bounding_box_points[i].z << "\n";
+	}
+	outFile << "Plane-Parameters\n";
+	for (int i = 0; i < plane_parameters.size(); ++i)
+	{
+		if(i != plane_parameters.size()-1)
+			outFile << plane_parameters[i] << " ";
+		else
+			outFile << plane_parameters[i] << "\n";
+	}
+	// Close the file
+	outFile.close();
+	return ;
+}
+
+
+// /**
+//  * @brief Get the bounding box points for currently visible planes.
+//  * @details Get the 2d points and corresponding plane labels
+//  * @param [in] [vector< Point3f >] points - 3d world co-ordinates
+//  * @param [in] [map< float, float >] 3d_to_2d - Mapping from 3d world co-ordinates to 2d image co-ordinates
+//  * @param [out] [vector< vector<float> >] feature_2d_points - 2d image co-ordinates
+//  * @param [out] [vector<int>] labels - Output labels for the feature_2d_points
+//  * @param [out] sortedPlaneParameters - plane parameters corresponding to plane i after arranging the points by
+//  * 					their distance from X axis
+//  */
+// int
+// ImageView::findMultiplePlanesIn2D(
+// 		const vector<Point3f> &points,
+// 		const map<float, float> 3d_to_2d,
+// 		vector<Point2f> &feature_2d_points,
+// 		vector<int> &labels,
+// 		vector< vector<float> > &sortedPlaneParameters,
+// 		vector<Point2f> boundPoints)
+// {
+// 	vector<Point3f> _in_points;
+// 	vector< vector<int> > points;
+// 	for(unsigned int i=0; i<ccPoints.size(); i++)
+// 	{
+// 		points.push_back(pointsClicked[ccPoints[i]]);
+// 	}
+// 	pthread_mutex_lock(&keyPoint_CS);
+// 	for(unsigned int i=0; i<_2d_points.size(); i++)
+// 	{
+// 		if(liesInside(points, _2d_points[i]))
+// 		{
+// 			Point3f featurePt;
+// 			featurePt.x = _3d_points[i][0];
+// 			featurePt.y = _3d_points[i][1];
+// 			featurePt.z = _3d_points[i][2];
+// 			_in_points.push_back(featurePt);
+// 		}
+// 	}
+// 	pthread_mutex_unlock(&keyPoint_CS);
+// 	// Step 1: Performing JLinkage to find multiple models
+// 	// This vector describes to which plane does point i belong to
+// 	// This is an output from JLinkage
+// 	vector<int> oldPlaneIndices;
+// 	callJLinkage(_in_points, oldPlaneIndices);
+// 	// Step 2: Remove points which contain less than 'minimumNumberOfPoints'
+// 	// We have taken 'minimumNumberOfPoints' to be 30
+// 	// Minimum number of points required to be qualified to be in data
+// 	int minPointsPerPlane = 30;
+// 	// Number of points in 'points' during initial stage
+// 	int numberOfPointsInData = points.size();
+// 	// Mapping planeIndex -> number of points in that plane
+// 	map<int, int> numberOfPointsPerPlane;
+// 	// Plane Indices after removing unnecessary planes
+// 	vector<int> newPlaneIndices;
+// 	vector<Point3f> newPoints;
+// 	// Number of planes after removing unnecessary planes
+// 	int numberOfPlanes;
+// 	removeUnnecessaryPlanes( _in_points, oldPlaneIndices, minPointsPerPlane,
+// 			numberOfPointsPerPlane, newPoints, newPlaneIndices, numberOfPlanes);
+// 	// Try to find for multiple planes only if there are more than 1 plane.
+// 	if( numberOfPlanes > 1 )
+// 	{
+// 		// Step 3: Perform K-means for the new set of planes obtained
+// 		Mat pointsMatrix = Mat(newPoints.size(), 3, CV_32F);
+// 		// Create a pointsMatrix from vector<Point3f> data
+// 		for(int i = 0; i < newPoints.size(); i++) {
+// 			float *ptr = (float*)(&pointsMatrix.at<float>(i,0));
+// 			ptr[0] = newPoints[i].x;
+// 			ptr[1] = newPoints[i].y;
+// 			ptr[2] = newPoints[i].z;
+// 		}
+// 		// Cluster centroid being returned from kmeans
+// 		Mat clusterCentroids;
+// 		/* Number of rounds for k-means */
+// 		int numberOfRounds = 10;
+// 		// Perform k-means
+// 		// Reference: http://docs.opencv.org/2.4/modules/core/doc/clustering.html
+// 		// float kmeans(const cv::_InputArray &,
+// 		// int, const cv::_OutputArray &,
+// 		// cv::TermCriteria, int, int, const cv::_OutputArray &);
+// 		// Performing kmeans using initial labels we've obtained in step 1
+// 		kmeans(pointsMatrix, numberOfPlanes, newPlaneIndices,
+// 				TermCriteria( CV_TERMCRIT_ITER, 10, 2.0), numberOfRounds,
+// 				KMEANS_USE_INITIAL_LABELS, clusterCentroids);
+// 		// Plane Parameters (a, b, c, d) for plane i
+// 		vector< vector<float> > planeParameters;
+// 		// Obtain the plane parameters for the set of points obtained after Step 2
+// 		// Arrange plane points belonging to a particular plane i
+// 		vector< vector<Point3f> > planeOrderedPoints;
+// 		getPlaneParameters(newPoints, newPlaneIndices, planeParameters, planeOrderedPoints);
+// 		// Step 4: Remove points which far from the estimated plane after performing k-means
+// 		// Get 3D Projection of points onto the plane
+// 		vector<float> distanceMatrix;
+// 		vector< vector<int> > planePointsIndexMapping;
+// 		vector<Point3f> newSortedPoints;
+// 		vector< vector<float> > newPlaneParameters;
+// 		map<int, pair<int, int> > planeIndexBounds;
+// 		vector<Point3f> projectionsOf3DPoints;
+// 		// Calculate the distances of the points from their respective planes
+// 		calculateDistanceFromPlane( newPoints, planeParameters, newPlaneIndices,
+// 				distanceMatrix, planePointsIndexMapping);
+// 		// Step 5
+// 		// Order plane by left to right as viewed from camera
+// 		vector<Point3f> sortedProjectionsOf3DPoints;
+// 		map<int, pair<int, int> > sortedPlaneIndexBounds;
+// 		vector< vector<Point3f> > boundingBoxPoints;
+// 		orderPlanePointsByCentroids( projectionsOf3DPoints, newPlaneParameters, planeIndexBounds,
+// 				sortedProjectionsOf3DPoints, sortedPlaneParameters, sortedPlaneIndexBounds);
+// 	}
+// 	else
+// 	{
+// 		vector<float> planeParameters;
+// 		vector<Point3f> projectionsOf3DPoints;
+// 		fitPlane3D(newPoints, planeParameters);
+// 		float a = planeParameters[0];
+// 		float b = planeParameters[1];
+// 		float c = planeParameters[2];
+// 		float d = planeParameters[3];
+// 		for (int j = 0; j < newPoints.size(); ++j)
+// 		{
+// 			float x0 = newPoints[j].x;
+// 			float y0 = newPoints[j].y;
+// 			float z0 = newPoints[j].z;
+// 			float t = ((-1)*(a*x0+b*y0+c*z0+d))/(a*a+b*b+c*c);
+// 			float projX0 = x0 + a*t;
+// 			float projY0 = y0 + b*t;
+// 			float projZ0 = z0 + c*t;
+// 			projectionsOf3DPoints.push_back(Point3f(projX0, projY0, projZ0));
+// 		}
+// 		sortedPlaneParameters.push_back(planeParameters);
+// 	}
+// 	for (int i = 0; i < newPlaneIndices.size(); ++i)
+// 	{
+// 		labels.push_back(newPlaneIndices);
+// 	}
+// 	for (int i = 0; i < newPoints.size(); ++i)
+// 	{
+// 		feature_2d_points.push_back(3d_to_2d[newPoints[i]]);
+// 	}
+// 	extractBoundingRectIn2D(feature_2d_points, boundPoints);
+// 	return 0;
+
+// }
+
+
+// void
+// ImageView::split(	const string &s,
+// 					char delim,
+// 					vector<float> &elems)
+// {
+// 	stringstream ss(s);
+// 	string item;
+// 	while (getline(ss, item, delim))
+// 	{
+// 		elems.push_back(stof(item));
+// 	}
+// }
