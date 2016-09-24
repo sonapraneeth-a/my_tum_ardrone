@@ -2,7 +2,7 @@
  * ImageView.cpp
  *
  *       Created on: 21-Feb-2015
- *    Last Modified: 22-Sep-2016
+ *    Last Modified: 23-Sep-2016
  *  Original Author: Anirudh Vemula
  *   Current Author: Meghshyam Govind Prasad
  *   Current Author: Sona Praneeth Akula
@@ -14,6 +14,7 @@
  * 19-Sep-2016	Sona Praneeth Akula			* Added code for on_key_down(); key c, g
  * 21-Sep-2016	Sona Praneeth Akula			* Added threading to TopView
  * 22-Sep-2016	Sona Praneeth Akula			* Added code to destroy TopView once its job is done
+ * 23-Sep-2016	Sona Praneeth Akula			* Added code for testing path planning
  *****************************************************************************************/
 
 
@@ -38,6 +39,8 @@ typedef K::Segment_3 Segment_3;
 typedef K::Point_3 Point_3;
 typedef CGAL::Creator_uniform_3<double,Point_3> PointCreator;*/
 using namespace std;
+
+int plane_num_test = 0;
 
 ImageView::ImageView(ControlUINode *cnode)
 {
@@ -459,6 +462,55 @@ ImageView::on_key_down(int key)
 			node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);
 		}
 	}
+	// Key a - Just for testing
+	if(key == 97)
+	{
+		vector<double> curr_pos_of_drone;
+		curr_pos_of_drone.clear();
+		node->getCurrentPositionOfDrone(curr_pos_of_drone);
+		cout << "Current Quadcopter Position: (" << curr_pos_of_drone[0] 
+				<< ", " << curr_pos_of_drone[1] << ", " << curr_pos_of_drone[1]
+				<< ", " << curr_pos_of_drone[3]  << ")\n";
+		extractBoundingPoly();
+		renderRect = true;
+		int size = continuousBoundingBoxPoints.size();
+		assert(size == planeParameters.size());
+		int i,j;
+		for (i = 0; i < size; ++i)
+		{
+			continuousBoundingBoxPoints[i].clear();
+			planeParameters[i].clear();
+		}
+		continuousBoundingBoxPoints.clear();
+		planeParameters.clear();
+		// Calls JLinkage
+		node->fitMultiplePlanes3d(ccPoints, pointsClicked, planeParameters, continuousBoundingBoxPoints);
+		cout << "[ DEBUG ] continuousBoundingBoxPoints from ImageView\n";
+		size = continuousBoundingBoxPoints.size();
+		for (i = 0; i < size; ++i)
+		{
+			for (j = 0; j < 5; ++j)
+			{
+				cout << continuousBoundingBoxPoints[i][j] << " ";
+			}
+			cout << "\n";
+		}
+		string filename = "Plane_Info.txt";
+		plane_num_test++;
+		vector<Point3f> bounding_box_points;
+		vector<float> plane_parameters;
+		bounding_box_points.clear();
+		plane_parameters.clear();
+		for (int i = 0; i < continuousBoundingBoxPoints[0].size(); ++i)
+		{
+			bounding_box_points.push_back(continuousBoundingBoxPoints[0][i]);
+		}
+		for (int i = 0; i < planeParameters[0].size(); ++i)
+		{
+			plane_parameters.push_back(planeParameters[0][i]);
+		}
+		WriteInfoToFile(bounding_box_points, plane_parameters, plane_num_test, filename);
+	}
 	// Key c
 	if(key == 99)
 	{
@@ -466,7 +518,7 @@ ImageView::on_key_down(int key)
 		/* Angle with which	quadcopter has to rotate to orient itself to the new plane */
 		std::vector< double > main_angles;
 		/* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
-		std::vector< RotateDirection > main_direction;
+		std::vector< RotateDirection > main_directions;
 		/* Initiating the GUI */
 		TopView *top = new TopView();
 		top->startSystem();
@@ -475,10 +527,13 @@ ImageView::on_key_down(int key)
 		while(!(top->getExitStatus()))
 		{}
 		/* Get the directions, angles and number of planes */
-		top->getDirections(main_direction);
+		top->getDirections(main_directions);
 		top->getAngles(main_angles);
 		/* Printing the information to the terminal */
 		int number_of_planes = top->getNumberOfPlanes();
+		int type_of_surface = top->getTypeOfSurface();
+		int max_height = top->getMaxHeightOfPlane();
+		int view_dir = top->getViewingDirection();
 		if(number_of_planes == 0)
 		{
 			cout << "[ ERROR] No diagram drawn\n";
@@ -488,10 +543,30 @@ ImageView::on_key_down(int key)
 			cout << "Number of planes: " << number_of_planes << "\n";
 		}
 		cout << "Max Height of the plane (as estimated by the user): " << top->getMaxHeightOfPlane() << "\n";
-		if(top->getTypeOfSurface() == 0)
+		if(type_of_surface == 0)
+		{
 			cout << "Surface Drawn: " << "Open Surface" << "\n";
+			if(view_dir == 0)
+			{
+				cout << "Viewing the surface from front\n";
+			}
+			if(view_dir == 1)
+			{
+				cout << "Viewing the surface from back\n";
+			}
+		}
 		if(top->getTypeOfSurface() == 1)
+		{
 			cout << "Surface Drawn: " << "Closed Surface" << "\n";
+			if(view_dir == 2)
+			{
+				cout << "Viewing the surface from outside the structure\n";
+			}
+			if(view_dir == 3)
+			{
+				cout << "Viewing the surface from inside the structure\n";
+			}
+		}
 		top->destroy();
 		cout << "Angles: ";
 		for (int i = 0; i < main_angles.size(); ++i)
@@ -500,17 +575,17 @@ ImageView::on_key_down(int key)
 		}
 		cout << "\n";
 		cout << "Directions: ";
-		for (int i = 0; i < main_direction.size(); ++i)
+		for (int i = 0; i < main_directions.size(); ++i)
 		{
-			if(main_direction[i] == 0)
+			if(main_directions[i] == 0)
 				cout << "CLOCKWISE" << " ";
-			else if(main_direction[i] == 1)
+			else if(main_directions[i] == 1)
 				cout << "ANTI-CLOCKWISE" << " ";
 		}
 		cout << "\n";
 		if(number_of_planes > 0)
 		{
-			// node->getMeTheMap(main_angles, main_directions);
+			//node->getMeTheMap(main_angles, main_directions, max_height);
 			// Land the quadcopter on completion of the task
 			cout << "Bounding Box Points collected\n";
 			cout << "Landing the quadcopter\n";
@@ -674,8 +749,6 @@ ImageView::extractBoundingPoly()
 }
 
 
-/*** NEWER FUNCTIONS ***/
-
 void
 ImageView::extractBoundingRect()
 {
@@ -715,6 +788,8 @@ ImageView::extractBoundingRect()
 	bPoints.push_back(maxXIndex);
 	bPoints.push_back(maxYIndex);
 }
+
+/*** NEWER FUNCTIONS ***/
 
 void
 ImageView::readInfo(string filename,
@@ -827,165 +902,108 @@ ImageView::WriteInfoToFile(const vector<Point3f> &bounding_box_points,
 		else
 			outFile << plane_parameters[i] << "\n";
 	}
+	outFile << "\n";
 	// Close the file
 	outFile.close();
 	return ;
 }
 
+void
+ImageView::split(	const string &s,
+					char delim,
+					vector<float> &elems)
+{
+	stringstream ss(s);
+	string item;
+	while (getline(ss, item, delim))
+	{
+		elems.push_back(stof(item));
+	}
+}
 
-// /**
-//  * @brief Get the bounding box points for currently visible planes.
-//  * @details Get the 2d points and corresponding plane labels
-//  * @param [in] [vector< Point3f >] points - 3d world co-ordinates
-//  * @param [in] [map< float, float >] 3d_to_2d - Mapping from 3d world co-ordinates to 2d image co-ordinates
-//  * @param [out] [vector< vector<float> >] feature_2d_points - 2d image co-ordinates
-//  * @param [out] [vector<int>] labels - Output labels for the feature_2d_points
-//  * @param [out] sortedPlaneParameters - plane parameters corresponding to plane i after arranging the points by
-//  * 					their distance from X axis
-//  */
-// int
-// ImageView::findMultiplePlanesIn2D(
-// 		const vector<Point3f> &points,
-// 		const map<float, float> 3d_to_2d,
-// 		vector<Point2f> &feature_2d_points,
-// 		vector<int> &labels,
-// 		vector< vector<float> > &sortedPlaneParameters,
-// 		vector<Point2f> boundPoints)
-// {
-// 	vector<Point3f> _in_points;
-// 	vector< vector<int> > points;
-// 	for(unsigned int i=0; i<ccPoints.size(); i++)
-// 	{
-// 		points.push_back(pointsClicked[ccPoints[i]]);
-// 	}
-// 	pthread_mutex_lock(&keyPoint_CS);
-// 	for(unsigned int i=0; i<_2d_points.size(); i++)
-// 	{
-// 		if(liesInside(points, _2d_points[i]))
-// 		{
-// 			Point3f featurePt;
-// 			featurePt.x = _3d_points[i][0];
-// 			featurePt.y = _3d_points[i][1];
-// 			featurePt.z = _3d_points[i][2];
-// 			_in_points.push_back(featurePt);
-// 		}
-// 	}
-// 	pthread_mutex_unlock(&keyPoint_CS);
-// 	// Step 1: Performing JLinkage to find multiple models
-// 	// This vector describes to which plane does point i belong to
-// 	// This is an output from JLinkage
-// 	vector<int> oldPlaneIndices;
-// 	callJLinkage(_in_points, oldPlaneIndices);
-// 	// Step 2: Remove points which contain less than 'minimumNumberOfPoints'
-// 	// We have taken 'minimumNumberOfPoints' to be 30
-// 	// Minimum number of points required to be qualified to be in data
-// 	int minPointsPerPlane = 30;
-// 	// Number of points in 'points' during initial stage
-// 	int numberOfPointsInData = points.size();
-// 	// Mapping planeIndex -> number of points in that plane
-// 	map<int, int> numberOfPointsPerPlane;
-// 	// Plane Indices after removing unnecessary planes
-// 	vector<int> newPlaneIndices;
-// 	vector<Point3f> newPoints;
-// 	// Number of planes after removing unnecessary planes
-// 	int numberOfPlanes;
-// 	removeUnnecessaryPlanes( _in_points, oldPlaneIndices, minPointsPerPlane,
-// 			numberOfPointsPerPlane, newPoints, newPlaneIndices, numberOfPlanes);
-// 	// Try to find for multiple planes only if there are more than 1 plane.
-// 	if( numberOfPlanes > 1 )
-// 	{
-// 		// Step 3: Perform K-means for the new set of planes obtained
-// 		Mat pointsMatrix = Mat(newPoints.size(), 3, CV_32F);
-// 		// Create a pointsMatrix from vector<Point3f> data
-// 		for(int i = 0; i < newPoints.size(); i++) {
-// 			float *ptr = (float*)(&pointsMatrix.at<float>(i,0));
-// 			ptr[0] = newPoints[i].x;
-// 			ptr[1] = newPoints[i].y;
-// 			ptr[2] = newPoints[i].z;
-// 		}
-// 		// Cluster centroid being returned from kmeans
-// 		Mat clusterCentroids;
-// 		/* Number of rounds for k-means */
-// 		int numberOfRounds = 10;
-// 		// Perform k-means
-// 		// Reference: http://docs.opencv.org/2.4/modules/core/doc/clustering.html
-// 		// float kmeans(const cv::_InputArray &,
-// 		// int, const cv::_OutputArray &,
-// 		// cv::TermCriteria, int, int, const cv::_OutputArray &);
-// 		// Performing kmeans using initial labels we've obtained in step 1
-// 		kmeans(pointsMatrix, numberOfPlanes, newPlaneIndices,
-// 				TermCriteria( CV_TERMCRIT_ITER, 10, 2.0), numberOfRounds,
-// 				KMEANS_USE_INITIAL_LABELS, clusterCentroids);
-// 		// Plane Parameters (a, b, c, d) for plane i
-// 		vector< vector<float> > planeParameters;
-// 		// Obtain the plane parameters for the set of points obtained after Step 2
-// 		// Arrange plane points belonging to a particular plane i
-// 		vector< vector<Point3f> > planeOrderedPoints;
-// 		getPlaneParameters(newPoints, newPlaneIndices, planeParameters, planeOrderedPoints);
-// 		// Step 4: Remove points which far from the estimated plane after performing k-means
-// 		// Get 3D Projection of points onto the plane
-// 		vector<float> distanceMatrix;
-// 		vector< vector<int> > planePointsIndexMapping;
-// 		vector<Point3f> newSortedPoints;
-// 		vector< vector<float> > newPlaneParameters;
-// 		map<int, pair<int, int> > planeIndexBounds;
-// 		vector<Point3f> projectionsOf3DPoints;
-// 		// Calculate the distances of the points from their respective planes
-// 		calculateDistanceFromPlane( newPoints, planeParameters, newPlaneIndices,
-// 				distanceMatrix, planePointsIndexMapping);
-// 		// Step 5
-// 		// Order plane by left to right as viewed from camera
-// 		vector<Point3f> sortedProjectionsOf3DPoints;
-// 		map<int, pair<int, int> > sortedPlaneIndexBounds;
-// 		vector< vector<Point3f> > boundingBoxPoints;
-// 		orderPlanePointsByCentroids( projectionsOf3DPoints, newPlaneParameters, planeIndexBounds,
-// 				sortedProjectionsOf3DPoints, sortedPlaneParameters, sortedPlaneIndexBounds);
-// 	}
-// 	else
-// 	{
-// 		vector<float> planeParameters;
-// 		vector<Point3f> projectionsOf3DPoints;
-// 		fitPlane3D(newPoints, planeParameters);
-// 		float a = planeParameters[0];
-// 		float b = planeParameters[1];
-// 		float c = planeParameters[2];
-// 		float d = planeParameters[3];
-// 		for (int j = 0; j < newPoints.size(); ++j)
-// 		{
-// 			float x0 = newPoints[j].x;
-// 			float y0 = newPoints[j].y;
-// 			float z0 = newPoints[j].z;
-// 			float t = ((-1)*(a*x0+b*y0+c*z0+d))/(a*a+b*b+c*c);
-// 			float projX0 = x0 + a*t;
-// 			float projY0 = y0 + b*t;
-// 			float projZ0 = z0 + c*t;
-// 			projectionsOf3DPoints.push_back(Point3f(projX0, projY0, projZ0));
-// 		}
-// 		sortedPlaneParameters.push_back(planeParameters);
-// 	}
-// 	for (int i = 0; i < newPlaneIndices.size(); ++i)
-// 	{
-// 		labels.push_back(newPlaneIndices);
-// 	}
-// 	for (int i = 0; i < newPoints.size(); ++i)
-// 	{
-// 		feature_2d_points.push_back(3d_to_2d[newPoints[i]]);
-// 	}
-// 	extractBoundingRectIn2D(feature_2d_points, boundPoints);
-// 	return 0;
+void
+ImageView::getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuous_bounding_box_points)
+{
+	int size = continuous_bounding_box_points.size();
+	for (int i = 0; i < size; ++i)
+	{
+		continuous_bounding_box_points[i].clear();
+	}
+	continuous_bounding_box_points.clear();
+}
 
-// }
+void
+ImageView::getPlaneParameters(vector< vector<float> > &plane_parameters)
+{
+	int size = plane_parameters.size();
+	for (int i = 0; i < size; ++i)
+	{
+		plane_parameters[i].clear();
+	}
+	plane_parameters.clear();
+}
 
+void
+ImageView::getPointsClicked(vector< vector<int> > &points_clicked)
+{
+	int size = points_clicked.size();
+	for (int i = 0; i < size; ++i)
+	{
+		points_clicked[i].clear();
+	}
+	points_clicked.clear();
+}
 
-// void
-// ImageView::split(	const string &s,
-// 					char delim,
-// 					vector<float> &elems)
-// {
-// 	stringstream ss(s);
-// 	string item;
-// 	while (getline(ss, item, delim))
-// 	{
-// 		elems.push_back(stof(item));
-// 	}
-// }
+void
+ImageView::getKeyPointsNearest(vector< vector<int> > &key_points_nearest)
+{
+	int size = key_points_nearest.size();
+	for (int i = 0; i < size; ++i)
+	{
+		key_points_nearest[i].clear();
+	}
+	key_points_nearest.clear();
+}
+
+void
+ImageView::getCCPoints(vector<int> &cc_points)
+{
+	cc_points.clear();
+}
+
+void
+ImageView::setRender(bool render_poly, bool render_rect, bool render_significant_plane)
+{
+	renderPoly = render_poly;
+	renderRect = render_rect;
+	renderSignificantPlane = render_significant_plane;
+}
+
+void
+ImageView::setNumberOfPoints(int num_points_clicked, int num_key_points_detected)
+{
+	numKeyPointsDetected = num_key_points_detected;
+	numPointsClicked = num_points_clicked;
+}
+
+void
+ImageView::clearOutputVectors()
+{
+	int size = continuousBoundingBoxPoints.size();
+	assert(size == planeParameters.size());
+	for (int i = 0; i < size; ++i)
+	{
+		continuousBoundingBoxPoints[i].clear();
+		planeParameters[i].clear();
+	}
+	continuousBoundingBoxPoints.clear();
+	planeParameters.clear();
+}
+
+void
+ImageView::clearInputVectors()
+{
+	ccPoints.clear();
+	pointsClicked.clear();
+	keyPointsNearest.clear();
+}

@@ -3,7 +3,7 @@
  * ImageView.h
  *
  *       Created on: 21-Feb-2015
- *    Last Modified: 12-Sep-2016
+ *    Last Modified: 20-Sep-2016
  *  Original Author: Anirudh Vemula
  *   Current Author: Meghshyam Govind Prasad
  *   Current Author: Sona Praneeth Akula
@@ -12,7 +12,7 @@
  * 					 the camera feed of the drone and recording mouse clicks
  *
  * Date				Author							Modification
- * 12-Sep-2016	Sona Praneeth Akula	Added		Comments to the code
+ * 12-Sep-2016	Sona Praneeth Akula			* Added Comments to the code
  *****************************************************************************************/
 
 #ifndef _IMAGEVIEW_H
@@ -143,6 +143,8 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		bool renderPoly;
 		// Render bounding rectangle or not
 		bool renderRect;
+		// 
+		bool renderSignificantPlane;
 		// Distance by which the extracted plane should be translated
 		float translateDistance;
 		// 
@@ -294,24 +296,17 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		void split(	const string &s,
 					vector<float> &elems);
 
-		/**
-		 * @brief Get the bounding box points for currently visible planes.
-		 * @details Get the 2d points and corresponding plane labels
-		 * @param [in] [vector< Point3f >] points - 3d world co-ordinates
-		 * @param [in] [map< float, float >] 3d_to_2d - Mapping from 3d world co-ordinates to 2d image co-ordinates
-		 * @param [out] [vector< vector<float> >] feature_2d_points - 2d image co-ordinates
-		 * @param [out] [vector<int>] labels - Output labels for the feature_2d_points
-		 * @param [out] sortedPlaneParameters - plane parameters corresponding to plane i after arranging the points by
-		 * 					their distance from X axis
-		 */
-		int
-		findMultiplePlanesIn2D(
-				const vector<Point3f> &points,
-				const map<float, float> &_3d_to_2d_map,
-				vector<Point2f> &feature_2d_points,
-				vector<int> &labels,
-				vector< vector<float> > &sortedPlaneParameters,
-				vector<Point2f> boundPoints);
+		void getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuousBoundingBoxPoints);
+		void getPlaneParameters(vector< vector<float> > &planeParameters);
+		void getPointsClicked(vector< vector<int> > &pointsClicked);
+		void getKeyPointsNearest(vector< vector<int> > &keyPointsNearest);
+		void getCCPoints(vector<int> &ccPoints);
+		void setRender(bool renderPoly, bool renderRect, bool renderSignificantPlane);
+		void setNumberOfPoints(int numPointsClicked, int numKeyPointsDetected);
+		void clearInputVectors();
+		void clearOutputVectors();
+
+
 
 };
 

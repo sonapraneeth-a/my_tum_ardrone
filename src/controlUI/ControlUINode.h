@@ -888,6 +888,7 @@ class ControlUINode
 		void
 		getMeTheMap(const vector< double > &angles,
 									const vector< RotateDirection > directions,
+									int min_height_of_plane,
 									int max_height_of_plane);
 
 		/**
@@ -899,7 +900,7 @@ class ControlUINode
 		 * @return
 		 */
 		void
-		CoverTheCurrentPlane (int plane_num, float max_height);
+		CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance, RotateDirection dir);
 
 
 		/**
@@ -910,23 +911,44 @@ class ControlUINode
 		 * @return
 		 */
 		bool
-		AdjustToSeeCurrentPlane(float focal_length,
-												float min_height_of_plane, 
-												float max_height_of_plane);
+		AdjustToSeeCurrentPlane( float min_distance, float max_distance, bool stage);
 
 		/**
 		 * @brief Move the quadcopter to the next plane such that it can see the left edge of the new plane
 		 * @param [RotateDirection] Rotation Direction Of Quadcopter: CLOCKWISE, COUNTERCLOCKWISE
 		 */
 		void
-		MoveQuadcopterToNextPlane(RotateDirection dir);
+		MoveQuadcopterToNextPlane(RotateDirection dir, double angle);
 
 		/**
 		 * @brief Calculate distance from the plane to see the height
 		 * @param [int] max_height_of_plane
 		 */
 		float
-		getDistanceToSeePlane(int max_height_of_plane);
+		getDistanceToSeePlane(int height_of_plane);
+
+		void
+		designPathToChangeYaw(vector<double> &curr_point, double dest_yaw, vector< vector<double> > &xyz_yaw);
+
+		vector<float>
+		fitPlane3dForTheCurrentPlane();
+
+		void
+		getCurrentPositionOfDrone(vector<double> &curr_pos_of_drone);
+
+		void
+		get3DPointsOfCapturedPlane(const vector<int> &ccPoints, 
+											const vector<vector<int> > &pointsClicked,
+											vector< Point3f > &threed_points);
+
+		vector<Point3f>
+		GenerateMy3DPoints(float width, float height);
+
+		vector<Point2f>
+		GenerateMy2DPoints();
+
+		void
+		clearDoubleVector(vector< vector<double> > &xyz_yaw);
 };
 
 
