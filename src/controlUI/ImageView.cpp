@@ -602,8 +602,8 @@ ImageView::on_key_down(int key)
 	// Uses the points written from a file (obtained from key g)
 	if(key == 110)
 	{
-		string inputDirectory = "./";
-		string filename = inputDirectory + "Plane_3D_Points.txt";
+		string inputDirectory = "/home/vrlab/";
+		string filename = inputDirectory + "Plane_Info.txt";
 		vector< vector<float> > sortedPlaneParameters;
 		vector< vector<Point3f> > boundingBoxPoints;
 		readInfo(filename, sortedPlaneParameters, boundingBoxPoints);
@@ -630,12 +630,23 @@ ImageView::on_key_down(int key)
 		// Get the bounding box points
 		getContinuousBoundingBox ( boundingBoxPoints, sortedPlaneParameters,
 								continuousBoundingBoxPoints);
+		cout << "Continuous Bounding Box Points\n";
+		for (int i = 0; i < continuousBoundingBoxPoints.size(); ++i)
+		{
+			int param = continuousBoundingBoxPoints[i].size();
+			for (int j = 0; j < param; ++j)
+			{
+				cout << continuousBoundingBoxPoints[i][j] << "\n";
+			}
+			cout << "\n";
+		}
 		// Path planning: Cover multiple planes
 		if(renderRect)
 		{
 			renderRect = false;  // While moving the quadcopter we don't want bounding box to appear
-			node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);
 		}
+		cout << "[ DEBUG] Calling moveQuadcopter()\n";
+		node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);
 	}
 }
 
@@ -813,14 +824,14 @@ ImageView::readInfo(string filename,
 			/*cout << "Line: " << line << "\n";
 			cout << "1-Compare: " << line.compare(plane_string) << "\n";
 			cout << "2-Compare: " << line.compare(box_string) << "\n";*/
-			if(!line.empty() && line.compare(plane_string)==1)
+			if(!line.empty() && line.compare(plane_string)==0)
 			{
 				getline(plane_info, line);
 				split(line, copyVector);
 				sortedPlaneParameters.push_back(copyVector);
 				copyVector.clear();
 			}
-			if(!line.empty() && line.compare(box_string)==1)
+			if(!line.empty() && line.compare(box_string)==0)
 			{
 				for (int i = 1; i <= 4; ++i)
 				{
@@ -878,7 +889,10 @@ ImageView::WriteInfoToFile(const vector<Point3f> &bounding_box_points,
 	const char* outFilename = filename.c_str();
 	ofstream outFile;
 	// Open the object in writing and appending mode
-	outFile.open(outFilename, ios::app);
+	if(plane_num == 1)
+		outFile.open(outFilename, ios::out);
+	else
+		outFile.open(outFilename, ios::app);
 	// Check if the file is open
 	if (!outFile.is_open())
 	{
@@ -930,6 +944,16 @@ ImageView::getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuous_
 		continuous_bounding_box_points[i].clear();
 	}
 	continuous_bounding_box_points.clear();
+	vector<Point3f> dummy_points;
+	for (int i = 0; i < continuousBoundingBoxPoints.size(); ++i)
+	{
+		dummy_points.clear();
+		for (int j = 0; j < continuousBoundingBoxPoints[i].size(); ++j)
+		{
+			dummy_points.push_back(continuousBoundingBoxPoints[i][j]);
+		}
+		continuous_bounding_box_points.push_back(dummy_points);
+	}
 }
 
 void
@@ -941,6 +965,16 @@ ImageView::getPlaneParameters(vector< vector<float> > &plane_parameters)
 		plane_parameters[i].clear();
 	}
 	plane_parameters.clear();
+	vector<float> dummy_points;
+	for (int i = 0; i < planeParameters.size(); ++i)
+	{
+		dummy_points.clear();
+		for (int j = 0; j < planeParameters[i].size(); ++j)
+		{
+			dummy_points.push_back(planeParameters[i][j]);
+		}
+		plane_parameters.push_back(dummy_points);
+	}
 }
 
 void
@@ -952,6 +986,16 @@ ImageView::getPointsClicked(vector< vector<int> > &points_clicked)
 		points_clicked[i].clear();
 	}
 	points_clicked.clear();
+	vector<int> dummy_points;
+	for (int i = 0; i < pointsClicked.size(); ++i)
+	{
+		dummy_points.clear();
+		for (int j = 0; j < pointsClicked[i].size(); ++j)
+		{
+			dummy_points.push_back(pointsClicked[i][j]);
+		}
+		points_clicked.push_back(dummy_points);
+	}
 }
 
 void
@@ -963,12 +1007,26 @@ ImageView::getKeyPointsNearest(vector< vector<int> > &key_points_nearest)
 		key_points_nearest[i].clear();
 	}
 	key_points_nearest.clear();
+	vector<int> dummy_points;
+	for (int i = 0; i < keyPointsNearest.size(); ++i)
+	{
+		dummy_points.clear();
+		for (int j = 0; j < keyPointsNearest[i].size(); ++j)
+		{
+			dummy_points.push_back(keyPointsNearest[i][j]);
+		}
+		key_points_nearest.push_back(dummy_points);
+	}
 }
 
 void
 ImageView::getCCPoints(vector<int> &cc_points)
 {
 	cc_points.clear();
+	for (int i = 0; i < ccPoints.size(); ++i)
+	{
+		cc_points.push_back(ccPoints[i]);
+	}
 }
 
 void
