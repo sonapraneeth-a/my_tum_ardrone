@@ -2,7 +2,7 @@
  * ControlUINode.cpp
  *
  *       Created on: 19-Feb-2015
- *    Last Modified: 21-Sep-2016
+ *    Last Modified: 25-Sep-2016
  *  Original Author: Anirudh Vemula
  *   Current Author: Meghshyam Govind Prasad
  *   Current Author: Sona Praneeth Akula
@@ -1781,6 +1781,7 @@ ControlUINode::sendLand()
 void
 ControlUINode::getCurrentPositionOfDrone(vector<double> &curr_pos_of_drone)
 {
+	curr_pos_of_drone.clear();
 	pthread_mutex_lock(&pose_CS);
 		curr_pos_of_drone.push_back((double)x_drone);
 		curr_pos_of_drone.push_back((double)y_drone);
@@ -1821,10 +1822,11 @@ ControlUINode::getDistanceToSeePlane(int height)
 	// Read points
 	vector<Point2f> imagePoints = GenerateMy2DPoints();
 	float width = (16.0/9.0)*height;
+	float drone_length = 0.6;
 	vector<Point3f> objectPoints = GenerateMy3DPoints(width, height);
 
-	cout << "There are " << imagePoints.size() << " imagePoints and " 
-		<< objectPoints.size() << " objectPoints." << endl;
+	//cout << "There are " << imagePoints.size() << " imagePoints and " 
+	//	<< objectPoints.size() << " objectPoints." << endl;
 	Mat cameraMatrix(3, 3, DataType<double>::type);
 	setIdentity(cameraMatrix);
 	// From calibration done on our drone
@@ -1837,7 +1839,7 @@ ControlUINode::getDistanceToSeePlane(int height)
 	cameraMatrix.at<double>(2,0) = 0;
 	cameraMatrix.at<double>(2,1) = 0;
 	cameraMatrix.at<double>(2,2) = 1;
-	cout << "Initial cameraMatrix:\n" << cameraMatrix << endl;
+	//cout << "Initial cameraMatrix:\n" << cameraMatrix << endl;
 
 	Mat distCoeffs(5, 1, DataType<double>::type);
 	// From calibration done on our drone
@@ -1856,7 +1858,7 @@ ControlUINode::getDistanceToSeePlane(int height)
 	Rodrigues(rot_guess, rvec);
 	tvec.at<double>(0)  = 0.0;
 	tvec.at<double>(1)  = 0.0;
-	tvec.at<double>(2)  = -(3.0 - 0.6);
+	tvec.at<double>(2)  = -(height - drone_length);
 
 	solvePnP(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvec, tvec);
 
@@ -1905,11 +1907,11 @@ ControlUINode::GenerateMy2DPoints()
 	/* Point 9 */
 	x = 640; y = 360;
 	points.push_back(Point2f(x, y));
-	for(unsigned int i = 0; i < points.size(); ++i)
+	/*for(unsigned int i = 0; i < points.size(); ++i)
 	{
 		cout << points[i] << ", ";
 	}
-	cout << "\n";
+	cout << "\n";*/
 	return points;
 }
 
@@ -1952,11 +1954,11 @@ ControlUINode::GenerateMy3DPoints(float width, float height)
 	/* Point 9 */
 	x = width/2; y = -height/2; z = 0.0;
 	points.push_back(Point3f(x,y,z));
-	for(unsigned int i = 0; i < points.size(); ++i)
+	/*for(unsigned int i = 0; i < points.size(); ++i)
 	{
 		cout << points[i] << ", ";
 	}
-	cout << "\n";
+	cout << "\n";*/
 	return points;
 }
 
@@ -1968,7 +1970,7 @@ ControlUINode::GenerateMy3DPoints(float width, float height)
  * @return
  */
 void
-ControlUINode::moveDroneToPosition(vector<double> dest_point)
+ControlUINode::moveDroneToPosition(const vector<double> &dest_point)
 {
 	char buf[100];
 	commands.clear();
@@ -1991,7 +1993,7 @@ ControlUINode::moveDroneToPosition(vector<double> dest_point)
  * @return
  */
 void
-ControlUINode::moveDroneViaSetOfPoints(vector< vector<double> > dest_points)
+ControlUINode::moveDroneViaSetOfPoints(const vector< vector<double> > &dest_points)
 {
 	char buf[100];
 	commands.clear();
@@ -2041,7 +2043,7 @@ ControlUINode::designPathForDrone(const vector< double > &start,
  * @return
  */
 void
-ControlUINode::designPathToChangeYaw(vector<double> &curr_point, 
+ControlUINode::designPathToChangeYaw(const vector<double> &curr_point, 
 				double dest_yaw, 
 				vector< vector<double> > &xyz_yaw)
 {
@@ -2050,7 +2052,7 @@ ControlUINode::designPathToChangeYaw(vector<double> &curr_point,
 	targetPoints.clear();
 	double yaw_diff = dest_yaw - curr_point[3];
 	vector<double> interm_point;
-	xyz_yaw.clear();
+	clearDoubleVector(xyz_yaw);
 	double prevYaw = curr_point[3], desiredYaw = dest_yaw;
 	for(int i = 0; i < 6; i++)
 	{
@@ -2118,10 +2120,12 @@ ControlUINode::getMeTheMap(const vector< double > &angles,
   * @return
  */
 void
-ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance, RotateDirection dir)
+ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance, 
+									RotateDirection dir)
 {
 	/* Push that position to vector */
-	vector<double> new_pos_of_drone;
+	vector<double> dest_pos_of_drone;
+	vector<double> ac_dest_pos_of_drone;
 	// To check if the plane is covered completely
 	bool planeCovered = false;
 	/* As obtained from ControlUINode.cpp Line 429 */
@@ -2149,26 +2153,39 @@ ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float ma
 		/* Returns TRUE if the plane in view is covered completely, else FALSE*/
 		bool flag = AdjustToSeeCurrentPlane(min_distance,
 											max_distance, stage );
+		stage = false;
 		/* Mark the bounding points for the plane to be scanned */
 		/* Output: vector<Point2f> pointsClicked */
 		/* Loop until 4 points are clicked on the image */
 		// Stop the system until all 4 points are clicked
+		cout << "[ INFO] Start Clicking the bounding box points\n";
 		image_gui->getPointsClicked(points_clicked);
 		while(points_clicked.size()!=4) {image_gui->getPointsClicked(points_clicked);}
+		// @todo-meghshyam Should I ask user to press a key to indicate he has finished clicking the points
 		// @todo-sir Get the bounding box points of the leftmost-plane/significant-plane from the marked points
 		image_gui->extractBoundingPoly();
-		// image_gui->renderSignificantPlane = true; // @todo-me See 288-328 for implemtation
+		// image_gui->renderSignificantPlane = true; // @todo-me See 288-328 for implementation
+		image_gui->setRender(false, false, true);
 		// @todo-me Only render rectangle of significant plane
 		image_gui->renderFrame();
-		image_gui->clearOutputVectors();
+		//image_gui->clearOutputVectors();
 		// Calls JLinkage and finds all planes within the clicked region
 		// @todo-me @todo-sir Also return the most significant plane found
 		// @todo-me fix the renderFrame for significant plane
 		int significantPlaneIndex = 0;
 		image_gui->getCCPoints(cc_points);
 		image_gui->getPointsClicked(points_clicked);
-		image_gui->getPlaneParameters(plane_parameters);
-		image_gui->getContinuousBoundingBoxPoints(continuous_bounding_box_points);
+		/*image_gui->getPlaneParameters(plane_parameters);
+		image_gui->getContinuousBoundingBoxPoints(continuous_bounding_box_points);*/
+		int size = continuous_bounding_box_points.size();
+		assert(size == plane_parameters.size());
+		for (int i = 0; i < size; ++i)
+		{
+			continuous_bounding_box_points[i].clear();
+			plane_parameters[i].clear();
+		}
+		continuous_bounding_box_points.clear();
+		plane_parameters.clear();
 		fitMultiplePlanes3d(cc_points, points_clicked, plane_parameters, continuous_bounding_box_points);
 		/* Write the bounding box points to file Plane_Info.txt */
 		/* Write the plane parameters to the same file */
@@ -2197,26 +2214,26 @@ ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float ma
 			pthread_mutex_lock(&pose_CS);
 				getCurrentPositionOfDrone(current_pos_of_drone);
 			pthread_mutex_unlock(&pose_CS);
-			new_pos_of_drone.clear();
+			dest_pos_of_drone.clear();
 			// @todo-me Ensure that next plane is not being hit in CLOCKWISE
 			if(dir == CLOCKWISE)
 			{
-				new_pos_of_drone.push_back(current_pos_of_drone[0] + width_of_3d_plane/2); // heuristic
+				dest_pos_of_drone.push_back(current_pos_of_drone[0] + width_of_3d_plane/2); // heuristic
 			}
 			else
 			{
-				new_pos_of_drone.push_back(current_pos_of_drone[0] + width_of_3d_plane); // heuristic
+				dest_pos_of_drone.push_back(current_pos_of_drone[0] + width_of_3d_plane); // heuristic
 			}
-			new_pos_of_drone.push_back(current_pos_of_drone[1]);
-			new_pos_of_drone.push_back(current_pos_of_drone[2]);
-			new_pos_of_drone.push_back(current_pos_of_drone[3]);
+			dest_pos_of_drone.push_back(current_pos_of_drone[1]);
+			dest_pos_of_drone.push_back(current_pos_of_drone[2]);
+			dest_pos_of_drone.push_back(current_pos_of_drone[3]);
 			vector< vector<double> > path;
+			convertWRTQuadcopterOrigin(current_pos_of_drone, dest_pos_of_drone, ac_dest_pos_drone);
 			pthread_mutex_lock(&command_CS);
-				designPathForDrone(current_pos_of_drone, new_pos_of_drone, path);
+				designPathForDrone(current_pos_of_drone, ac_dest_pos_of_drone, path);
 				moveDroneViaSetOfPoints(path);
 			pthread_mutex_unlock(&command_CS);
 			planeCovered = false;
-			stage = false;
 		}
 	}
 }
@@ -2235,7 +2252,8 @@ ControlUINode::AdjustToSeeCurrentPlane(float min_distance, float max_distance, b
 	bool flag = true; // flag indicates whether or not the plane is covered completely
 	// @todo-sir Using focal length and max_height to calculate position
 	bool move = true;
-	vector<double> new_pos_of_drone;
+	vector<double> dest_pos_of_drone;
+	vector<double> ac_dest_pos_drone;
 	vector<float> current_plane_parameters;
 	vector<double> current_pos_of_drone;
 	if(stage)
@@ -2255,20 +2273,20 @@ ControlUINode::AdjustToSeeCurrentPlane(float min_distance, float max_distance, b
 		float y0 = current_pos_of_drone[1];
 		float z0 = current_pos_of_drone[2];
 		float quad_dis_plane = fabs(a*x0+b*y0+c*z0+d)/sqrt(a*a+b*b+c*c); // Current distance of quadcopter from the plane
-		new_pos_of_drone.clear();
+		dest_pos_of_drone.clear();
 		float distance_to_move = fabs(quad_dis_plane - ac_dis_plane);
 		if(quad_dis_plane > ac_dis_plane)
 		{
 			// @todo-sir @todo-meghshyam What distance should the quadcopter move?
-			new_pos_of_drone.push_back(current_pos_of_drone[0]);
-			new_pos_of_drone.push_back(current_pos_of_drone[1] + distance_to_move);
-			new_pos_of_drone.push_back(current_pos_of_drone[2]);
+			dest_pos_of_drone.push_back(current_pos_of_drone[0]);
+			dest_pos_of_drone.push_back(current_pos_of_drone[1] + distance_to_move);
+			dest_pos_of_drone.push_back(current_pos_of_drone[2]);
 		}
 		else if(quad_dis_plane < ac_dis_plane)
 		{
-			new_pos_of_drone.push_back(current_pos_of_drone[0]);
-			new_pos_of_drone.push_back(current_pos_of_drone[1] - distance_to_move);
-			new_pos_of_drone.push_back(current_pos_of_drone[2]);
+			dest_pos_of_drone.push_back(current_pos_of_drone[0]);
+			dest_pos_of_drone.push_back(current_pos_of_drone[1] - distance_to_move);
+			dest_pos_of_drone.push_back(current_pos_of_drone[2]);
 		}
 		else
 		{
@@ -2279,21 +2297,16 @@ ControlUINode::AdjustToSeeCurrentPlane(float min_distance, float max_distance, b
 	{
 	}
 	vector< vector<double> > xyz_yaw;
-	float current_yaw;
 	if(move)
 	{
 		pthread_mutex_lock(&pose_CS);
-			current_yaw = yaw;
-			current_pos_of_drone.clear();
-			current_pos_of_drone.push_back(x_drone);
-			current_pos_of_drone.push_back(y_drone);
-			current_pos_of_drone.push_back(z_drone);
-			current_pos_of_drone.push_back(yaw);
-			new_pos_of_drone.push_back(yaw);
+			getCurrentPositionOfDrone(current_pos_of_drone);
 		pthread_mutex_unlock(&pose_CS);
+		dest_pos_of_drone.push_back(current_pos_of_drone[3]);
 		clearDoubleVector(xyz_yaw);
+		convertWRTQuadcopterOrigin(current_pos_of_drone, dest_pos_of_drone, ac_dest_pos_drone);
 		pthread_mutex_lock(&command_CS);
-			designPathForDrone(current_pos_of_drone, new_pos_of_drone, xyz_yaw);
+			designPathForDrone(current_pos_of_drone, ac_dest_pos_of_drone, xyz_yaw);
 			moveDroneViaSetOfPoints(xyz_yaw);
 		pthread_mutex_unlock(&command_CS);
 	}
@@ -2324,8 +2337,8 @@ ControlUINode::AdjustToSeeCurrentPlane(float min_distance, float max_distance, b
 	// Right edge end is towards the top of the screen
 	Line2f right_edge(image_bounding_box_points[1], image_bounding_box_points[2]); 
 	// @todo-sir @todo-meghshyam check this
-	if( (right_edge.start.x >= 340.0 && right_edge.start.y <= 10.0) &&
-		(right_edge.end.x >= 620.0 && right_edge.end.y >= 340.0) )
+	if( (right_edge.start.x >= 620.0 && right_edge.start.y >= 340.0) &&
+		(right_edge.end.x >= 620.0 && right_edge.end.y <= 10.0) )
 	{
 		flag = true;
 	}
@@ -2345,21 +2358,17 @@ ControlUINode::MoveQuadcopterToNextPlane(RotateDirection dir, double dest_rotati
 {
 	vector<double> current_pos_of_drone;
 	vector<double> dest_pos_of_drone;
+	vector<double> ac_dest_pos_drone;
 	vector< vector<double> > xyz_yaw;
 	vector<Point3f> _in_points;
 	vector< Point2f > image_bounding_box_points;
 	pthread_mutex_lock(&pose_CS);
-		current_pos_of_drone.clear();
-		current_pos_of_drone.push_back(x_drone);
-		current_pos_of_drone.push_back(y_drone);
-		current_pos_of_drone.push_back(z_drone);
-		current_pos_of_drone.push_back(yaw);
+		getCurrentPositionOfDrone(current_pos_of_drone);
 	pthread_mutex_unlock(&pose_CS);
 	if(dir == CLOCKWISE)
 	{
 		// [MGP] -ve anti-clockwise , +ve clockwise
-		double dest_yaw = yaw-((-1.0))*dest_rotation; // heuristic
-		clearDoubleVector(xyz_yaw);
+		double dest_yaw = yaw+(fabs(dest_rotation)); // heuristic
 		designPathToChangeYaw(current_pos_of_drone, dest_yaw, xyz_yaw);
 		pthread_mutex_lock(&command_CS);
 			moveDroneViaSetOfPoints(xyz_yaw);
@@ -2368,23 +2377,21 @@ ControlUINode::MoveQuadcopterToNextPlane(RotateDirection dir, double dest_rotati
 	else if(dir == COUNTERCLOCKWISE)
 	{
 		// @todo-me Check for forward/backward
+		// @todo-meghshyam Because the quadcopter is at the center of plane i-1
+		// we need to move it by width of plane i-1
 		double some_value = 5.0; // @todo-me Fix this heuristic
 		dest_pos_of_drone.clear();
 		dest_pos_of_drone.push_back(current_pos_of_drone[0]+some_value);
 		dest_pos_of_drone.push_back(current_pos_of_drone[1]);
 		dest_pos_of_drone.push_back(current_pos_of_drone[2]);
-		dest_pos_of_drone.push_back(current_pos_of_drone[3]-(dest_rotation/2));
-		clearDoubleVector(xyz_yaw);
+		dest_pos_of_drone.push_back(current_pos_of_drone[3]-(fabs(dest_rotation/2)));
+		convertWRTQuadcopterOrigin(current_pos_of_drone, dest_pos_of_drone, ac_dest_pos_drone);
 		pthread_mutex_lock(&command_CS);
-			designPathForDrone(current_pos_of_drone, dest_pos_of_drone, xyz_yaw);
+			designPathForDrone(current_pos_of_drone, ac_dest_pos_of_drone, xyz_yaw);
 			moveDroneViaSetOfPoints(xyz_yaw);
 		pthread_mutex_unlock(&command_CS);
 		pthread_mutex_lock(&pose_CS);
-			current_pos_of_drone.clear();
-			current_pos_of_drone.push_back(x_drone);
-			current_pos_of_drone.push_back(y_drone);
-			current_pos_of_drone.push_back(z_drone);
-			current_pos_of_drone.push_back(yaw);
+			getCurrentPositionOfDrone(current_pos_of_drone);
 		pthread_mutex_unlock(&pose_CS);
 		// @todo-me Fix these values in if-else block
 		if(dest_rotation >= 75.0)
@@ -2400,18 +2407,17 @@ ControlUINode::MoveQuadcopterToNextPlane(RotateDirection dir, double dest_rotati
 		}
 		dest_rotation /= 2;
 		dest_pos_of_drone.clear();
-		dest_pos_of_drone.push_back(current_pos_of_drone[0]+some_value);
-		dest_pos_of_drone.push_back(current_pos_of_drone[1]);
+		dest_pos_of_drone.push_back(current_pos_of_drone[0]);
+		dest_pos_of_drone.push_back(current_pos_of_drone[1]+some_value);
 		dest_pos_of_drone.push_back(current_pos_of_drone[2]);
-		dest_pos_of_drone.push_back(current_pos_of_drone[3]-(dest_rotation/4));
-		clearDoubleVector(xyz_yaw);
+		dest_pos_of_drone.push_back(current_pos_of_drone[3]-(fabs(dest_rotation/4)));
+		convertWRTQuadcopterOrigin(current_pos_of_drone, dest_pos_of_drone, ac_dest_pos_drone);
 		pthread_mutex_lock(&command_CS);
-			designPathForDrone(current_pos_of_drone, dest_pos_of_drone, xyz_yaw);
+			designPathForDrone(current_pos_of_drone, ac_dest_pos_of_drone, xyz_yaw);
 			moveDroneViaSetOfPoints(xyz_yaw);
 		pthread_mutex_unlock(&command_CS);
 	}
-	vector< vector<Point2f> > boundPoints;
-	// Get multiple planes in 2D points and as well as their boundingPoints
+	// By this time I expect the quadcopter to see the complete plane i
 	pthread_mutex_lock(&keyPoint_CS);
 		_in_points.clear();
 		for (int i = 0; i < _3d_points.size(); ++i)
@@ -2426,8 +2432,15 @@ ControlUINode::MoveQuadcopterToNextPlane(RotateDirection dir, double dest_rotati
 	vector< vector<Point3f> > continuous_bounding_box_points;
 	// Plane parameters
 	vector< vector<float> > plane_parameters;
-	image_gui->getPlaneParameters(plane_parameters);
-	image_gui->getContinuousBoundingBoxPoints(continuous_bounding_box_points);
+	int size = continuous_bounding_box_points.size();
+	assert(size == plane_parameters.size());
+	for (int i = 0; i < size; ++i)
+	{
+		continuous_bounding_box_points[i].clear();
+		plane_parameters[i].clear();
+	}
+	continuous_bounding_box_points.clear();
+	plane_parameters.clear();
 	findMultiplePlanes(_in_points, plane_parameters, continuous_bounding_box_points);
 	image_bounding_box_points.clear();
 	project3DPointsOnImage(continuous_bounding_box_points[0], image_bounding_box_points);
@@ -2441,27 +2454,25 @@ ControlUINode::MoveQuadcopterToNextPlane(RotateDirection dir, double dest_rotati
 	float theta = desiredYaw;
 	float dest_yaw;
 	pthread_mutex_lock(&pose_CS);
-		current_pos_of_drone.clear();
-		current_pos_of_drone.push_back(x_drone);
-		current_pos_of_drone.push_back(y_drone);
-		current_pos_of_drone.push_back(z_drone);
-		current_pos_of_drone.push_back(yaw);
-		dest_yaw = yaw;
+		getCurrentPositionOfDrone(current_pos_of_drone);
 	pthread_mutex_unlock(&pose_CS);
+	dest_yaw = current_pos_of_drone[3];
 	dest_pos_of_drone.clear();
 	dest_pos_of_drone.push_back(x_drone);
 	dest_pos_of_drone.push_back(y_drone);
 	dest_pos_of_drone.push_back(z_drone);
 	if(dir == CLOCKWISE)
-		dest_yaw = yaw-theta;
-	else
 		dest_yaw = yaw+theta;
+	else
+		dest_yaw = yaw-theta;
 	dest_pos_of_drone.push_back(dest_yaw);
-	clearDoubleVector(xyz_yaw);
+	convertWRTQuadcopterOrigin(current_pos_of_drone, dest_pos_of_drone, ac_dest_pos_drone);
+	// Align the quadcoper to plane i
 	pthread_mutex_lock(&command_CS);
-		designPathForDrone(current_pos_of_drone, dest_pos_of_drone, xyz_yaw);
+		designPathForDrone(current_pos_of_drone, ac_dest_pos_of_drone, xyz_yaw);
 		moveDroneViaSetOfPoints(xyz_yaw);
 	pthread_mutex_unlock(&command_CS);
+	// Adjust the quadcopter to see the left edge of the plane
 	bool leftEdgeOfPlaneVisible = false;
 	do
 	{
@@ -2475,37 +2486,43 @@ ControlUINode::MoveQuadcopterToNextPlane(RotateDirection dir, double dest_rotati
 				_in_points.push_back(Point3f(x, y, z));
 			}
 		pthread_mutex_unlock(&keyPoint_CS);
-		image_gui->getPlaneParameters(plane_parameters);
-		image_gui->getContinuousBoundingBoxPoints(continuous_bounding_box_points);
+		int size = continuous_bounding_box_points.size();
+		assert(size == plane_parameters.size());
+		for (int i = 0; i < size; ++i)
+		{
+			continuous_bounding_box_points[i].clear();
+			plane_parameters[i].clear();
+		}
+		continuous_bounding_box_points.clear();
+		plane_parameters.clear();
 		findMultiplePlanes(_in_points, plane_parameters, continuous_bounding_box_points);
 		image_bounding_box_points.clear();
 		project3DPointsOnImage(continuous_bounding_box_points[0], image_bounding_box_points);
 		Line2f left_edge(image_bounding_box_points[0], image_bounding_box_points[3]);
 		leftEdgeOfPlaneVisible = false;
-		if( (left_edge.start.x >= 340.0 && left_edge.start.y <= 10.0) &&
-			(left_edge.end.x >= 620.0 && left_edge.end.y >= 340.0) )
+		// @todo-me @todo-meghshyam Fix this heuristic
+		if( (left_edge.start.x <= 10.0 && left_edge.start.y >= 340.0) &&
+			(left_edge.end.x <= 10.0 && left_edge.end.y <= 10.0) )
 		{
 			leftEdgeOfPlaneVisible = true;
 		}
 		else
 		{
 			leftEdgeOfPlaneVisible = false;
-			float distance = 5; // @todo-me heuristic
+			float distance = 0.25; // @todo-me heuristic. Kept it at 0.25m move leftwards
 			pthread_mutex_lock(&pose_CS);
-				current_pos_of_drone.clear();
-				current_pos_of_drone.push_back(x_drone);
-				current_pos_of_drone.push_back(y_drone);
-				current_pos_of_drone.push_back(z_drone);
-				current_pos_of_drone.push_back(yaw);
+				getCurrentPositionOfDrone(current_pos_of_drone);
 			pthread_mutex_unlock(&pose_CS);
 			dest_pos_of_drone.clear();
-			dest_pos_of_drone.push_back(current_pos_of_drone[0] -distance);
+			// @todo-me @todo-meghshyam Fix this heuristic value
+			dest_pos_of_drone.push_back(current_pos_of_drone[0] - distance);
 			dest_pos_of_drone.push_back(current_pos_of_drone[1]);
 			dest_pos_of_drone.push_back(current_pos_of_drone[2]);
 			dest_pos_of_drone.push_back(current_pos_of_drone[3]);
 			clearDoubleVector(xyz_yaw);
+			convertWRTQuadcopterOrigin(current_pos_of_drone, dest_pos_of_drone, ac_dest_pos_drone);
 			pthread_mutex_lock(&command_CS);
-				designPathForDrone(current_pos_of_drone, dest_pos_of_drone, xyz_yaw);
+				designPathForDrone(current_pos_of_drone, ac_dest_pos_of_drone, xyz_yaw);
 				moveDroneViaSetOfPoints(xyz_yaw);
 			pthread_mutex_unlock(&command_CS);
 		}
@@ -2523,6 +2540,36 @@ ControlUINode::clearDoubleVector(vector< vector<double> > &xyz_yaw)
 	xyz_yaw.clear();
 }
 
+void
+ControlUINode::convertWRTQuadcopterOrigin(const vector<double> &current_pos_of_drone, 
+											const vector<double> &dest_pos_of_drone, 
+											vector<double> &ac_dest_pos_drone)
+{
+	ac_dest_pos_drone.clear();
+	Mat rotationMatrix = Mat::eye(3, 3, CV_64F);
+	double angle = current_pos_of_drone[3];
+	rotationMatrix.at<double>(0, 0) = cos(angle);
+	rotationMatrix.at<double>(0, 1) = -sin(angle);
+	rotationMatrix.at<double>(1, 0) = sin(angle);
+	rotationMatrix.at<double>(1, 1) = cos(angle);
+	Mat translationVector(3, 1, DataType<double>::type);
+	translationVector.at<double>(0, 0) = current_pos_of_drone[0];
+	translationVector.at<double>(1, 0) = current_pos_of_drone[1];
+	translationVector.at<double>(2, 0) = current_pos_of_drone[2];
+	Mat dest_point_drone_origin_mat(3, 1, DataType<double>::type);
+	dest_point_drone_origin_mat.at<double>(0, 0) = dest_pos_of_drone[0];
+	dest_point_drone_origin_mat.at<double>(1, 0) = dest_pos_of_drone[1];
+	dest_point_drone_origin_mat.at<double>(2, 0) = dest_pos_of_drone[2];
+	Mat sub = rotationMatrix*translationVector;
+	Mat b = dest_point_drone_origin_mat + sub;
+	// How do I solve Ax = b?
+	// Will this always be solvable?
+	Mat x = rotationMatrix.inv() * b;
+	ac_dest_pos_drone.push_back(x.at<double>(0, 0));
+	ac_dest_pos_drone.push_back(x.at<double>(1, 0));
+	ac_dest_pos_drone.push_back(x.at<double>(2, 0));
+	ac_dest_pos_drone.push_back(angle+dest_pos_of_drone[3]);
+}
 
 /* CURRENTLY MIGHT NOT BE REQUIRED 
 // Gather the points for the marked plane by moving the quadcopter towards the left edge of the plane 

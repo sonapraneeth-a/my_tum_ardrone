@@ -3,7 +3,7 @@
  * ControlUINode.h
  *
  *       Created on: 19-Feb-2015
- *    Last Modified: 12-Sep-2016
+ *    Last Modified: 24-Sep-2016
  *  Original Author: Anirudh Vemula
  *   Current Author: Meghshyam Govind Prasad
  *   Current Author: Sona Praneeth Akula
@@ -856,7 +856,7 @@ class ControlUINode
 		 * @return
 		 */
 		void
-		moveDroneToPosition(vector<double> dest_point);
+		moveDroneToPosition(const vector<double> &dest_point);
 
 		/**
 		 * @brief Move the drone to the destination point via a set of points
@@ -866,7 +866,7 @@ class ControlUINode
 		 * @return
 		 */
 		void
-		moveDroneViaSetOfPoints(vector< vector<double> > dest_points);
+		moveDroneViaSetOfPoints(const vector< vector<double> > &dest_points);
 
 		/**
 		 * @brief Generates the set of points (smoothly distributed) which drone has to follow to move from start to end
@@ -928,7 +928,7 @@ class ControlUINode
 		getDistanceToSeePlane(int height_of_plane);
 
 		void
-		designPathToChangeYaw(vector<double> &curr_point, double dest_yaw, vector< vector<double> > &xyz_yaw);
+		designPathToChangeYaw(const vector<double> &curr_point, double dest_yaw, vector< vector<double> > &xyz_yaw);
 
 		vector<float>
 		fitPlane3dForTheCurrentPlane();
@@ -949,6 +949,12 @@ class ControlUINode
 
 		void
 		clearDoubleVector(vector< vector<double> > &xyz_yaw);
+
+		void
+		convertWRTQuadcopterOrigin(const vector<double> &current_pos_of_drone, 
+										const vector<double> &dest_pos_of_drone, 
+										vector<double> &ac_dest_pos_drone);
+
 };
 
 
