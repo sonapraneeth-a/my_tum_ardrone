@@ -646,7 +646,7 @@ ImageView::on_key_down(int key)
 			renderRect = false;  // While moving the quadcopter we don't want bounding box to appear
 		}
 		cout << "[ DEBUG] Calling moveQuadcopter()\n";
-		node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);
+		node->moveQuadcopter(sortedPlaneParameters, continuousBoundingBoxPoints);
 	}
 }
 
