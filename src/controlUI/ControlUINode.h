@@ -887,9 +887,9 @@ class ControlUINode
 		 */
 		void
 		getMeTheMap(const vector< double > &angles,
-									const vector< RotateDirection > directions,
-									int min_height_of_plane,
-									int max_height_of_plane);
+						const vector< RotateDirection > directions,
+						int min_height_of_plane,
+						int max_height_of_plane);
 
 		/**
 		 * @brief Cover the current plane visible to the quadcopter camera
@@ -900,7 +900,11 @@ class ControlUINode
 		 * @return
 		 */
 		void
-		CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance, RotateDirection dir);
+		CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance, RotateDirection dir,
+								const vector< vector<Point3f> > &bounding_box_points,
+								const vector< vector<float> > &plane_parameters,
+								vector< Point3f > &current_bounding_box_points,
+								vector< float > &current_plane_parameters);
 
 
 		/**
@@ -938,8 +942,8 @@ class ControlUINode
 
 		void
 		get3DPointsOfCapturedPlane(const vector<int> &ccPoints, 
-											const vector<vector<int> > &pointsClicked,
-											vector< Point3f > &threed_points);
+									const vector<vector<int> > &pointsClicked,
+									vector< Point3f > &threed_points);
 
 		vector<Point3f>
 		GenerateMy3DPoints(float width, float height);
@@ -955,6 +959,32 @@ class ControlUINode
 										const vector<double> &dest_pos_of_drone, 
 										vector<double> &ac_dest_pos_drone);
 
+		void
+		getMultiplePlanes3d (vector<int> &ccPoints, vector< vector<int> > &pointsClicked, 
+									vector< vector<float> > &planeParameters,
+									vector< vector<Point3f> > &continuousBoundingBoxPoints,
+									vector< vector<Point3f> > &sorted_3d_points,
+									vector<float> &percentagePlane);
+
+		void
+		getMultiplePlanes3d (vector< vector<float> > &planeParameters,
+								vector< vector<Point3f> > &continuousBoundingBoxPoints,
+								vector< vector<Point3f> > &sorted_3d_points,
+								vector<float> &percentageOfEachPlane);
+
+		float 
+		getOptimalDistanceToSeePlane();
+
+		int
+		getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
+									const vector< vector<float> > &temp_plane_parameters,
+									const vector<float> &percentagePlane);
+
+		vector<float>
+		bestFitPlane(const vector<Point3f> &threed_points);
+
+		void
+		testJLinkageOutput();
 };
 
 

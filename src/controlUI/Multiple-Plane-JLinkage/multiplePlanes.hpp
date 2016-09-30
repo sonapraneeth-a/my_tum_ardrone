@@ -48,9 +48,20 @@ int findMultiplePlanes(
 		vector< vector<float> > &sortedPlaneParameters,
 		vector< vector<Point3f> > &continuousBoundingBoxPoints);
 
+
+void
+findPercBoundEachPlane(
+		const vector<Point3f> &points,
+		vector< vector<float> > &sortedPlaneParameters,
+		vector< vector<Point3f> > &continuousBoundingBoxPoints,
+		vector< vector<Point3f> > &sorted_3d_points,
+		vector<float> &percentageOfEachPlane);
+
 int findMultiplePlanes1(
 		const vector<Point3f> &points,
 		vector< vector<float> > &sortedPlaneParameters,
 		vector< vector<Point3f> > &continuousBoundingBoxPoints);
+
+
 
 #endif

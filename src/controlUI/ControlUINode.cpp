@@ -32,6 +32,7 @@
 #include "Multiple-Plane-JLinkage/conversion.hpp"
 #include "Multiple-Plane-JLinkage/utilities.hpp"
 #include "Multiple-Plane-JLinkage/makeBoundingRects.hpp"
+#include "Multiple-Plane-JLinkage/multiplePlanes.hpp"
 
 #include "std_msgs/String.h"
 #include "std_msgs/Empty.h"
@@ -303,7 +304,7 @@ ControlUINode::load3dPoints (vector<float> x_w, vector<float> y_w, vector<float>
 	}
 
 	pthread_mutex_unlock(&pose_CS);
-	write3DPointsToCSV(_3d_points);
+	//write3DPointsToCSV(_3d_points);
 }
 
 void
@@ -1962,6 +1963,159 @@ ControlUINode::GenerateMy3DPoints(float width, float height)
 	return points;
 }
 
+void
+ControlUINode::getMultiplePlanes3d (vector<int> &ccPoints, vector< vector<int> > &pointsClicked, 
+									vector< vector<float> > &planeParameters,
+									vector< vector<Point3f> > &continuousBoundingBoxPoints,
+									vector< vector<Point3f> > &sorted_3d_points,
+									vector<float> &percentageOfEachPlane)
+{
+	vector<Point3f> _in_points;
+	vector<vector<int> > points;
+	for(unsigned int i = 0; i < ccPoints.size(); i++)
+	{
+		points.push_back(pointsClicked[ccPoints[i]]);
+	}
+	pthread_mutex_lock(&keyPoint_CS);
+	for(unsigned int i = 0; i < _2d_points.size(); i++)
+	{
+		if(liesInside(points, _2d_points[i]))
+		{
+			Point3f featurePt;
+			featurePt.x = _3d_points[i][0];
+			featurePt.y = _3d_points[i][1];
+			featurePt.z = _3d_points[i][2];
+			_in_points.push_back(featurePt);
+		}
+	}
+	pthread_mutex_unlock(&keyPoint_CS);
+	findPercBoundEachPlane(_in_points, planeParameters, continuousBoundingBoxPoints, sorted_3d_points, percentageOfEachPlane);
+	return ;
+}
+
+void
+ControlUINode::getMultiplePlanes3d (vector< vector<float> > &planeParameters,
+									vector< vector<Point3f> > &continuousBoundingBoxPoints,
+									vector< vector<Point3f> > &sorted_3d_points,
+									vector<float> &percentageOfEachPlane)
+{
+	vector< Point3f > _in_points;
+	pthread_mutex_lock(&keyPoint_CS);
+	for(unsigned int i = 0; i < _3d_points.size(); i++)
+	{
+		Point3f featurePt;
+		featurePt.x = _3d_points[i][0];
+		featurePt.y = _3d_points[i][1];
+		featurePt.z = _3d_points[i][2];
+		_in_points.push_back(featurePt);
+	}
+	pthread_mutex_unlock(&keyPoint_CS);
+	findPercBoundEachPlane(_in_points, planeParameters, continuousBoundingBoxPoints, 
+							sorted_3d_points, percentageOfEachPlane);
+	return ;
+}
+
+void
+ControlUINode::testJLinkageOutput()
+{
+	vector< vector<float> > planeParameters;
+	vector< vector<Point3f> > continuousBoundingBoxPoints;
+	vector< vector<float> > plane_parameters;
+	vector< vector<Point3f> > continuous_bounding_box_points;
+	vector< vector<Point3f> > sorted_3d_points;
+	vector<float> percentageOfEachPlane;
+	getMultiplePlanes3d(planeParameters, continuousBoundingBoxPoints, 
+							sorted_3d_points, percentageOfEachPlane);
+	cout << "[ DEBUG] Testing JLinkage Outout on key press f\n";
+	for (int i = 0; i < planeParameters.size(); ++i)
+	{
+		cout << "[ INFO] Parameters (a, b, c, d) for plane " << i << ": (" 
+				<< percentageOfEachPlane[i] << ")\n";
+		for (int j = 0; j < planeParameters[i].size(); ++j)
+		{
+			cout << planeParameters[i][j] << " ";
+		}
+		cout << "\n";
+	}
+	for (int i = 0; i < continuousBoundingBoxPoints.size(); ++i)
+	{
+		cout << "[ INFO] Bounding box points for plane " << i << "\n";
+		for (int j = 0; j < continuousBoundingBoxPoints[i].size(); ++j)
+		{
+			cout << continuousBoundingBoxPoints[i][j] << " ";
+		}
+		cout << "\n";
+	}
+	image_gui->setContinuousBoundingBoxPoints(continuousBoundingBoxPoints);
+	image_gui->setRender(false, true, false);
+	cout << "Rendering frame\n";
+	image_gui->renderFrame();
+	cout << "Calculating plane parameters:\n";
+	int planeIndex = getCurrentPlaneIndex(plane_parameters, planeParameters, percentageOfEachPlane);
+	cout << "Plane Index:" << planeIndex << "\n";
+	image_gui->setSigPlaneBoundingBoxPoints(continuousBoundingBoxPoints[planeIndex]);
+	image_gui->setRender(false, false, true);
+	cout << "Rendering frame\n";
+	image_gui->renderFrame();
+	vector<float> normal = bestFitPlane(sorted_3d_points[planeIndex]);
+}
+
+int
+ControlUINode::getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
+									const vector< vector<float> > &temp_plane_parameters,
+									const vector<float> &percentagePlane)
+{
+	int planeIndex = -1;
+	if(plane_parameters.size() == 0)
+	{
+		vector<float> yaw_axis;
+		yaw_axis.push_back(0.0);
+		yaw_axis.push_back(1.0);
+		yaw_axis.push_back(0.0);
+		for (int i = 0; i < temp_plane_parameters.size(); ++i)
+		{
+			float a = temp_plane_parameters[i][0];
+			float b = temp_plane_parameters[i][1];
+			float c = temp_plane_parameters[i][2];
+			float dot_p = yaw_axis[0]*a + yaw_axis[1]*b + yaw_axis[2]*c;
+			if(dot_p >= 0.9)
+			{
+				planeIndex = i; break;
+			}
+		}
+	}
+	else
+	{
+		for (int i = 0; i < temp_plane_parameters.size(); ++i)
+		{
+			float dot_p;
+			float in_a, in_b, in_c;
+			float out_a, out_b, out_c;
+			out_a = temp_plane_parameters[i][0];
+			out_b = temp_plane_parameters[i][1];
+			out_c = temp_plane_parameters[i][2];
+			bool found = false;
+			for (int j = 0; j < plane_parameters.size(); ++j)
+			{
+				in_a = plane_parameters[i][0];
+				in_b = plane_parameters[i][1];
+				in_c = plane_parameters[i][2];
+				dot_p = in_a*out_a + in_b*out_b + in_c*out_c;
+				if(dot_p >= 0.9)
+				{
+					found = true; break;
+				}
+			}
+			if(!found)
+			{
+				planeIndex = i;
+				break;
+			}
+		}
+	}
+	return planeIndex;
+}
+
 /**
  * @brief Move the drone to the destination point
  * @details
@@ -2078,16 +2232,33 @@ ControlUINode::getMeTheMap(const vector< double > &angles,
 	int plane_num = 01;
 	float min_distance = getDistanceToSeePlane(min_height_of_plane);
 	float max_distance = getDistanceToSeePlane(max_height_of_plane);
+	// corners of all multiple planes bounding boxes in 3D
+	vector< vector<Point3f> > bounding_box_points;
+	// Plane parameters of all multiple planes being covered
+	vector< vector<float> > plane_parameters;
+	// corners of all multiple planes bounding boxes in 3D
+	vector< Point3f > current_bounding_box_points;
+	// Plane parameters of all multiple planes being covered
+	vector< float > current_plane_parameters;
 	// At the end of CoverTheCurrentPlane(), the quadcopter is expected at the center of the
 	// plane (both wrt width and height) it is currently seeing
+	int distance;
 	if(directions.size()==0)
 	{
 		// CLOCKWISE - to prevent is crashing it with nearby adjacent plane (if it exists)
-		CoverTheCurrentPlane(plane_num, min_distance, max_distance, CLOCKWISE);
+		CoverTheCurrentPlane(plane_num, min_distance, max_distance, CLOCKWISE,
+							bounding_box_points, plane_parameters,
+							current_bounding_box_points, current_plane_parameters);
+		bounding_box_points.push_back(current_bounding_box_points);
+		plane_parameters.push_back(current_plane_parameters);
 	}
 	else
 	{
-		CoverTheCurrentPlane(plane_num, min_distance, max_distance, directions[0]);
+		CoverTheCurrentPlane(plane_num, min_distance, max_distance, directions[0],
+							bounding_box_points, plane_parameters,
+							current_bounding_box_points, current_plane_parameters);
+		bounding_box_points.push_back(current_bounding_box_points);
+		plane_parameters.push_back(current_plane_parameters);
 		/* directions*/
 		int number_of_rotations = directions.size();
 		for(int i = 0; i < number_of_rotations; i++)
@@ -2098,17 +2269,39 @@ ControlUINode::getMeTheMap(const vector< double > &angles,
 			plane_num++;
 			if(i == number_of_rotations-1)
 			{
-				CoverTheCurrentPlane(plane_num, min_distance, max_distance, CLOCKWISE);
+				CoverTheCurrentPlane(plane_num, min_distance, max_distance, CLOCKWISE,
+								bounding_box_points, plane_parameters,
+								current_bounding_box_points, current_plane_parameters);
 			}
 			else
 			{
-				CoverTheCurrentPlane(plane_num, min_distance, max_distance, directions[i+1]);
+				CoverTheCurrentPlane(plane_num, min_distance, max_distance, directions[i+1],
+									bounding_box_points, plane_parameters,
+									current_bounding_box_points, current_plane_parameters);
 			}
+			bounding_box_points.push_back(current_bounding_box_points);
+			plane_parameters.push_back(current_plane_parameters);
 		}
 	}
 	sendLand();
+	/* Write the bounding box points to file Plane_Info.txt */
+	/* Write the plane parameters to the same file */
+	string file_name = "Plane_Info.txt";
+	cout << "[ INFO] Writing the information to " << file_name << ".\n";
+	for (int i = 0; i < plane_parameters.size(); ++i)
+	{
+		image_gui->WriteInfoToFile(bounding_box_points[i], 
+			plane_parameters[i], i, file_name);
+	}
+	cout << "[ INFO] Gathering points completed.\n";
+	return ;
 }
 
+float
+getOptimalDistanceToSeePlane()
+{
+
+}
 
 /**
  * @brief Cover the current plane visible to the quadcopter camera
@@ -2121,8 +2314,14 @@ ControlUINode::getMeTheMap(const vector< double > &angles,
  */
 void
 ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance, 
-									RotateDirection dir)
+									RotateDirection dir,
+									const vector< vector<Point3f> > &bounding_box_points,
+									const vector< vector<float> > &plane_parameters,
+									vector< Point3f > &current_bounding_box_points,
+									vector< float > &current_plane_parameters)
 {
+	current_bounding_box_points.clear();
+	current_plane_parameters.clear();
 	/* Push that position to vector */
 	vector<double> dest_pos_of_drone;
 	vector<double> ac_dest_pos_of_drone;
@@ -2130,6 +2329,14 @@ ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float ma
 	bool planeCovered = false;
 	/* As obtained from ControlUINode.cpp Line 429 */
 	bool stage = true; // Variable to indicate whether it's the first time seeing the plane
+	// corners of all multiple planes bounding boxes in 3D
+	vector< vector<Point3f> > temp_bounding_box_points;
+	// Plane parameters of all multiple planes being covered
+	vector< vector<float> > temp_plane_parameters;
+	vector<Point3f> plane_3d_points;
+	vector< vector<Point3f> > sorted_3d_points;
+	int significantPlaneIndex;
+	bool isBigPlane = false;
 	while (!planeCovered)
 	{
 		// First param: Number of points clicked on the screen 
@@ -2145,10 +2352,6 @@ ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float ma
 		vector< vector<float> > key_points_nearest;
 		// corners of the convex hull
 		vector<int> cc_points;
-		// corners of multiple planes bounding boxes in 3D
-		vector< vector<Point3f> > continuous_bounding_box_points;
-		// Plane parameters
-		vector< vector<float> > plane_parameters;
 		/* Adjust the quadcopter to see the top and bottom edge of current plane (plane in view) */
 		/* Returns TRUE if the plane in view is covered completely, else FALSE*/
 		bool flag = AdjustToSeeCurrentPlane(min_distance,
@@ -2175,35 +2378,47 @@ ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float ma
 		int significantPlaneIndex = 0;
 		image_gui->getCCPoints(cc_points);
 		image_gui->getPointsClicked(points_clicked);
-		/*image_gui->getPlaneParameters(plane_parameters);
-		image_gui->getContinuousBoundingBoxPoints(continuous_bounding_box_points);*/
-		int size = continuous_bounding_box_points.size();
-		assert(size == plane_parameters.size());
+		int size = temp_bounding_box_points.size();
+		assert(size == temp_plane_parameters.size());
 		for (int i = 0; i < size; ++i)
 		{
-			continuous_bounding_box_points[i].clear();
-			plane_parameters[i].clear();
+			temp_bounding_box_points[i].clear();
+			temp_plane_parameters[i].clear();
 		}
-		continuous_bounding_box_points.clear();
-		plane_parameters.clear();
-		fitMultiplePlanes3d(cc_points, points_clicked, plane_parameters, continuous_bounding_box_points);
-		/* Write the bounding box points to file Plane_Info.txt */
-		/* Write the plane parameters to the same file */
-		string file_name = "Plane_Info.txt";
+		temp_bounding_box_points.clear();
+		temp_plane_parameters.clear();
+		vector<float> percentageOfEachPlane;
+		getMultiplePlanes3d(cc_points, points_clicked, temp_plane_parameters, temp_bounding_box_points,
+							sorted_3d_points, percentageOfEachPlane);
+		significantPlaneIndex = getCurrentPlaneIndex(plane_parameters, temp_plane_parameters, percentageOfEachPlane);
 		// bounding_box_points[0] - corresponds to the points of the leftmost plane
 		// Write points of significant plane to file
 		// @todo-me So indices might change form 0 to something else. Please NOTE
-		image_gui->WriteInfoToFile(continuous_bounding_box_points[significantPlaneIndex], 
-			plane_parameters[significantPlaneIndex], plane_num, file_name);
 		if (flag)
 		{
 			planeCovered = true;
+			if(!isBigPlane)
+			{
+				for (int i = 0; i < temp_bounding_box_points[significantPlaneIndex].size(); ++i)
+				{
+					current_bounding_box_points.push_back(temp_bounding_box_points[significantPlaneIndex][i]);
+				}
+				for (int i = 0; i < temp_plane_parameters[significantPlaneIndex].size(); ++i)
+				{
+					current_plane_parameters.push_back(temp_plane_parameters[significantPlaneIndex][i]);
+				}
+			}
+			else
+			{
+
+			}
 		}
 		else
 		{
+			isBigPlane = true;
 			/* @todo-me Shift by some amount to see the next part of the same plane */
-			Point3f top_right = continuous_bounding_box_points[significantPlaneIndex][2];
-			Point3f top_left = continuous_bounding_box_points[significantPlaneIndex][3];
+			Point3f top_right = temp_bounding_box_points[significantPlaneIndex][2];
+			Point3f top_left = temp_bounding_box_points[significantPlaneIndex][3];
 			int width_of_3d_plane = fabs(sqrt( (top_right.x - top_left.x)*(top_right.x - top_left.x) +
 												(top_right.y - top_left.y)*(top_right.y - top_left.y) + 
 												(top_right.z - top_left.z)*(top_right.z - top_left.z) ));
@@ -2220,7 +2435,7 @@ ControlUINode::CoverTheCurrentPlane (int plane_num, float min_distance, float ma
 			{
 				dest_pos_of_drone.push_back(current_pos_of_drone[0] + width_of_3d_plane/2); // heuristic
 			}
-			else
+			else if(dir == COUNTERCLOCKWISE)
 			{
 				dest_pos_of_drone.push_back(current_pos_of_drone[0] + width_of_3d_plane); // heuristic
 			}
@@ -2329,13 +2544,16 @@ ControlUINode::AdjustToSeeCurrentPlane(float min_distance, float max_distance, b
 	image_gui->getContinuousBoundingBoxPoints(continuous_bounding_box_points);
 	findMultiplePlanes(_in_points, plane_parameters, continuous_bounding_box_points);
 	image_bounding_box_points.clear();
-	project3DPointsOnImage(continuous_bounding_box_points[0], image_bounding_box_points);
+	int significantPlaneIndex = plane_parameters.size()-1;
+	project3DPointsOnImage(continuous_bounding_box_points[significantPlaneIndex], image_bounding_box_points);
 	// According to makeBoundingRects.cpp (202-205) UV are pushed in 
 	// bottom-left, bottom-right, top-left, top-right
 	// So I assume XYZ are stored in the same manner
 	// Right edge start is towards the bottom of the screen
 	// Right edge end is towards the top of the screen
-	Line2f right_edge(image_bounding_box_points[1], image_bounding_box_points[2]); 
+	// @todo-meghshyam May be we need to find how the normals of the planes are oriented to check if the
+	// plane has ended. Because right edge would always exist for a bounding box
+	Line2f right_edge(image_bounding_box_points[1], image_bounding_box_points[2]);
 	// @todo-sir @todo-meghshyam check this
 	if( (right_edge.start.x >= 620.0 && right_edge.start.y >= 340.0) &&
 		(right_edge.end.x >= 620.0 && right_edge.end.y <= 10.0) )
@@ -2446,7 +2664,9 @@ ControlUINode::MoveQuadcopterToNextPlane(RotateDirection dir, double dest_rotati
 	project3DPointsOnImage(continuous_bounding_box_points[0], image_bounding_box_points);
 	vector<float> pos; pos.clear();
 	double desiredYaw = 0;
-	int newPlaneIndex = 1; // @todo-me Check this value
+	// @todo-meghshyam May be we need to find how the normals of the planes are oriented to check if the
+	// plane has ended. Because right edge would always exist for a bounding box
+	int newPlaneIndex = 1; // @todo-me @todo-meghshyam Check this value
 	Point3f projectedNormal(plane_parameters[newPlaneIndex][0], plane_parameters[newPlaneIndex][1], 0);
 	Point3f yAxis(0,1,0);
 	desiredYaw = findAngle(projectedNormal, yAxis);
@@ -2570,6 +2790,67 @@ ControlUINode::convertWRTQuadcopterOrigin(const vector<double> &current_pos_of_d
 	ac_dest_pos_of_drone.push_back(x.at<double>(2, 0));
 	ac_dest_pos_of_drone.push_back(angle+dest_pos_of_drone[3]);
 }
+
+vector<float>
+ControlUINode::bestFitPlane(const vector<Point3f> &threed_points)
+{
+	// http://stackoverflow.com/questions/1400213/3d-least-squares-plane
+	float x_c = 0.0, y_c = 0.0, z_c = 0.0;
+	Mat X(3, threed_points.size(), DataType<float>::type);
+	for (int i = 0; i < threed_points.size(); ++i)
+	{
+		x_c += threed_points[i].x;
+		y_c += threed_points[i].y;
+		z_c += threed_points[i].z;
+		X.at<float>(0, i) = threed_points[i].x;
+		X.at<float>(1, i) = threed_points[i].y;
+		X.at<float>(2, i) = threed_points[i].z;
+	}
+	x_c /= threed_points.size();
+	y_c /= threed_points.size();
+	z_c /= threed_points.size();
+	for (int i = 0; i < threed_points.size(); ++i)
+	{
+		X.at<float>(0, i) = X.at<float>(0, i) - x_c;
+		X.at<float>(1, i) = X.at<float>(1, i) - y_c;
+		X.at<float>(2, i) = X.at<float>(2, i) - z_c;
+	}
+	// http://www.ilikebigbits.com/blog/2015/3/2/plane-from-points
+	float val11 = 0.0, val12 = 0.0;
+	float val21 = 0.0, val22 = 0.0;
+	float val1 = 0.0, val2 = 0.0;
+	for (int i = 0; i < threed_points.size(); ++i)
+	{
+		val11 += (X.at<float>(0,i) * X.at<float>(0,i));
+		val12 += (X.at<float>(0,i) * X.at<float>(1,i));
+		val21 += (X.at<float>(1,i) * X.at<float>(0,i));
+		val22 += (X.at<float>(1,i) * X.at<float>(1,i));
+		val1 += (X.at<float>(0,i) * X.at<float>(2,i));
+		val2 += (X.at<float>(1,i) * X.at<float>(2,i));
+	}
+	float D = (val11*val22) - (val12*val21);
+	float a = ((val2*val12) - (val1*val22))/D;
+	float b = ((val12*val1) - (val11*val2))/D;
+	float c = 1.0;
+	float mag = a*a + b*b + c*c;
+	cout << "Method 1: (" << a/mag << ", " << b/mag << ", " << c/mag << ")\n";
+	// SVD Method
+	// http://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
+	// http://www.ltu.se/cms_fs/1.51590!/svd-fitting.pdf
+	Mat w(3, threed_points.size(), DataType<float>::type);
+	Mat vt(threed_points.size(), threed_points.size(), DataType<float>::type);
+	Mat u(3, 3, DataType<float>::type);
+	SVD::compute(X, w, u, vt);
+	cout << "U:\n" << u << "\n";
+	cout << "S:\n" << w << "\n";
+	cout << "Method 2: (" << u.at<float>(0, 2) << ", " << u.at<float>(1, 2) << ", " << u.at<float>(2, 2) << ")\n";
+	vector<float> normal;
+	normal.push_back(a);
+	normal.push_back(b);
+	normal.push_back(c);
+	return normal;
+}
+
 
 /* CURRENTLY MIGHT NOT BE REQUIRED 
 // Gather the points for the marked plane by moving the quadcopter towards the left edge of the plane 

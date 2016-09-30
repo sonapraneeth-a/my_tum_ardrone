@@ -57,7 +57,16 @@ void getBoundingBoxCoordinates (
 		const map<int, pair<int, int> > &sortedPlaneIndexBounds,
 		vector< vector<Point3f> > &boundingBoxPoints );
 
-void getBoundingBoxPointsOfPlane(const vector<Point3f> &pointsInThePlane, const vector<float> &sortedPlaneParameters, vector<Point3f> &sortedPlaneXYZBoundingPoints);
+void getBoundingBoxPointsOfPlane(
+		const vector<Point3f> &pointsInThePlane, 
+		const vector<float> &sortedPlaneParameters, 
+		vector<Point3f> &sortedPlaneXYZBoundingPoints);
+
+void getPercentageOfEachPlane (
+		const vector<Point3f> &sortedProjectionOf3DPoints,
+		const map<int, pair<int, int> > &sortedPlaneIndexBounds,
+		vector< vector<Point3f> > &sorted_3d_points,
+		vector<float> &percentageOfEachPlane);
 
 /**
  * @brief This function makes the bounding boxes generated before continuous

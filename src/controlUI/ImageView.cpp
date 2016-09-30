@@ -329,6 +329,21 @@ ImageView::renderFrame()
 			glEnd();
 		}
 	}
+	if(renderSignificantPlane)
+	{
+		glColor3f(1.0, 1.0, 1.0); 
+		glBegin(GL_LINE_STRIP);
+		vector<Point2f> imagePts;
+		node->project3DPointsOnImage(sigPlaneBoundingBoxPoints, imagePts);
+		for(int pointIndex = 0; pointIndex < imagePts.size(); pointIndex++)
+		{
+			vector<int> p(2);
+			p[0] = imagePts[pointIndex].x;
+			p[1] = imagePts[pointIndex].y;
+			glVertex2i(p[0], p[1]);
+		}
+		glEnd();
+	}
 	glDisable(GL_BLEND);
 
 	myGLWindow->swap_buffers();
@@ -597,6 +612,11 @@ ImageView::on_key_down(int key)
 			node->sendLand();
 		}
 		cout << "[ INFO] Quadcopter has landed.\n";
+	}
+	// Key f
+	if(key == 102)
+	{
+		node->testJLinkageOutput();
 	}
 	// Key n
 	// Uses the points written from a file (obtained from key g)
@@ -957,6 +977,27 @@ ImageView::getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuous_
 }
 
 void
+ImageView::setContinuousBoundingBoxPoints(const vector< vector<Point3f> > &continuous_bounding_box_points)
+{
+	int size = continuousBoundingBoxPoints.size();
+	for (int i = 0; i < size; ++i)
+	{
+		continuousBoundingBoxPoints[i].clear();
+	}
+	continuousBoundingBoxPoints.clear();
+	vector<Point3f> dummy_points;
+	for (int i = 0; i < continuous_bounding_box_points.size(); ++i)
+	{
+		dummy_points.clear();
+		for (int j = 0; j < continuous_bounding_box_points[i].size(); ++j)
+		{
+			dummy_points.push_back(continuous_bounding_box_points[i][j]);
+		}
+		continuousBoundingBoxPoints.push_back(dummy_points);
+	}
+}
+
+void
 ImageView::getPlaneParameters(vector< vector<float> > &plane_parameters)
 {
 	int size = plane_parameters.size();
@@ -1064,4 +1105,15 @@ ImageView::clearInputVectors()
 	ccPoints.clear();
 	pointsClicked.clear();
 	keyPointsNearest.clear();
+}
+
+void
+ImageView::setSigPlaneBoundingBoxPoints(const vector<Point3f> &sigplane_bounding_box_points)
+{
+	sigPlaneBoundingBoxPoints.clear();
+	for (int i = 0; i < sigplane_bounding_box_points.size(); ++i)
+	{
+		sigPlaneBoundingBoxPoints.push_back(sigplane_bounding_box_points[i]);
+	}
+	return ;
 }

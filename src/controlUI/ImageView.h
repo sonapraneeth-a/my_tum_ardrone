@@ -131,6 +131,8 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		std::vector<int> ccPoints;
 		// corners of multiple planes bounding boxes in 3D
 		std::vector< std::vector<cv::Point3f> > continuousBoundingBoxPoints;
+		// corners of significant plane bounding boxes in 3D
+		std::vector<cv::Point3f> sigPlaneBoundingBoxPoints;
 		// Plane parameters
 		std::vector< std::vector<float> > planeParameters;
 		// corners of the bounding rectangle
@@ -297,6 +299,8 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 					vector<float> &elems);
 
 		void getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuousBoundingBoxPoints);
+		void setContinuousBoundingBoxPoints(const vector< vector<Point3f> > &continuous_bounding_box_points);
+		void setSigPlaneBoundingBoxPoints(const vector<Point3f> &sigplane_bounding_box_points);
 		void getPlaneParameters(vector< vector<float> > &planeParameters);
 		void getPointsClicked(vector< vector<int> > &pointsClicked);
 		void getKeyPointsNearest(vector< vector<int> > &keyPointsNearest);

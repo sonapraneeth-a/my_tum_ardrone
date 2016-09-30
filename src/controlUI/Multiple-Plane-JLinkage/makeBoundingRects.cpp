@@ -113,6 +113,50 @@ void orderPlanePointsByCentroids(
 
 }
 
+void getPercentageOfEachPlane (
+		const vector<Point3f> &sortedProjectionOf3DPoints,
+		const map<int, pair<int, int> > &sortedPlaneIndexBounds,
+		vector< vector<Point3f> > &sorted_3d_points,
+		vector<float> &percentageOfEachPlane)
+{
+	percentageOfEachPlane.clear();
+	int size = sorted_3d_points.size();
+	for (int i = 0; i < size; ++i)
+	{
+		sorted_3d_points[i].clear();
+	}
+	sorted_3d_points.clear();
+	int numberOfPlanes = sortedPlaneIndexBounds.size();
+	int i, j;
+	int indexOne, indexTwo;
+	vector<Point3f> pointsInThePlane;
+	int totalNumberOfPoints = 0;
+	for (i = 0; i < numberOfPlanes; ++i)
+	{
+		indexOne = sortedPlaneIndexBounds.at(i).first;
+		indexTwo = sortedPlaneIndexBounds.at(i).second;
+		pointsInThePlane.clear();
+		for (j = indexOne; j < indexTwo; ++j)
+		{
+			pointsInThePlane.push_back(sortedProjectionOf3DPoints[j]);
+		}
+		sorted_3d_points.push_back(pointsInThePlane);
+		percentageOfEachPlane.push_back((float)pointsInThePlane.size());
+		totalNumberOfPoints += pointsInThePlane.size();
+	}
+	float max_percentage = 0.0;
+	for (i = 0; i < numberOfPlanes; ++i)
+	{
+		float percentage = (float)percentageOfEachPlane[i]/totalNumberOfPoints;
+		percentageOfEachPlane[i] = percentage;
+		if(percentage >= max_percentage)
+		{
+			max_percentage = percentage;
+		}
+	}
+	return ;
+}
+
 void getBoundingBoxCoordinates (
 		const vector<Point3f> &sortedProjectionOf3DPoints,
 		const vector< vector<float> > &sortedPlaneParameters,
@@ -123,7 +167,7 @@ void getBoundingBoxCoordinates (
 	// Get the number of planes
 	int numberOfPlanes = sortedPlaneIndexBounds.size();
 	int i, j;
-	int numberOfPointsInThePlane, indexOne, indexTwo;
+	int indexOne, indexTwo;
 	vector<Point3f> pointsInThePlane;
 
 	for (i = 0; i < numberOfPlanes; ++i) {
