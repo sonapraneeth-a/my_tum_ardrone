@@ -80,6 +80,9 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		CVD::ImageRef defaultWindowSize;
 		bool changeSizeNextRender;
 
+		// Keyboard control
+		bool key_board_control;
+
 		/**
 		 * @brief The associated thread's run function
 		 * @details Creates the 'DRONE CAMERA FEED' Window
@@ -282,34 +285,56 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 
 		/*** NEWER FUNCTIONS ***/
 
-		void readInfo(string filename,
-					vector< vector<float> > &sortedPlaneParameters,
-					vector< vector<Point3f> > &boundingBoxPoints);
+		void 
+		readInfo(string filename,
+						vector< vector<float> > &sortedPlaneParameters,
+						vector< vector<Point3f> > &boundingBoxPoints);
 
 		void
 		WriteInfoToFile(const vector<Point3f> &bounding_box_points, 
 					const vector<float> &plane_parameters, 
 					int plane_num, string filename);
 
-		void split(	const string &s,
-					char delim,
-					vector<float> &elems);
+		void
+		split(	const string &s, char delim, vector<float> &elems);
 
-		void split(	const string &s,
-					vector<float> &elems);
+		void split(	const string &s, vector<float> &elems);
 
-		void getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuousBoundingBoxPoints);
-		void setContinuousBoundingBoxPoints(const vector< vector<Point3f> > &continuous_bounding_box_points);
-		void setSigPlaneBoundingBoxPoints(const vector<Point3f> &sigplane_bounding_box_points);
-		void getPlaneParameters(vector< vector<float> > &planeParameters);
-		void getPointsClicked(vector< vector<int> > &pointsClicked);
-		void getKeyPointsNearest(vector< vector<int> > &keyPointsNearest);
-		void getCCPoints(vector<int> &ccPoints);
-		void setRender(bool renderPoly, bool renderRect, bool renderSignificantPlane);
-		void setNumberOfPoints(int numPointsClicked, int numKeyPointsDetected);
-		void clearInputVectors();
-		void clearOutputVectors();
+		void
+		getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuousBoundingBoxPoints);
 
+		void
+		setContinuousBoundingBoxPoints(const vector< vector<Point3f> > &continuous_bounding_box_points);
+
+		void
+		setSigPlaneBoundingBoxPoints(const vector<Point3f> &sigplane_bounding_box_points);
+
+		void
+		getPlaneParameters(vector< vector<float> > &planeParameters);
+
+		void
+		getPointsClicked(vector< vector<int> > &pointsClicked);
+
+		void
+		getKeyPointsNearest(vector< vector<int> > &keyPointsNearest);
+
+		void
+		getCCPoints(vector<int> &ccPoints);
+
+		void
+		setRender(bool renderPoly, bool renderRect, bool renderSignificantPlane);
+
+		void
+		setNumberOfPoints(int numPointsClicked, int numKeyPointsDetected);
+
+		void
+		clearInputVectors();
+
+		void
+		clearOutputVectors();
+
+		bool
+		is_keyBoardActive();
 
 
 };

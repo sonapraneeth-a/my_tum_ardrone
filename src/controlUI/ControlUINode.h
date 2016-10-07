@@ -8,7 +8,7 @@
  *   Current Author: Meghshyam Govind Prasad
  *   Current Author: Sona Praneeth Akula
  *          Project: Quadcopter
- *      Description: 
+ *      Description:
  *
  * Date				Author							Modification
  * 12-Sep-2016	Sona Praneeth Akula	Added		Added comments to the code
@@ -132,7 +132,7 @@ struct grid
 		 * @param [float] height - Height of the grid
 		 * @param [float] overlap - Amount of overlap between two grids
 		 */
-		grid( float _min_u_, float _min_v_, float _max_u_, float _max_v_, 
+		grid( float _min_u_, float _min_v_, float _max_u_, float _max_v_,
 					float width, float height, float overlap)
 		{
 			this->minU = _min_u_;
@@ -148,10 +148,10 @@ struct grid
 		}
 
 		/**
-		 * @brief @todo Add a gridSquare to grid at the end of a specific row 
+		 * @brief @todo Add a gridSquare to grid at the end of a specific row
 		 * @details
 		 * @param [gridSquare] square - Grid Square to be added to grid at specific row
-		 * @return 
+		 * @return
 		 */
 		void add(gridSquare square)
 		{
@@ -267,8 +267,8 @@ struct pGridSquare
 		 * @param
 		 * @param
 		 */
-		pGridSquare(float u, float v, 
-								float width, float height, 
+		pGridSquare(float u, float v,
+								float width, float height,
 								std::vector<float> rd, std::vector<float> dd)
 		{
 			this->u = u;
@@ -316,9 +316,9 @@ struct pGrid
 		 * @param
 		 * @param
 		 */
-		pGrid(float au, float av, 
-					std::vector<float> rd, std::vector<float> dd, 
-					float width, float height, float overlap, 
+		pGrid(float au, float av,
+					std::vector<float> rd, std::vector<float> dd,
+					float width, float height, float overlap,
 					float maxR, float maxD)
 		{
 			this->au = au;
@@ -484,6 +484,7 @@ class ControlUINode
 
 		std::vector<double> targetPoint;
 		std::list<std_msgs::String> commands;
+		std::list<std_msgs::String> just_navigation_commands;
 		std::list<std::vector<double> > targetPoints;
 		std::vector<int> startTargePtIndex;
 		int numberOfPlanes;
@@ -502,6 +503,8 @@ class ControlUINode
 		float pollingTime; // Interval at which polling is done to check the drone position
 		bool targetSet;
 		bool currentCommand;
+		// Only for navigating the quadcopter
+		bool  justNavigation; 
 		bool recordNow;
 		bool notRecording;
 
@@ -529,10 +532,10 @@ class ControlUINode
 	public:
 
 		ImageView *image_gui;
-
+		bool got_points;
 		/**
 		 * @brief Constructor for ControlUINode
-		 * @details Callbacks called from Constructor -> keyPointDataCb, 
+		 * @details Callbacks called from Constructor -> keyPointDataCb,
 		 * 					&poseCb, comCb
 		 * @param
 		 * @return
@@ -559,7 +562,7 @@ class ControlUINode
 
 		/**
 		 * @brief Main Loop
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -606,8 +609,8 @@ class ControlUINode
 
 		// Algorithmic functions
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -616,12 +619,12 @@ class ControlUINode
 
 		/**
 		 * @brief Fit multiple planes in 3D
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
 		void
-		fitMultiplePlanes3d (vector<int> &ccPoints, vector< vector<int> > &pointsClicked, 
+		fitMultiplePlanes3d (vector<int> &ccPoints, vector< vector<int> > &pointsClicked,
 															vector< vector<float> > &planeParameters,
 															vector< vector<Point3f> > &continuousBoundingBoxPoints);
 
@@ -644,24 +647,24 @@ class ControlUINode
 		 * @return
 		 */
 		void
-		getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint, 
+		getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint,
 												double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw);
 
 		//Find target points for plane not parallel to XZ plane
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
 		void
-		getPTargetPoints(const pGrid &g, const vector<float> & plane, 
-													const vector<Point3f> &uvAxes, vector<vector<double> > &tPoints ); 
+		getPTargetPoints(const pGrid &g, const vector<float> & plane,
+													const vector<Point3f> &uvAxes, vector<vector<double> > &tPoints );
 
 		//sort target points according to Z
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -670,8 +673,8 @@ class ControlUINode
 
 		//Get UV Grid corners
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -680,8 +683,8 @@ class ControlUINode
 
 		//Print UV grid and according XYZ grid
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -690,8 +693,8 @@ class ControlUINode
 
 		// Search function : Given a 2d point, find the nearest 2d keypoint and return its 3d position
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -700,8 +703,8 @@ class ControlUINode
 
 		// Get 2d position (with a threshold) of a key point given its 3d position. Return empty vector if keypoint not found in the current frame (within the threshold)
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -710,8 +713,8 @@ class ControlUINode
 
 		//Project World Pts on Image plane
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -720,8 +723,8 @@ class ControlUINode
 
 		//calibrate camera
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -730,8 +733,8 @@ class ControlUINode
 
 		// Get 2d position of the nearest key point given a 3d position
 		/**
-		 * @brief 
-		 * @details 
+		 * @brief
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -749,7 +752,7 @@ class ControlUINode
 
 		/**
 		 * @brief Write 3D points obtained to a CSV file
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -758,7 +761,7 @@ class ControlUINode
 
 		/**
 		 * @brief A helper function to get the number of key points in the current frame
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -767,7 +770,7 @@ class ControlUINode
 
 		/**
 		 * @brief Saves the 3d coordinates of the keypoints as a CSV file for external processing
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -785,7 +788,7 @@ class ControlUINode
 
 		/**
 		 * @brief Projects the 3d points onto the extracted plane
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -794,7 +797,7 @@ class ControlUINode
 
 		/**
 		 * @brief Builds the grid
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -804,7 +807,7 @@ class ControlUINode
 		//pGrid buildPGrid (std::vector<std::vector<float> > pPoints);
 		/**
 		 * @brief Builds the PGrid
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -813,7 +816,7 @@ class ControlUINode
 
 		/**
 		 * @brief Gets the target points given the grid and plane
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
@@ -822,32 +825,78 @@ class ControlUINode
 
 		/**
 		 * @brief Generate the appropriate goto commands according to the target points
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
 		void
-		moveDrone (const std::vector<double> &prevPosition, 
-										std::vector< std::vector<double> > tPoints, 
+		moveDrone (const std::vector<double> &prevPosition,
+										std::vector< std::vector<double> > tPoints,
 										double prevYaw, double yaw);
 
 		/**
 		 * @brief Checks the position of the drone and whether the error is less than a threshold
-		 * @details 
+		 * @details
 		 * @param
 		 * @return
 		 */
 		void
 		checkPos (const ros::TimerEvent&);
 
-		void
-		sendLand();
-
 		// Records the video for a fixed amount of time
 		// bool recordVideo ();
 
 
 		/*** NEWER FUNCTIONS ***/
+		// Records the video for a fixed amount of time
+		// bool recordVideo ();
+
+
+		/*** NEWER FUNCTIONS ***/
+		vector<float>
+		fitPlane3dForTheCurrentPlane();
+
+		void
+		sendLand();
+
+		void
+		getCurrentPositionOfDrone(vector<double> &curr_pos_of_drone);
+
+		/**
+		 * @brief Calculate distance from the plane to see the height
+		 * @param [int] max_height_of_plane
+		 */
+		float
+		getDistanceToSeePlane(int height_of_plane);
+
+		vector<Point2f>
+		GenerateMy2DPoints();
+
+		vector<Point3f>
+		GenerateMy3DPoints(float width, float height);
+
+		void
+		getMultiplePlanes3d (const vector<int> &ccPoints, const vector< vector<int> > &pointsClicked,
+									vector< vector<float> > &planeParameters,
+									vector< vector<Point3f> > &continuousBoundingBoxPoints,
+									vector< vector<Point3f> > &sorted_3d_points,
+									vector<float> &percentageOfEachPlane);
+
+		void
+		getMultiplePlanes3d (vector< vector<float> > &planeParameters,
+								vector< vector<Point3f> > &continuousBoundingBoxPoints,
+								vector< vector<Point3f> > &sorted_3d_points,
+								vector<float> &percentageOfEachPlane);
+
+		float
+		getPointPlaneDistance(const vector<double> &current_pos_of_drone,
+								const vector<float> &planeParameters);
+
+		int
+		getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
+									const vector< vector<float> > &temp_plane_parameters,
+									const vector<float> &percentagePlane);
+
 		/**
 		 * @brief Move the drone to the destination point
 		 * @details
@@ -877,9 +926,24 @@ class ControlUINode
 		 * @return
 		 */
 		void
-		designPathForDrone(const vector< double > &start, 
-							const vector< double > &end, 
+		designPathForDrone(const vector< double > &start,
+							const vector< double > &end,
 							vector< vector<double> > &path);
+
+		void
+		designPathToChangeYaw(const vector<double> &curr_point,
+						double dest_yaw, vector< vector<double> > &xyz_yaw);
+
+		void
+		clearDoubleVector(vector< vector<double> > &xyz_yaw);
+
+		void
+		convertWRTQuadcopterOrigin(const vector<double> &current_pos_of_drone,
+										const vector<double> &dest_pos_of_drone,
+										vector<double> &ac_dest_pos_of_drone);
+
+		vector<float>
+		bestFitPlane(const vector<Point3f> &threed_points);
 
 		/**
 		 * @brief Get the bounding box points of each plane by autonomously navigating the quadcopter
@@ -887,22 +951,43 @@ class ControlUINode
 		 */
 		void
 		getMeTheMap(const vector< double > &angles,
-						const vector< RotateDirection > directions,
-						int min_height_of_plane,
-						int max_height_of_plane);
+						const vector< RotateDirection > &directions,
+						float min_distance,
+						float max_distance);
+
+		void
+		projectPointsOnPlane (const vector<Point3f> &points,
+								const vector<float> &planeParameters,
+								vector<Point3f> &projectedPoints);
+
+		void
+		alignQuadcopterToCurrentPlane(const vector<double> &current_pos_of_drone,
+										const vector<float> &planeParameters);
+
+		void
+		moveForward(float min_distance, float max_distance);
+
+		void
+		moveBackward(float min_distance, float max_distance);
+
+		bool
+		isNewPlaneVisible(const vector< vector<float> > &plane_parameters,
+							const vector< vector<float> > &planeParameters,
+							const vector<float> &percentagePlane);
 
 		/**
 		 * @brief Cover the current plane visible to the quadcopter camera
-		 * @details 
+		 * @details
 		 * @param [int] plane_num - Which plane you're covering
 		 * @param [float] max_height - Maximum height of the plane
 		 * @param [Point3f] current_pos_of_drone - Current position in 3D of the quadcopter
 		 * @return
 		 */
 		void
-		CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance, RotateDirection dir,
-								const vector< vector<Point3f> > &bounding_box_points,
-								const vector< vector<float> > &plane_parameters,
+		CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance,
+								RotateDirection dir, double next_plane_angle,
+								const vector< vector<Point3f> > &all_planes_bounding_box_points,
+								const vector< vector<float> > &all_planes_plane_parameters,
 								vector< Point3f > &current_bounding_box_points,
 								vector< float > &current_plane_parameters);
 
@@ -915,76 +1000,36 @@ class ControlUINode
 		 * @return
 		 */
 		bool
-		AdjustToSeeCurrentPlane( float min_distance, float max_distance, bool stage);
+		AdjustToSeeCurrentPlane(float min_distance, float max_distance,
+								const vector< vector<float> > &plane_parameters, bool stage);
+
+		int
+		checkVisibility(const vector<float> &planeParameters, const vector<Point3f> &continuous_bounding_box_points,
+						bool which_side);
 
 		/**
 		 * @brief Move the quadcopter to the next plane such that it can see the left edge of the new plane
 		 * @param [RotateDirection] Rotation Direction Of Quadcopter: CLOCKWISE, COUNTERCLOCKWISE
 		 */
 		void
-		MoveQuadcopterToNextPlane(RotateDirection dir, double angle);
-
-		/**
-		 * @brief Calculate distance from the plane to see the height
-		 * @param [int] max_height_of_plane
-		 */
-		float
-		getDistanceToSeePlane(int height_of_plane);
-
-		void
-		designPathToChangeYaw(const vector<double> &curr_point, double dest_yaw, vector< vector<double> > &xyz_yaw);
-
-		vector<float>
-		fitPlane3dForTheCurrentPlane();
-
-		void
-		getCurrentPositionOfDrone(vector<double> &curr_pos_of_drone);
-
-		void
-		get3DPointsOfCapturedPlane(const vector<int> &ccPoints, 
-									const vector<vector<int> > &pointsClicked,
-									vector< Point3f > &threed_points);
-
-		vector<Point3f>
-		GenerateMy3DPoints(float width, float height);
-
-		vector<Point2f>
-		GenerateMy2DPoints();
-
-		void
-		clearDoubleVector(vector< vector<double> > &xyz_yaw);
-
-		void
-		convertWRTQuadcopterOrigin(const vector<double> &current_pos_of_drone, 
-										const vector<double> &dest_pos_of_drone, 
-										vector<double> &ac_dest_pos_drone);
-
-		void
-		getMultiplePlanes3d (vector<int> &ccPoints, vector< vector<int> > &pointsClicked, 
-									vector< vector<float> > &planeParameters,
-									vector< vector<Point3f> > &continuousBoundingBoxPoints,
-									vector< vector<Point3f> > &sorted_3d_points,
-									vector<float> &percentagePlane);
-
-		void
-		getMultiplePlanes3d (vector< vector<float> > &planeParameters,
-								vector< vector<Point3f> > &continuousBoundingBoxPoints,
-								vector< vector<Point3f> > &sorted_3d_points,
-								vector<float> &percentageOfEachPlane);
-
-		float 
-		getOptimalDistanceToSeePlane();
-
-		int
-		getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
-									const vector< vector<float> > &temp_plane_parameters,
-									const vector<float> &percentagePlane);
-
-		vector<float>
-		bestFitPlane(const vector<Point3f> &threed_points);
+		MoveQuadcopterToNextPlane(RotateDirection dir, double angle,
+									const vector< vector<float> > &plane_parameters);
 
 		void
 		testJLinkageOutput();
+
+		double
+		getHeightFromGround(const vector<float> &planeParameters, 
+							const vector<Point3f> &continuousBoundingBoxPoints);
+
+		/**** UNNECESSARY FUNCTIONS ****/
+		void
+		get3DPointsOfCapturedPlane(const vector<int> &ccPoints,
+									const vector<vector<int> > &pointsClicked,
+									vector< Point3f > &threed_points);
+
+
+
 };
 
 

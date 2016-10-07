@@ -26,7 +26,7 @@ void removeUnnecessaryPlanes(
 		vector<int> &newPlaneIndices,
 		int &numberOfPlanes) {
 
-	cout << "[ DEBUG ] removeUnnecessaryPlanes Started\n";
+	//cout << "[ DEBUG ] removeUnnecessaryPlanes Started\n";
 
 	// Get the number of points present in the plane
 	int numberOfPoints = oldData.size();
@@ -49,9 +49,9 @@ void removeUnnecessaryPlanes(
 		}
 	}
 
-	cout << "[ DEBUG ] Detected number of planes before removing unnecessary planes : " << numberOfUniquePlanes << "\n";
+	/*cout << "[ DEBUG ] Detected number of planes before removing unnecessary planes : " << numberOfUniquePlanes << "\n";
 	for (map<int,int>::iterator it=numberOfPointsPerPlane.begin(); it!=numberOfPointsPerPlane.end(); ++it)
-		cout << "[ DEBUG ] " << it->first << " => " << it->second << "\n";
+		cout << "[ DEBUG ] " << it->first << " => " << it->second << "\n";*/
 
 	// Remove those planes which having less than minimum number of points in them
 	for (i = 0; i < numberOfUniquePlanes; i++) {
@@ -72,12 +72,12 @@ void removeUnnecessaryPlanes(
 
 	// Number of planes found after removal of unnecessary planes
 	numberOfPlanes = numberOfPointsPerPlane.size();
-	cout << "[ DEBUG ] Detected number of planes after removing unnecessary planes: " << numberOfPlanes << "\n";
+	/*cout << "[ DEBUG ] Detected number of planes after removing unnecessary planes: " << numberOfPlanes << "\n";
 	for (map<int,int>::iterator it=numberOfPointsPerPlane.begin(); it!=numberOfPointsPerPlane.end(); ++it)
 		cout << "[ DEBUG ] " << it->first << " => " << it->second << "\n";
 	cout << "[ DEBUG ] Old indices mapped to new indices" << endl;
 	for (map<int,int>::iterator it=oldToNewPlaneIndices.begin(); it!=oldToNewPlaneIndices.end(); ++it)
-		cout << "[ DEBUG ] " << it->first << " => " << it->second << "\n";
+		cout << "[ DEBUG ] " << it->first << " => " << it->second << "\n";*/
 
 	// Create the new data after removing unnecessary planes and also new indices
 	// corresponding to the newPlaneDataPoints
@@ -94,7 +94,7 @@ void removeUnnecessaryPlanes(
 	}
 
 
-	cout << "[ DEBUG ] removeUnnecessaryPlanes Completed\n";
+	//cout << "[ DEBUG ] removeUnnecessaryPlanes Completed\n";
 	return ;
 
 }
@@ -110,7 +110,7 @@ void calculateDistanceFromPlane(
 	int numberOfPoints = data.size();
 	// Get the number of planes
 	int numberOfPlanes = planeParameters.size();
-	cout << "[ DEBUG ] calculateDistanceFromPlane Started with " << numberOfPlanes << " planes.\n";
+	//cout << "[ DEBUG ] calculateDistanceFromPlane Started with " << numberOfPlanes << " planes.\n";
 	int i;
 	// Dummy vector to initialize planePointsIndexMapping
 	vector<int> pointsIndex;
@@ -120,7 +120,7 @@ void calculateDistanceFromPlane(
 		planePointsIndexMapping.push_back(pointsIndex);
 	}
 
-	cout << "[ DEBUG ] Calculating the distances of each point to its respective plane\n";
+	//cout << "[ DEBUG ] Calculating the distances of each point to its respective plane\n";
 	for(i = 0; i < numberOfPoints; i++) {
 
 		// Get the plane parameters into variables a, b, c, d
@@ -151,7 +151,7 @@ void calculateDistanceFromPlane(
 
 	}
 
-	cout << "[ DEBUG ] calculateDistanceFromPlane Completed\n";
+	//cout << "[ DEBUG ] calculateDistanceFromPlane Completed\n";
 	return ;
 
 }
@@ -171,28 +171,28 @@ void removePointsFarFromPlane(
 	// Create a dummy vector for initializing newPlaneParameters
 	vector<float> abcd;
 
-	for (i = 0; i < numberOfPlanes; ++i) {
-		cout << "[ DEBUG ] Initial Plane Parameters for plane " << i << " are: ";
+	/*for (i = 0; i < numberOfPlanes; ++i) {
+		/cout << "[ DEBUG ] Initial Plane Parameters for plane " << i << " are: ";
 		for (j = 0; j < 4; ++j) {
 			cout << planeParameters[i][j] << " ";
 		}
 		cout << "\n";
 	}
-	cout << "\n";
+	cout << "\n";*/
 
 	vector<float> distanceOfPointsFromPlane;
 	for(i = 0; i < numberOfPlanes; i++) {
 
-		cout << "[ DEBUG ] Plane " << i << endl;
+		//cout << "[ DEBUG ] Plane " << i << endl;
 		int numberOfPointsInThePlane = planePointsIndexMapping[i].size();
 
 		for(j = 0; j < numberOfPointsInThePlane; j++) {
 			distanceOfPointsFromPlane.push_back(distanceMatrix[planePointsIndexMapping[i][j]]);
 		}
 
-		cout << "[ DEBUG ] Calculating Kth Percentile for distance threshold.\n";
+		//cout << "[ DEBUG ] Calculating Kth Percentile for distance threshold.\n";
 		float distanceThreshold = getKthPercentile(distanceOfPointsFromPlane, 95.0);
-		cout << "[ DEBUG ] Calculating Kth Percentile Success!!!\n";
+		//cout << "[ DEBUG ] Calculating Kth Percentile Success!!!\n";
 
 		int newDataSize = newSortedData.size(), numberOfPointsInTheCurrentPlane=0;
 		for(j = 0; j < numberOfPointsInThePlane; j++) {
@@ -201,17 +201,17 @@ void removePointsFarFromPlane(
 				numberOfPointsInTheCurrentPlane++;
 			}
 		}
-		cout << "[ DEBUG ] Added points of plane " << i << " to newSortedData\n";
+		//cout << "[ DEBUG ] Added points of plane " << i << " to newSortedData\n";
 		// Get plane index bounds after making new data for plane i
 		planeIndexBounds.insert(make_pair(i,make_pair(newDataSize, newDataSize+numberOfPointsInThePlane)));
 		// Get the new plane parameters
-		cout << "[ DEBUG ] Plane Index Bounds for plane " << i << " are  " << newDataSize << ", " << newDataSize+numberOfPointsInThePlane << "\n";
+		//cout << "[ DEBUG ] Plane Index Bounds for plane " << i << " are  " << newDataSize << ", " << newDataSize+numberOfPointsInThePlane << "\n";
 
-		cout << "Plane Parameters for this plane are: ";
+		/*cout << "Plane Parameters for this plane are: ";
 		for (j = 0; j < 4; ++j) {
 			cout << planeParameters[i][j] << " ";
 		}
-		cout << "\n";
+		cout << "\n";*/
 
 		for(j = 0; j < 4; j++) {
 			abcd.push_back(planeParameters[i][j]);
@@ -221,7 +221,7 @@ void removePointsFarFromPlane(
 		distanceOfPointsFromPlane.clear();
 	}
 
-	cout << "[ DEBUG ] removePointsFarFromPlane Completed.\n";
+	//cout << "[ DEBUG ] removePointsFarFromPlane Completed.\n";
 	return ;
 
 }
@@ -232,7 +232,7 @@ void get3DPlaneProjectionsOfPoints (
 		const map<int, pair<int, int> > &planeIndexBounds,
 		vector<Point3f> &projectionsOf3DPoints	) {
 
-	cout << "[ DEBUG ] get3DPlaneProjectionsOfPoints Started\n";
+	//cout << "[ DEBUG ] get3DPlaneProjectionsOfPoints Started\n";
 	// Get the number of planes
 	int numberOfPlanes = planeIndexBounds.size();
 	int startOfPlanePoints, endOfPlanePoints;
@@ -240,7 +240,7 @@ void get3DPlaneProjectionsOfPoints (
 	int i, j;
 	for (i = 0; i < numberOfPlanes; ++i) {
 
-		cout << "[ DEBUG ] Calculating 3D Projections for Plane " << i << "\n";
+		//cout << "[ DEBUG ] Calculating 3D Projections for Plane " << i << "\n";
 		startOfPlanePoints = planeIndexBounds.at(i).first;
 		endOfPlanePoints = planeIndexBounds.at(i).second;
 
@@ -270,7 +270,7 @@ void get3DPlaneProjectionsOfPoints (
 		}
 
 	}
-	cout << "[ DEBUG ] get3DPlaneProjectionsOfPoints completed!!!!\n";
+	//cout << "[ DEBUG ] get3DPlaneProjectionsOfPoints completed!!!!\n";
 	return ;
 
 }

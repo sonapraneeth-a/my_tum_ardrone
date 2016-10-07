@@ -94,7 +94,7 @@ void orderPlanePointsByCentroids(
 
 	}
 
-	//cout << "[ DEBUG ] Original Plane Index Bounds\n";
+	/*//cout << "[ DEBUG ] Original Plane Index Bounds\n";
 	for(map<int, pair<int,int> >::const_iterator it = planeIndexBounds.begin();
 		    it != planeIndexBounds.end(); ++it) {
 		std::cout << it->first << " " << it->second.first << " " << it->second.second << "\n";
@@ -108,7 +108,7 @@ void orderPlanePointsByCentroids(
 	printVectorOfVectors(planeParameters);
 	//cout << "[ DEBUG ] Sorted Plane Parameters\n";
 	printVectorOfVectors(sortedPlaneParameters);
-	//cout << "[ DEBUG ] orderPlanePointsByCentroids Completed.\n";
+	//cout << "[ DEBUG ] orderPlanePointsByCentroids Completed.\n";*/
 	return ;
 
 }

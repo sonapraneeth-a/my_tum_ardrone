@@ -65,6 +65,7 @@ ImageView::ImageView(ControlUINode *cnode)
 
 	numFile = 0;
 	translateDistance = 0.5;
+	key_board_control = true;
 }
 
 ImageView::~ImageView()
@@ -350,23 +351,38 @@ ImageView::renderFrame()
 	myGLWindow->HandlePendingEvents();
 }
 
-// Keyboard input
+/**
+ * @brief Available functionality for various key press
+ * @details
+ *			Key a - [Used stage 01] Just for testing
+ *			Key b - Extracts bounding rect
+ *			Key c - [Used stage 01] Collect the bounding box points and plane parameters for all the planes
+ *			Key d - Clear the vectors 'pointsClicked' and 'keyPointsNearest'
+ *			Key e - Extract Multiple planes using Jlinkage and store the bounding box points for the planess
+ *			Key f - [Used stage 01] For testing
+ *			Key g - Navigating the planes using the planned path and collecting the video footage
+ *			Key n - [Used stage 01] Uses the points written from a file (obtained from key c) and does the functionality of Key g
+ *			Key q - Quit the keyboard control
+ *			Key r - [Used stage 01] Reset all the vectors and rendering
+ *			Key s - Saves the keypoint information '_3d_points' to file named by 'numFile'
+ *			Key t - Extracts bounding polygon
+ *			Key space - [NOT IMPLEMENTED]
+ *			Key + - [NOT IMPLEMENTED]
+ *			Key - - [NOT IMPLEMENTED]
+ * @param [int] key - ASCII value of key
+ */
 void
 ImageView::on_key_down(int key)
 {
-	// r - Reset all the vectors and rendering
-	if(key == 114)
+	// Key b - Extracts bounding rect
+	if(key == 98)
 	{
-		// node->publishCommand("i reset");
-		// Need to reset all the entire points to initial state
-		numPointsClicked = 0;
-		numKeyPointsDetected = 0;
-		pointsClicked.clear();
-		keyPointsNearest.clear();
-		renderPoly = false;
-		renderRect= false;
+		// renders the bounding rectangle
+		// renderPoly = false;
+		// renderRect = !renderRect;
+		extractBoundingRect();
 	}
-	// d - Clear the vectors 'pointsClicked' and 'keyPointsNearest'
+	// Key d - Clear the vectors 'pointsClicked' and 'keyPointsNearest'
 	if(key == 100)
 	{
 		// node->publishCommand("i delete");
@@ -382,36 +398,7 @@ ImageView::on_key_down(int key)
 			keyPointsNearest.pop_back();
 		}
 	}
-	// space
-	if(key == 32)
-	{
-		// node->publishCommand("i run");
-		// Send control commands to drone. TODO need to implement
-	}
-	// s - Saves the keypoint information '_3d_points' to file named by 'numFile'
-	if(key == 115)
-	{
-		// save all the keypoint information
-		node->saveKeyPointInformation(numFile);
-		numFile++;
-	}
-	// t
-	if(key == 116)
-	{
-		// renders the polygon
-		//renderRect = false;
-		renderPoly = !renderPoly;
-		extractBoundingPoly();
-	}
-	// b
-	if(key == 98)
-	{
-		// renders the bounding rectangle
-		// renderPoly = false;
-		// renderRect = !renderRect;
-		extractBoundingRect();
-	}
-	// e - Extract Multiple planes using Jlinkage and store the bounding box points for the planess
+	// Key e - Extract Multiple planes using Jlinkage and store the bounding box points for the planess
 	if(key == 101)
 	{
 		/*
@@ -452,8 +439,7 @@ ImageView::on_key_down(int key)
 		}
 		//vector<float> translatedPlane = node->translatePlane (translateDistance);
 	}
-	/* Below are the keys to be implemented properly fro mtp stage 01 */
-	// g - Navigating the planes using the planned path and collecting the video footage
+	// Key g - Navigating the planes using the planned path and collecting the video footage
 	if(key == 103)
 	{
 		// Cover multiple planes
@@ -463,54 +449,78 @@ ImageView::on_key_down(int key)
 			node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);
 		}
 	}
-	// n - Navigating the planes using the planned path and collecting the video footage
-	// Uses the points written from a file
-	if(key == 110)
+	// Key r - Reset all the vectors and rendering
+	if(key == 114)
 	{
-		// Read points from the file
-		// For planeParameters and continuousBoundingBoxPoints
-
-		// Cover multiple planes
-		if(renderRect)
-		{
-			renderRect = false;  // While moving the quadcopter we don't want bounding box to appear
-			node->moveQuadcopter(planeParameters, continuousBoundingBoxPoints);
-		}
+		// node->publishCommand("i reset");
+		// Need to reset all the entire points to initial state
+		numPointsClicked = 0;
+		numKeyPointsDetected = 0;
+		pointsClicked.clear();
+		keyPointsNearest.clear();
+		renderPoly = false;
+		renderRect= false;
+		renderSignificantPlane = false;
+	}
+	// Key s - Saves the keypoint information '_3d_points' to file named by 'numFile'
+	if(key == 115)
+	{
+		// save all the keypoint information
+		node->saveKeyPointInformation(numFile);
+		numFile++;
+	}
+	//Key  t - Extracts bounding polygon
+	if(key == 116)
+	{
+		// renders the polygon
+		//renderRect = false;
+		renderPoly = !renderPoly;
+		extractBoundingPoly();
+	}
+	// Key space
+	if(key == 32)
+	{
+		// node->publishCommand("i run");
+		// Send control commands to drone. TODO need to implement
+	}
+	/* Below are the keys to be implemented properly fro mtp stage 01 */
+	if(key == 113)
+	{
+		key_board_control = false;
 	}
 	// Key a - Just for testing
 	if(key == 97)
 	{
+		int min_height_of_plane = 2.0;
+		int max_height_of_plane = 5.0;
+		float min_distance = node->getDistanceToSeePlane(min_height_of_plane);
+		float max_distance = node->getDistanceToSeePlane(max_height_of_plane);
 		vector<double> curr_pos_of_drone;
 		curr_pos_of_drone.clear();
 		node->getCurrentPositionOfDrone(curr_pos_of_drone);
+		cout << "Max dist. allowed: " << max_distance << ", Min dist. allowed: " << min_distance << "\n";
 		cout << "Current Quadcopter Position: (" << curr_pos_of_drone[0] 
 				<< ", " << curr_pos_of_drone[1] << ", " << curr_pos_of_drone[1]
 				<< ", " << curr_pos_of_drone[3]  << ")\n";
 		extractBoundingPoly();
 		renderRect = true;
-		int size = continuousBoundingBoxPoints.size();
-		assert(size == planeParameters.size());
-		int i,j;
-		for (i = 0; i < size; ++i)
+		int size;
+		size = continuousBoundingBoxPoints.size();
+		for (int i = 0; i < size; ++i)
 		{
 			continuousBoundingBoxPoints[i].clear();
+		}
+		size = planeParameters.size();
+		for (int i = 0; i < size; ++i)
+		{
 			planeParameters[i].clear();
 		}
 		continuousBoundingBoxPoints.clear();
 		planeParameters.clear();
 		// Calls JLinkage
 		node->fitMultiplePlanes3d(ccPoints, pointsClicked, planeParameters, continuousBoundingBoxPoints);
-		cout << "[ DEBUG ] continuousBoundingBoxPoints from ImageView\n";
-		size = continuousBoundingBoxPoints.size();
-		for (i = 0; i < size; ++i)
-		{
-			for (j = 0; j < 5; ++j)
-			{
-				cout << continuousBoundingBoxPoints[i][j] << " ";
-			}
-			cout << "\n";
-		}
 		string filename = "Plane_Info.txt";
+		cout << "[ DEBUG] Writing info of plane " << plane_num_test << " to file " << filename << "\n";
 		plane_num_test++;
 		vector<Point3f> bounding_box_points;
 		vector<float> plane_parameters;
@@ -526,7 +536,7 @@ ImageView::on_key_down(int key)
 		}
 		WriteInfoToFile(bounding_box_points, plane_parameters, plane_num_test, filename);
 	}
-	// Key c
+	// Key c - Collect the bounding box points and plane parameters for all the planes
 	if(key == 99)
 	{
 		/* Launches GUI: Return approx. angles and orientations */
@@ -534,6 +544,7 @@ ImageView::on_key_down(int key)
 		std::vector< double > main_angles;
 		/* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
 		std::vector< RotateDirection > main_directions;
+		int number_of_planes;
 		/* Initiating the GUI */
 		TopView *top = new TopView();
 		top->startSystem();
@@ -545,7 +556,7 @@ ImageView::on_key_down(int key)
 		top->getDirections(main_directions);
 		top->getAngles(main_angles);
 		/* Printing the information to the terminal */
-		int number_of_planes = top->getNumberOfPlanes();
+		number_of_planes = top->getNumberOfPlanes();
 		int type_of_surface = top->getTypeOfSurface();
 		int max_height = top->getMaxHeightOfPlane();
 		int view_dir = top->getViewingDirection();
@@ -598,9 +609,16 @@ ImageView::on_key_down(int key)
 				cout << "ANTI-CLOCKWISE" << " ";
 		}
 		cout << "\n";
+		number_of_planes = 1;
 		if(number_of_planes > 0)
 		{
-			//node->getMeTheMap(main_angles, main_directions, max_height);
+			int min_height_of_plane = 2.0;
+			// float min_distance = node->getDistanceToSeePlane(min_height_of_plane);
+			// float max_distance = node->getDistanceToSeePlane(max_height);
+			float min_distance = node->getDistanceToSeePlane(3.0);
+			float max_distance = node->getDistanceToSeePlane(4.0);
+			cout << "Min Distance: " << min_distance << ", Max Distance: " << max_distance << "\n";
+			node->getMeTheMap(main_angles, main_directions, min_distance, max_distance);
 			// Land the quadcopter on completion of the task
 			cout << "Bounding Box Points collected\n";
 			cout << "Landing the quadcopter\n";
@@ -613,13 +631,18 @@ ImageView::on_key_down(int key)
 		}
 		cout << "[ INFO] Quadcopter has landed.\n";
 	}
-	// Key f
+	// Key f - For testing
 	if(key == 102)
 	{
+		cout << "Pressed Key f\n";
 		node->testJLinkageOutput();
 	}
-	// Key n
-	// Uses the points written from a file (obtained from key g)
+	if(key == 'z')
+	{
+		cout << "Pressed Key z\n";
+		node->got_points = true;
+	}
+	// Key n - Uses the points written from a file (obtained from key c)
 	if(key == 110)
 	{
 		string inputDirectory = "/home/vrlab/";
@@ -704,7 +727,6 @@ ImageView::on_mouse_down(CVD::ImageRef where, int state, int button)
 	v.push_back(x);
 	v.push_back(y);
 	pointsClicked.push_back(v);
-
 	search(v);
 }
 
@@ -822,12 +844,30 @@ ImageView::extractBoundingRect()
 
 /*** NEWER FUNCTIONS ***/
 
+/**
+ * @brief Read information about various file froma   file
+ * @details 
+ * @param [in] [string] filename - Name of the file (along with directory) from which the information is to read
+ * @param [out] [vector< vector<float> >] planeParameters - Plane parameters of all planes
+ * @param [out] [vector< vector<Point3f> >] boundingBoxPoints - Corresponding boudning box points
+ */
 void
 ImageView::readInfo(string filename,
-					vector< vector<float> > &sortedPlaneParameters,
+					vector< vector<float> > &planeParameters,
 					vector< vector<Point3f> > &boundingBoxPoints)
 {
-	sortedPlaneParameters.clear();
+	int size;
+	size = planeParameters.size();
+	for (int i = 0; i < size; ++i)
+	{
+		planeParameters[i].clear();
+	}
+	planeParameters.clear();
+	size = boundingBoxPoints.size();
+	for (int i = 0; i < size; ++i)
+	{
+		boundingBoxPoints[i].clear();
+	}
 	boundingBoxPoints.clear();
 	ifstream plane_info;
 	plane_info.open(filename.c_str(), std::ifstream::in);
@@ -848,7 +888,7 @@ ImageView::readInfo(string filename,
 			{
 				getline(plane_info, line);
 				split(line, copyVector);
-				sortedPlaneParameters.push_back(copyVector);
+				planeParameters.push_back(copyVector);
 				copyVector.clear();
 			}
 			if(!line.empty() && line.compare(box_string)==0)
@@ -1028,6 +1068,7 @@ ImageView::getPointsClicked(vector< vector<int> > &points_clicked)
 	}
 	points_clicked.clear();
 	vector<int> dummy_points;
+	cout << "[ DEBUG] [getPointsClicked] Adding points\n";
 	for (int i = 0; i < pointsClicked.size(); ++i)
 	{
 		dummy_points.clear();
@@ -1037,6 +1078,7 @@ ImageView::getPointsClicked(vector< vector<int> > &points_clicked)
 		}
 		points_clicked.push_back(dummy_points);
 	}
+	cout << "[ DEBUG] [getPointsClicked] Added " << points_clicked.size() << " points\n";
 }
 
 void
@@ -1116,4 +1158,10 @@ ImageView::setSigPlaneBoundingBoxPoints(const vector<Point3f> &sigplane_bounding
 		sigPlaneBoundingBoxPoints.push_back(sigplane_bounding_box_points[i]);
 	}
 	return ;
+}
+
+bool
+ImageView::is_keyBoardActive()
+{
+	return key_board_control;
 }

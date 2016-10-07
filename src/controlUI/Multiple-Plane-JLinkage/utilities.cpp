@@ -54,7 +54,7 @@ void getPlaneParameters(
 	vector< vector<float> >  &planeParameters,
 	vector< vector<Point3f> > &planeOrderedPoints) {
 
-	cout << "[ DEBUG ] getPlaneParametes Started\n";
+	//cout << "[ DEBUG ] getPlaneParametes Started\n";
 	// vector< vector<Point3f> > planeOrderedPoints;
 	// Get the number of unique planes
 	int numberOfPlanes = numberOfUniquePlanes(planeIndices);
@@ -68,7 +68,7 @@ void getPlaneParameters(
 	int i;
 
 	// Put all points belonging to a particular plane i in planeOrderedPoints[i]
-	cout << "[ DEBUG ] Creating planeOrderPoints\n";
+	//cout << "[ DEBUG ] Creating planeOrderPoints\n";
 	for (i = 0; i < numberOfPlanes; ++i) {
 		planeOrderedPoints.push_back(pointsOfAPlane);
 	}
@@ -76,7 +76,7 @@ void getPlaneParameters(
 		planeOrderedPoints[planeIndices[i]].push_back(planePoints[i]);
 	}
 
-	writePointsToCSVForGPlot(planeOrderedPoints, "output/planeOrderedPoints.txt");
+	//writePointsToCSVForGPlot(planeOrderedPoints, "output/planeOrderedPoints.txt");
 	float a, b, c, d;
 	// Find the plane parameters for each plane
 	for (i = 0; i < numberOfPlanes; ++i) {
@@ -84,14 +84,14 @@ void getPlaneParameters(
 		// Clear old plane parameters
 		planeParametersForThisPlane.clear();
 		// Get the plane parameters
-		cout << "[ DEBUG ] Fitting a plane to set of points for plane " << i << "\n";
+		//cout << "[ DEBUG ] Fitting a plane to set of points for plane " << i << "\n";
 		fitPlane3D(planeOrderedPoints[i], planeParametersForThisPlane);
 		planeParameters.push_back(planeParametersForThisPlane);
 
 	}
 
-	printVectorOfVectors(planeParameters);
-	cout << "[ DEBUG ] getPlaneParametes Completed\n";
+	//printVectorOfVectors(planeParameters);
+	//cout << "[ DEBUG ] getPlaneParametes Completed\n";
 	return ;
 
 }
@@ -99,13 +99,13 @@ void getPlaneParameters(
 int numberOfUniquePlanes(
 		const vector<int> &planeIndices ) {
 
-	cout << "[ DEBUG ] Calculating the number of unique planes\n";
+	//cout << "[ DEBUG ] Calculating the number of unique planes\n";
 	int ans = 0;
 	int numberOfPlanes = planeIndices.size();
 	// Convert the vector set to contain only the unique elements
 	set<int> uniquePlaneIndices(planeIndices.begin(), planeIndices.end());
 	ans = uniquePlaneIndices.size();
-	cout << "[ DEBUG ] There are " << ans << " number of planes.\n";
+	//cout << "[ DEBUG ] There are " << ans << " number of planes.\n";
 	return ans;
 
 }
@@ -118,7 +118,7 @@ void fitPlane3D(
 	int j;
 	// Get the number of points in the plane
 	int numberOfPointsInThisPlane = planePoints.size();
-	cout << "[ DEBUG ] fitPlane3D started for " << numberOfPointsInThisPlane << " points\n";
+	//cout << "[ DEBUG ] fitPlane3D started for " << numberOfPointsInThisPlane << " points\n";
 	// Create a matrix out of the vector of points: Dimension: numberOfPoints*3
 	Mat pointsMatrixTemp(numberOfPointsInThisPlane, 3, CV_32F);
 	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
@@ -130,10 +130,10 @@ void fitPlane3D(
 	float centroidX = (mean(pointsMatrixTemp.col(0)))[0];
 	float centroidY = (mean(pointsMatrixTemp.col(1)))[0];
 	float centroidZ = (mean(pointsMatrixTemp.col(2)))[0];
-	cout << centroidX << " " << centroidY << " " << centroidZ << "\n";
+	//cout << centroidX << " " << centroidY << " " << centroidZ << "\n";
 	Mat eigenvalues, eigenvectors;
 	// Make the points mean centered
-	cout << "[ DEBUG ] Making the points mean-centric\n";
+	//cout << "[ DEBUG ] Making the points mean-centric\n";
 	for (j = 0; j < numberOfPointsInThisPlane; ++j) {
 		pointsMatrixTemp.at<float>(j, 0) = pointsMatrixTemp.at<float>(j, 0) - centroidX;
 		pointsMatrixTemp.at<float>(j, 1) = pointsMatrixTemp.at<float>(j, 1) - centroidY;
@@ -143,7 +143,7 @@ void fitPlane3D(
 	eigen(pointsMatrixTemp.t()*pointsMatrixTemp, eigenvalues, eigenvectors);
 	// Pick the eigenvector corresponding to least eigenvalue
 	Mat minEigVector = eigenvectors.row(2);
-	cout << "[ DEBUG ] Obtaining the plane parameters corresponding to minimum eigenvalue\n";
+	//cout << "[ DEBUG ] Obtaining the plane parameters corresponding to minimum eigenvalue\n";
 	float normSum = 0.0;
 	// Normalise the eigenvector
 	for(j = 0; j < 3; ++j) {
@@ -172,7 +172,7 @@ void fitPlane3D(
 		planeParameters.push_back(-d);
 	}
 
-	cout << "[ DEBUG ] fitPlane3D Completed\n";
+	//cout << "[ DEBUG ] fitPlane3D Completed\n";
 	return ;
 
 }
@@ -185,7 +185,7 @@ float getKthPercentile(
 	// Reference:
 	// http://web.stanford.edu/class/archive/anthsci/anthsci192/anthsci192.1064/handouts/calculating%20percentiles.pdf
 	float threshold;
-	cout << "[ DEBUG ] getKthPercentile Started\n";
+	//cout << "[ DEBUG ] getKthPercentile Started\n";
 	vector<float> copiedData;
 	int sizeOfData = data.size();
 	int i;
@@ -198,7 +198,7 @@ float getKthPercentile(
 	sort(copiedData.begin(), copiedData.end());
 
 	// Get the threshold
-	cout << "[ DEBUG ] Get the Kth threshold\n";
+	//cout << "[ DEBUG ] Get the Kth threshold\n";
 	int size = copiedData.size();
 	float percentile;
 	for (i = 0; i < size; ++i) {
@@ -210,7 +210,7 @@ float getKthPercentile(
 	// Clear the copy of data
 	copiedData.clear();
 
-	cout << "[ DEBUG ] getKthPercentile Completed. Threshold is " << threshold << "\n";
+	//cout << "[ DEBUG ] getKthPercentile Completed. Threshold is " << threshold << "\n";
 	return threshold;
 
 }

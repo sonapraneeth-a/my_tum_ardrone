@@ -334,9 +334,9 @@ TopView::checkMenu(float x, float y)
 	else if( (x >= 660.0) && (x <= 680.0) && (y >= 520.0) && (y <= 530.0) )
 	{
 		_max_plane_height++;
-		if(_max_plane_height >= 15.0)
+		if(_max_plane_height >= _max_allowed_plane_height)
 		{
-			_max_plane_height = 15.0;
+			_max_plane_height = _max_allowed_plane_height;
 		}
 		originalScreen();
 		myObjectDrawing();
@@ -346,9 +346,9 @@ TopView::checkMenu(float x, float y)
 	else if( (x >= 685.0) && (x <= 705.0) && (y >= 520.0) && (y <= 530.0) )
 	{
 		_max_plane_height--;
-		if(_max_plane_height <= 0.0)
+		if(_max_plane_height <= _min_allowed_plane_height)
 		{
-			_max_plane_height = 0.0;
+			_max_plane_height = _min_allowed_plane_height;
 		}
 		originalScreen();
 		myObjectDrawing();
@@ -423,32 +423,43 @@ TopView::calculateAngles()
 			angles.push_back(src_to_dest.angle);
 			direction.push_back(src_to_dest.dir);
 		}
+		// For calculating the angle between last line and first line for polygon
+		if(drawing_option == POLYGON)
+		{
+			point1 = _points[_points.size()-2];
+			point2 = _points[_points.size()-1];
+			point3 = _points[0];
+			point1.x = point1.x - 20.0;
+			point1.y = point1.y - 50.0;
+			point2.x = point2.x - 20.0;
+			point2.y = point2.y - 50.0;
+			point3.x = point3.x - 20.0;
+			point3.y = point3.y - 50.0;
+			Line2f line1(point1, point2);
+			Line2f line2(point2, point3);
+			Orientation src_to_dest = line1.perp().calculateOrientation(drawing_option, _viewing_direction, line2.perp());
+			angles.push_back(src_to_dest.angle);
+			direction.push_back(src_to_dest.dir);
+			_number_of_planes = angles.size();
+		}
 	}
 	else
 	{
 		if(_points.size() == 0)
+		{
 			cout << "[ WARNING] There is no drawing\n";
-		cout << "[ WARNING] There is only a single line\n";
+			_number_of_planes = 0;
+		}
+		else if(_points.size() == 2)
+		{
+			cout << "[ WARNING] There is only a single line\n";
+			_number_of_planes = 1;
+		}
+		else
+		{
+
+		}
 	}
-	// For calculating the angle between last line and first line for polygon
-	if(drawing_option == POLYGON)
-	{
-		point1 = _points[_points.size()-2];
-		point2 = _points[_points.size()-1];
-		point3 = _points[0];
-		point1.x = point1.x - 20.0;
-		point1.y = point1.y - 50.0;
-		point2.x = point2.x - 20.0;
-		point2.y = point2.y - 50.0;
-		point3.x = point3.x - 20.0;
-		point3.y = point3.y - 50.0;
-		Line2f line1(point1, point2);
-		Line2f line2(point2, point3);
-		Orientation src_to_dest = line1.perp().calculateOrientation(drawing_option, _viewing_direction, line2.perp());
-		angles.push_back(src_to_dest.angle);
-		direction.push_back(src_to_dest.dir);
-	}
-	_number_of_planes = angles.size();
 	if( drawing_option == POLYLINE && _points.size() > 2)
 	{
 		_number_of_planes++;
