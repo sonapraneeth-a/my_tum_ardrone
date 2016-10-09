@@ -425,7 +425,7 @@ void getContinuousBoundingBox (
 		//cout << "[ DEBUG ] Line ParametersP size: " << lineIntersectionOfPlanes.size() << "\n";
 	}
 
-	//cout << "[ DEBUG ] continuousBoundingBoxPoints Completed\n";
+	// cout << "[ DEBUG ] continuousBoundingBoxPoints Completed\n";
 	return ;
 
 }

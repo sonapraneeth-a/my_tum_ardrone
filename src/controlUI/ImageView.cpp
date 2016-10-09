@@ -31,6 +31,7 @@
 #include "std_msgs/String.h"
 #include "../HelperFunctions.h"
 #include "ControlUINode.h"
+#include "helperFunctions.h"
 
 /*typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Polyhedron_3<K> Polyhedron_3;
@@ -304,7 +305,7 @@ ImageView::renderFrame()
 			glColor3f(1.0-1.0/(planeIndex+1), 0, 1.0/(planeIndex+1)); 
 			glBegin(GL_LINE_STRIP);
 			/*	
-			for(int pointIndex = 0; pointIndex<planeBoundingBoxPoints.size(); pointIndex++) {
+			for(unsigned int pointIndex = 0; pointIndex<planeBoundingBoxPoints.size(); pointIndex++) {
 				vector<float> pt(3);
 				pt[0] = planeBoundingBoxPoints[pointIndex].x;
 				pt[1] = planeBoundingBoxPoints[pointIndex].y;
@@ -319,7 +320,7 @@ ImageView::renderFrame()
 			*/
 			vector<Point2f> imagePts;
 			node->project3DPointsOnImage(planeBoundingBoxPoints, imagePts);
-			for(int pointIndex = 0; pointIndex<imagePts.size(); pointIndex++)
+			for(unsigned int pointIndex = 0; pointIndex<imagePts.size(); pointIndex++)
 			{
 				vector<int> p(2);
 				p[0] = imagePts[pointIndex].x;
@@ -336,7 +337,7 @@ ImageView::renderFrame()
 		glBegin(GL_LINE_STRIP);
 		vector<Point2f> imagePts;
 		node->project3DPointsOnImage(sigPlaneBoundingBoxPoints, imagePts);
-		for(int pointIndex = 0; pointIndex < imagePts.size(); pointIndex++)
+		for(unsigned int pointIndex = 0; pointIndex < imagePts.size(); pointIndex++)
 		{
 			vector<int> p(2);
 			p[0] = imagePts[pointIndex].x;
@@ -369,13 +370,14 @@ ImageView::renderFrame()
  *			Key space - [NOT IMPLEMENTED]
  *			Key + - [NOT IMPLEMENTED]
  *			Key - - [NOT IMPLEMENTED]
+ *			Key 0-9 - [Used stage 01] Testing
  * @param [int] key - ASCII value of key
  */
 void
 ImageView::on_key_down(int key)
 {
 	// Key b - Extracts bounding rect
-	if(key == 98)
+	if(key == 'b')
 	{
 		// renders the bounding rectangle
 		// renderPoly = false;
@@ -383,7 +385,7 @@ ImageView::on_key_down(int key)
 		extractBoundingRect();
 	}
 	// Key d - Clear the vectors 'pointsClicked' and 'keyPointsNearest'
-	if(key == 100)
+	if(key == 'd')
 	{
 		// node->publishCommand("i delete");
 		// Need to delete the last point
@@ -399,7 +401,7 @@ ImageView::on_key_down(int key)
 		}
 	}
 	// Key e - Extract Multiple planes using Jlinkage and store the bounding box points for the planess
-	if(key == 101)
+	if(key == 'e')
 	{
 		/*
 		 * TODO Currently commented code which fits single plane and moves the drone accordingly
@@ -415,9 +417,9 @@ ImageView::on_key_down(int key)
 		// Extract multiple planes
 		extractBoundingPoly();
 		renderRect = true;
-		int size = continuousBoundingBoxPoints.size();
+		unsigned int size = continuousBoundingBoxPoints.size();
 		assert(size == planeParameters.size());
-		int i,j;
+		unsigned int i,j;
 		for (i = 0; i < size; ++i)
 		{
 			continuousBoundingBoxPoints[i].clear();
@@ -440,7 +442,7 @@ ImageView::on_key_down(int key)
 		//vector<float> translatedPlane = node->translatePlane (translateDistance);
 	}
 	// Key g - Navigating the planes using the planned path and collecting the video footage
-	if(key == 103)
+	if(key == 'g')
 	{
 		// Cover multiple planes
 		if(renderRect)
@@ -450,7 +452,7 @@ ImageView::on_key_down(int key)
 		}
 	}
 	// Key r - Reset all the vectors and rendering
-	if(key == 114)
+	if(key == 'r')
 	{
 		// node->publishCommand("i reset");
 		// Need to reset all the entire points to initial state
@@ -463,14 +465,14 @@ ImageView::on_key_down(int key)
 		renderSignificantPlane = false;
 	}
 	// Key s - Saves the keypoint information '_3d_points' to file named by 'numFile'
-	if(key == 115)
+	if(key == 's')
 	{
 		// save all the keypoint information
 		node->saveKeyPointInformation(numFile);
 		numFile++;
 	}
 	//Key  t - Extracts bounding polygon
-	if(key == 116)
+	if(key == 't')
 	{
 		// renders the polygon
 		//renderRect = false;
@@ -484,34 +486,31 @@ ImageView::on_key_down(int key)
 		// Send control commands to drone. TODO need to implement
 	}
 	/* Below are the keys to be implemented properly fro mtp stage 01 */
-	if(key == 113)
-	{
-		key_board_control = false;
-	}
+	/** PRANEETH's CODE **/
 	// Key a - Just for testing
-	if(key == 97)
+	if(key == 'a')
 	{
 		int min_height_of_plane = 2.0;
 		int max_height_of_plane = 5.0;
-		float min_distance = node->getDistanceToSeePlane(min_height_of_plane);
-		float max_distance = node->getDistanceToSeePlane(max_height_of_plane);
+		float min_distance = getDistanceToSeePlane(min_height_of_plane);
+		float max_distance = getDistanceToSeePlane(max_height_of_plane);
 		vector<double> curr_pos_of_drone;
 		curr_pos_of_drone.clear();
-		node->getCurrentPositionOfDrone(curr_pos_of_drone);
+		/* node->getCurrentPositionOfDrone(curr_pos_of_drone);
 		cout << "Max dist. allowed: " << max_distance << ", Min dist. allowed: " << min_distance << "\n";
 		cout << "Current Quadcopter Position: (" << curr_pos_of_drone[0] 
 				<< ", " << curr_pos_of_drone[1] << ", " << curr_pos_of_drone[1]
-				<< ", " << curr_pos_of_drone[3]  << ")\n";
+				<< ", " << curr_pos_of_drone[3]  << ")\n";*/
 		extractBoundingPoly();
 		renderRect = true;
-		int size;
+		unsigned int size;
 		size = continuousBoundingBoxPoints.size();
-		for (int i = 0; i < size; ++i)
+		for (unsigned int i = 0; i < size; ++i)
 		{
 			continuousBoundingBoxPoints[i].clear();
 		}
 		size = planeParameters.size();
-		for (int i = 0; i < size; ++i)
+		for (unsigned int i = 0; i < size; ++i)
 		{
 			planeParameters[i].clear();
 		}
@@ -526,124 +525,111 @@ ImageView::on_key_down(int key)
 		vector<float> plane_parameters;
 		bounding_box_points.clear();
 		plane_parameters.clear();
-		for (int i = 0; i < continuousBoundingBoxPoints[0].size(); ++i)
+		for (unsigned int i = 0; i < continuousBoundingBoxPoints[0].size(); ++i)
 		{
 			bounding_box_points.push_back(continuousBoundingBoxPoints[0][i]);
 		}
-		for (int i = 0; i < planeParameters[0].size(); ++i)
+		for (unsigned int i = 0; i < planeParameters[0].size(); ++i)
 		{
 			plane_parameters.push_back(planeParameters[0][i]);
 		}
 		WriteInfoToFile(bounding_box_points, plane_parameters, plane_num_test, filename);
 	}
 	// Key c - Collect the bounding box points and plane parameters for all the planes
-	if(key == 99)
+	if(key == 'c')
 	{
 		/* Launches GUI: Return approx. angles and orientations */
 		/* Angle with which	quadcopter has to rotate to orient itself to the new plane */
 		std::vector< double > main_angles;
 		/* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
 		std::vector< RotateDirection > main_directions;
-		int number_of_planes;
-		/* Initiating the GUI */
+		/* Initiating the GUI (Runs in a thread) */
 		TopView *top = new TopView();
 		top->startSystem();
 		/* GUI has been closed here */
-		cout << "Calling the GUI for drawing top view sketch of the surface\n";
+		cout << "[Key 'c'] Calling the GUI for drawing top view sketch of the surface\n";
 		while(!(top->getExitStatus()))
 		{}
 		/* Get the directions, angles and number of planes */
 		top->getDirections(main_directions);
 		top->getAngles(main_angles);
 		/* Printing the information to the terminal */
-		number_of_planes = top->getNumberOfPlanes();
+		int number_of_planes = top->getNumberOfPlanes();
 		int type_of_surface = top->getTypeOfSurface();
-		int max_height = top->getMaxHeightOfPlane();
+		int max_height_of_plane = top->getMaxHeightOfPlane();
 		int view_dir = top->getViewingDirection();
 		if(number_of_planes == 0)
 		{
-			cout << "[ ERROR] No diagram drawn\n";
+			cout << "[ ERROR] [Key 'c'] No diagram drawn\n";
+			cout << "[ ERROR] [Key 'c'] So, landing the quadcopter\n";
+			node->sendLand();
+			cout << "[ INFO] [Key 'c'] Quadcopter has landed.\n";
 		}
 		else
 		{
-			cout << "Number of planes: " << number_of_planes << "\n";
-		}
-		cout << "Max Height of the plane (as estimated by the user): " << top->getMaxHeightOfPlane() << "\n";
-		if(type_of_surface == 0)
-		{
-			cout << "Surface Drawn: " << "Open Surface" << "\n";
-			if(view_dir == 0)
+			cout << "[Key 'c'] Number of planes: " << number_of_planes << "\n";
+			cout << "[Key 'c'] Max Height of the plane (as estimated by the user): " << max_height_of_plane << "\n";
+			if(type_of_surface == 0)
 			{
-				cout << "Viewing the surface from front\n";
+				cout << "[Key 'c']c Surface Drawn: " << "Open Surface" << "\n";
+				if(view_dir == 0)
+				{
+					cout << "[Key 'c'] Viewing the surface from front\n";
+				}
+				if(view_dir == 1)
+				{
+					cout << "[Key 'c'] Viewing the surface from back\n";
+				}
 			}
-			if(view_dir == 1)
+			if(top->getTypeOfSurface() == 1)
 			{
-				cout << "Viewing the surface from back\n";
+				cout << "[Key 'c'] Surface Drawn: " << "Closed Surface" << "\n";
+				if(view_dir == 2)
+				{
+					cout << "[Key 'c'] Viewing the surface from outside the structure\n";
+				}
+				if(view_dir == 3)
+				{
+					cout << "[Key 'c'] Viewing the surface from inside the structure\n";
+				}
 			}
-		}
-		if(top->getTypeOfSurface() == 1)
-		{
-			cout << "Surface Drawn: " << "Closed Surface" << "\n";
-			if(view_dir == 2)
+			top->destroy();
+			cout << "[Key 'c'] Angles: ";
+			for (unsigned int i = 0; i < main_angles.size(); ++i)
 			{
-				cout << "Viewing the surface from outside the structure\n";
+				cout << main_angles[i] << " ";
 			}
-			if(view_dir == 3)
+			cout << "\n";
+			cout << "[Key 'c'] Directions: ";
+			for (unsigned int i = 0; i < main_directions.size(); ++i)
 			{
-				cout << "Viewing the surface from inside the structure\n";
+				if(main_directions[i] == 0)
+					cout << "CLOCKWISE" << " ";
+				else if(main_directions[i] == 1)
+					cout << "ANTI-CLOCKWISE" << " ";
 			}
-		}
-		top->destroy();
-		cout << "Angles: ";
-		for (int i = 0; i < main_angles.size(); ++i)
-		{
-			cout << main_angles[i] << " ";
-		}
-		cout << "\n";
-		cout << "Directions: ";
-		for (int i = 0; i < main_directions.size(); ++i)
-		{
-			if(main_directions[i] == 0)
-				cout << "CLOCKWISE" << " ";
-			else if(main_directions[i] == 1)
-				cout << "ANTI-CLOCKWISE" << " ";
-		}
-		cout << "\n";
-		number_of_planes = 1;
-		if(number_of_planes > 0)
-		{
+			cout << "\n";
 			int min_height_of_plane = 2.0;
-			// float min_distance = node->getDistanceToSeePlane(min_height_of_plane);
-			// float max_distance = node->getDistanceToSeePlane(max_height);
-			float min_distance = node->getDistanceToSeePlane(3.0);
-			float max_distance = node->getDistanceToSeePlane(4.0);
-			cout << "Min Distance: " << min_distance << ", Max Distance: " << max_distance << "\n";
-			node->getMeTheMap(main_angles, main_directions, min_distance, max_distance);
-			// Land the quadcopter on completion of the task
-			cout << "Bounding Box Points collected\n";
-			cout << "Landing the quadcopter\n";
-			node->sendLand();
+			/*
+			float min_distance = node->getDistanceToSeePlane(min_height_of_plane);
+			float max_distance = node->getDistanceToSeePlane(max_height_of_plane);
+			cout << "[Key 'c'] Min. Distance: " << min_distance << ", Max. Distance: " << max_distance << "\n";
+			node->setValues(number_of_planes, min_height_of_plane, min_distance, max_height_of_plane, max_distance);
+			node->setMainAngles(main_angles);
+			node->setMainDirections(main_directions);
+			node->adjustToSeeCurrentPlane();
+			*/
 		}
-		else
-		{
-			cout << "[ ERROR] No diagram drawn. So, landing the quadcopter\n";
-			node->sendLand();
-		}
-		cout << "[ INFO] Quadcopter has landed.\n";
 	}
-	// Key f - For testing
-	if(key == 102)
+	// Key 0-9 - For testing
+	if(key >= '0' && key <= '9')
 	{
-		cout << "Pressed Key f\n";
-		node->testJLinkageOutput();
-	}
-	if(key == 'z')
-	{
-		cout << "Pressed Key z\n";
-		node->got_points = true;
+		cout << "Pressed Key 1\n";
+		int num = key-'0';
+		node->testUtility(num);
 	}
 	// Key n - Uses the points written from a file (obtained from key c)
-	if(key == 110)
+	if(key == 'n')
 	{
 		string inputDirectory = "/home/vrlab/";
 		string filename = inputDirectory + "Plane_Info.txt";
@@ -651,33 +637,32 @@ ImageView::on_key_down(int key)
 		vector< vector<Point3f> > boundingBoxPoints;
 		readInfo(filename, sortedPlaneParameters, boundingBoxPoints);
 		cout << "Plane Parameters\n";
-		for (int i = 0; i < sortedPlaneParameters.size(); ++i)
+		for (unsigned int i = 0; i < sortedPlaneParameters.size(); ++i)
 		{
-			int param = sortedPlaneParameters[i].size();
-			for (int j = 0; j < param; ++j)
+			unsigned int param = sortedPlaneParameters[i].size();
+			for (unsigned int j = 0; j < param; ++j)
 			{
 				cout << sortedPlaneParameters[i][j] << " ";
 			}
 			cout << "\n";
 		}
 		cout << "Bounding Box Points\n";
-		for (int i = 0; i < boundingBoxPoints.size(); ++i)
+		for (unsigned int i = 0; i < boundingBoxPoints.size(); ++i)
 		{
-			int param = boundingBoxPoints[i].size();
-			for (int j = 0; j < param; ++j)
+			unsigned int param = boundingBoxPoints[i].size();
+			for (unsigned int j = 0; j < param; ++j)
 			{
 				cout << boundingBoxPoints[i][j] << "\n";
 			}
 			cout << "\n";
 		}
 		// Get the bounding box points
-		getContinuousBoundingBox ( boundingBoxPoints, sortedPlaneParameters,
-								continuousBoundingBoxPoints);
+		getContinuousBoundingBox ( boundingBoxPoints, sortedPlaneParameters, continuousBoundingBoxPoints);
 		cout << "Continuous Bounding Box Points\n";
-		for (int i = 0; i < continuousBoundingBoxPoints.size(); ++i)
+		for (unsigned int i = 0; i < continuousBoundingBoxPoints.size(); ++i)
 		{
-			int param = continuousBoundingBoxPoints[i].size();
-			for (int j = 0; j < param; ++j)
+			unsigned int param = continuousBoundingBoxPoints[i].size();
+			for (unsigned int j = 0; j < param; ++j)
 			{
 				cout << continuousBoundingBoxPoints[i][j] << "\n";
 			}
@@ -687,6 +672,7 @@ ImageView::on_key_down(int key)
 		if(renderRect)
 		{
 			renderRect = false;  // While moving the quadcopter we don't want bounding box to appear
+			renderSignificantPlane = false;
 		}
 		cout << "[ DEBUG] Calling moveQuadcopter()\n";
 		node->moveQuadcopter(sortedPlaneParameters, continuousBoundingBoxPoints);
@@ -724,10 +710,25 @@ ImageView::on_mouse_down(CVD::ImageRef where, int state, int button)
 
 	numPointsClicked++;
 	vector<int> v;
+	v.clear();
 	v.push_back(x);
 	v.push_back(y);
 	pointsClicked.push_back(v);
 	search(v);
+	if(numPointsClicked == 4)
+	{
+		numPointsClicked = 0;
+		cout << "[ DEBUG] pointsClicked are:\n";
+		for(unsigned int i = 0; i < pointsClicked.size(); i++)
+		{
+			cout << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
+		}
+		cout << "\n";
+		cout << "[ DEBUG] [on_mouse_down] Capturing the current plane\n";
+		node->captureTheCurrentPlane();
+		// Clear all Vectors
+		clearInputVectors();
+	}
 }
 
 
@@ -842,7 +843,7 @@ ImageView::extractBoundingRect()
 	bPoints.push_back(maxYIndex);
 }
 
-/*** NEWER FUNCTIONS ***/
+/*** PRANEETH's CODE ***/
 
 /**
  * @brief Read information about various file froma   file
@@ -856,15 +857,15 @@ ImageView::readInfo(string filename,
 					vector< vector<float> > &planeParameters,
 					vector< vector<Point3f> > &boundingBoxPoints)
 {
-	int size;
+	unsigned int size;
 	size = planeParameters.size();
-	for (int i = 0; i < size; ++i)
+	for (unsigned int i = 0; i < size; ++i)
 	{
 		planeParameters[i].clear();
 	}
 	planeParameters.clear();
 	size = boundingBoxPoints.size();
-	for (int i = 0; i < size; ++i)
+	for (unsigned int i = 0; i < size; ++i)
 	{
 		boundingBoxPoints[i].clear();
 	}
@@ -945,7 +946,7 @@ ImageView::WriteInfoToFile(const vector<Point3f> &bounding_box_points,
 			const vector<float> &plane_parameters, 
 			int plane_num, string filename)
 {
-	int num_bounding_box_points = bounding_box_points.size();
+	unsigned int num_bounding_box_points = bounding_box_points.size();
 	const char* outFilename = filename.c_str();
 	ofstream outFile;
 	// Open the object in writing and appending mode
@@ -962,14 +963,14 @@ ImageView::WriteInfoToFile(const vector<Point3f> &bounding_box_points,
 	}
 	outFile << "Plane " << std::setfill ('0') << std::setw (2) << to_string(plane_num) << "\n";
 	outFile << "Bounding-Box-Points\n";
-	for (int i = 0; i < num_bounding_box_points; ++i)
+	for (unsigned int i = 0; i < num_bounding_box_points; ++i)
 	{
 		outFile << bounding_box_points[i].x << " "
 			<< bounding_box_points[i].y << " "
 			<< bounding_box_points[i].z << "\n";
 	}
 	outFile << "Plane-Parameters\n";
-	for (int i = 0; i < plane_parameters.size(); ++i)
+	for (unsigned int i = 0; i < plane_parameters.size(); ++i)
 	{
 		if(i != plane_parameters.size()-1)
 			outFile << plane_parameters[i] << " ";
@@ -998,17 +999,17 @@ ImageView::split(	const string &s,
 void
 ImageView::getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuous_bounding_box_points)
 {
-	int size = continuous_bounding_box_points.size();
-	for (int i = 0; i < size; ++i)
+	unsigned int size = continuous_bounding_box_points.size();
+	for (unsigned int i = 0; i < size; ++i)
 	{
 		continuous_bounding_box_points[i].clear();
 	}
 	continuous_bounding_box_points.clear();
 	vector<Point3f> dummy_points;
-	for (int i = 0; i < continuousBoundingBoxPoints.size(); ++i)
+	for (unsigned int i = 0; i < continuousBoundingBoxPoints.size(); ++i)
 	{
 		dummy_points.clear();
-		for (int j = 0; j < continuousBoundingBoxPoints[i].size(); ++j)
+		for (unsigned int j = 0; j < continuousBoundingBoxPoints[i].size(); ++j)
 		{
 			dummy_points.push_back(continuousBoundingBoxPoints[i][j]);
 		}
@@ -1019,17 +1020,17 @@ ImageView::getContinuousBoundingBoxPoints(vector< vector<Point3f> > &continuous_
 void
 ImageView::setContinuousBoundingBoxPoints(const vector< vector<Point3f> > &continuous_bounding_box_points)
 {
-	int size = continuousBoundingBoxPoints.size();
-	for (int i = 0; i < size; ++i)
+	unsigned int size = continuousBoundingBoxPoints.size();
+	for (unsigned int i = 0; i < size; ++i)
 	{
 		continuousBoundingBoxPoints[i].clear();
 	}
 	continuousBoundingBoxPoints.clear();
 	vector<Point3f> dummy_points;
-	for (int i = 0; i < continuous_bounding_box_points.size(); ++i)
+	for (unsigned int i = 0; i < continuous_bounding_box_points.size(); ++i)
 	{
 		dummy_points.clear();
-		for (int j = 0; j < continuous_bounding_box_points[i].size(); ++j)
+		for (unsigned int j = 0; j < continuous_bounding_box_points[i].size(); ++j)
 		{
 			dummy_points.push_back(continuous_bounding_box_points[i][j]);
 		}
@@ -1040,17 +1041,17 @@ ImageView::setContinuousBoundingBoxPoints(const vector< vector<Point3f> > &conti
 void
 ImageView::getPlaneParameters(vector< vector<float> > &plane_parameters)
 {
-	int size = plane_parameters.size();
-	for (int i = 0; i < size; ++i)
+	unsigned int size = plane_parameters.size();
+	for (unsigned int i = 0; i < size; ++i)
 	{
 		plane_parameters[i].clear();
 	}
 	plane_parameters.clear();
 	vector<float> dummy_points;
-	for (int i = 0; i < planeParameters.size(); ++i)
+	for (unsigned int i = 0; i < planeParameters.size(); ++i)
 	{
 		dummy_points.clear();
-		for (int j = 0; j < planeParameters[i].size(); ++j)
+		for (unsigned int j = 0; j < planeParameters[i].size(); ++j)
 		{
 			dummy_points.push_back(planeParameters[i][j]);
 		}
@@ -1061,18 +1062,18 @@ ImageView::getPlaneParameters(vector< vector<float> > &plane_parameters)
 void
 ImageView::getPointsClicked(vector< vector<int> > &points_clicked)
 {
-	int size = points_clicked.size();
-	for (int i = 0; i < size; ++i)
+	unsigned int size = points_clicked.size();
+	for (unsigned int i = 0; i < size; ++i)
 	{
 		points_clicked[i].clear();
 	}
 	points_clicked.clear();
 	vector<int> dummy_points;
-	cout << "[ DEBUG] [getPointsClicked] Adding points\n";
-	for (int i = 0; i < pointsClicked.size(); ++i)
+	cout << "[ DEBUG] [getPointsClicked] Adding " << pointsClicked.size() << " points\n";
+	for (unsigned int i = 0; i < pointsClicked.size(); ++i)
 	{
 		dummy_points.clear();
-		for (int j = 0; j < pointsClicked[i].size(); ++j)
+		for (unsigned int j = 0; j < pointsClicked[i].size(); ++j)
 		{
 			dummy_points.push_back(pointsClicked[i][j]);
 		}
@@ -1084,17 +1085,17 @@ ImageView::getPointsClicked(vector< vector<int> > &points_clicked)
 void
 ImageView::getKeyPointsNearest(vector< vector<int> > &key_points_nearest)
 {
-	int size = key_points_nearest.size();
-	for (int i = 0; i < size; ++i)
+	unsigned int size = key_points_nearest.size();
+	for (unsigned int i = 0; i < size; ++i)
 	{
 		key_points_nearest[i].clear();
 	}
 	key_points_nearest.clear();
 	vector<int> dummy_points;
-	for (int i = 0; i < keyPointsNearest.size(); ++i)
+	for (unsigned int i = 0; i < keyPointsNearest.size(); ++i)
 	{
 		dummy_points.clear();
-		for (int j = 0; j < keyPointsNearest[i].size(); ++j)
+		for (unsigned int j = 0; j < keyPointsNearest[i].size(); ++j)
 		{
 			dummy_points.push_back(keyPointsNearest[i][j]);
 		}
@@ -1106,7 +1107,7 @@ void
 ImageView::getCCPoints(vector<int> &cc_points)
 {
 	cc_points.clear();
-	for (int i = 0; i < ccPoints.size(); ++i)
+	for (unsigned int i = 0; i < ccPoints.size(); ++i)
 	{
 		cc_points.push_back(ccPoints[i]);
 	}
@@ -1130,9 +1131,9 @@ ImageView::setNumberOfPoints(int num_points_clicked, int num_key_points_detected
 void
 ImageView::clearOutputVectors()
 {
-	int size = continuousBoundingBoxPoints.size();
+	unsigned int size = continuousBoundingBoxPoints.size();
 	assert(size == planeParameters.size());
-	for (int i = 0; i < size; ++i)
+	for (unsigned int i = 0; i < size; ++i)
 	{
 		continuousBoundingBoxPoints[i].clear();
 		planeParameters[i].clear();
@@ -1153,7 +1154,7 @@ void
 ImageView::setSigPlaneBoundingBoxPoints(const vector<Point3f> &sigplane_bounding_box_points)
 {
 	sigPlaneBoundingBoxPoints.clear();
-	for (int i = 0; i < sigplane_bounding_box_points.size(); ++i)
+	for (unsigned int i = 0; i < sigplane_bounding_box_points.size(); ++i)
 	{
 		sigPlaneBoundingBoxPoints.push_back(sigplane_bounding_box_points[i]);
 	}

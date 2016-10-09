@@ -248,7 +248,7 @@ void findPercBoundEachPlane(
 	vector<Point3f> newPoints;
 	// Number of planes after removing unnecessary planes
 	int numberOfPlanes;
-	cout << "[ DEBUG ] [findPercBoundEachPlane] Calling removeUnnecessaryPlanes!!!\n";
+	cout << "[ DEBUG] [findPercBoundEachPlane] Calling removeUnnecessaryPlanes!!!\n";
 	removeUnnecessaryPlanes( points, oldPlaneIndices, minPointsPerPlane,
 			numberOfPointsPerPlane, newPoints, newPlaneIndices, numberOfPlanes);
 	// cout << "[ DEBUG ] Number of planes detected at the end of Step 2: " << numberOfPlanes << "\n";
@@ -300,7 +300,7 @@ void findPercBoundEachPlane(
 		// Obtain the plane parameters for the set of points obtained after Step 2
 		// Arrange plane points belonging to a particular plane i
 		vector< vector<Point3f> > planeOrderedPoints;
-		cout << "[ DEUBG] [findPercBoundEachPlane] Calling getPlaneParameters\n";
+		cout << "[ DEBUG] [findPercBoundEachPlane] Calling getPlaneParameters\n";
 		getPlaneParameters(newPoints, newPlaneIndices, planeParameters, planeOrderedPoints);
 		// cout << "[ DEBUG ] Step 3: getPlaneParameters Success!!!\n"; cout.flush();
 
@@ -313,17 +313,17 @@ void findPercBoundEachPlane(
 		map<int, pair<int, int> > planeIndexBounds;
 		vector<Point3f> projectionsOf3DPoints;
 		// Calculate the distances of the points from their respective planes
-		cout << "[ DEUBG] [findPercBoundEachPlane] Calling calculateDistanceFromPlane\n";
+		cout << "[ DEBUG] [findPercBoundEachPlane] Calling calculateDistanceFromPlane\n";
 		calculateDistanceFromPlane( newPoints, planeParameters, newPlaneIndices,
 				distanceMatrix, planePointsIndexMapping);
 		// cout << "[ DEBUG ] Step 4: calculateDistanceFromPlane Success!!!\n";
 		// cout.flush();
-		cout << "[ DEUBG] [findPercBoundEachPlane] Calling removePointsFarFromPlane\n";
+		cout << "[ DEBUG] [findPercBoundEachPlane] Calling removePointsFarFromPlane\n";
 		removePointsFarFromPlane( newPoints, planeParameters, distanceMatrix, planePointsIndexMapping, 
 			newSortedPoints, newPlaneParameters, planeIndexBounds);
 		// cout << "[ DEBUG ] Step 4: removePointsFarFromPlane Success!!!\n";
 		// cout.flush();
-		cout << "[ DEUBG] [findPercBoundEachPlane] Calling get3DPlaneProjectionsOfPoints\n";
+		cout << "[ DEBUG] [findPercBoundEachPlane] Calling get3DPlaneProjectionsOfPoints\n";
 		get3DPlaneProjectionsOfPoints ( newSortedPoints, newPlaneParameters, planeIndexBounds,
 							projectionsOf3DPoints);
 		// cout << "[ DEBUG ] Step 4: get3DPlaneProjectionsOfPoints Success!!!\n";
@@ -334,19 +334,19 @@ void findPercBoundEachPlane(
 		vector<Point3f> sortedProjectionsOf3DPoints;
 		map<int, pair<int, int> > sortedPlaneIndexBounds;
 		vector< vector<Point3f> > boundingBoxPoints;
-		cout << "[ DEUBG] [findPercBoundEachPlane] Calling orderPlanePointsByCentroids\n";
+		cout << "[ DEBUG] [findPercBoundEachPlane] Calling orderPlanePointsByCentroids\n";
 		orderPlanePointsByCentroids( projectionsOf3DPoints, newPlaneParameters, planeIndexBounds,
 				sortedProjectionsOf3DPoints, sortedPlaneParameters, sortedPlaneIndexBounds);
 		// cout << "[ DEBUG ] Step 5: orderPlanePointsByCentroids Success!!!\n";
 		// cout.flush();
-		cout << "[ DEUBG] [findPercBoundEachPlane] Calling getBoundingBoxCoordinates\n";
+		cout << "[ DEBUG] [findPercBoundEachPlane] Calling getBoundingBoxCoordinates\n";
 		getBoundingBoxCoordinates ( sortedProjectionsOf3DPoints, sortedPlaneParameters,
 				sortedPlaneIndexBounds, boundingBoxPoints );
 		// cout << "[ DEBUG ] Step 5: getBoundingBoxCoordinates Success!!!\n";
 		// cout.flush();
-		cout << "[ DEUBG] [findPercBoundEachPlane] Calling getPercentageOfEachPlane\n";
+		cout << "[ DEBUG] [findPercBoundEachPlane] Calling getPercentageOfEachPlane\n";
 		getPercentageOfEachPlane ( sortedProjectionsOf3DPoints, sortedPlaneIndexBounds, sorted_3d_points, percentageOfEachPlane );
-		cout << "[ DEUBG] [findPercBoundEachPlane] Calling getContinuousBoundingBox\n";
+		cout << "[ DEBUG] [findPercBoundEachPlane] Calling getContinuousBoundingBox\n";
 		getContinuousBoundingBox ( boundingBoxPoints, sortedPlaneParameters, continuousBoundingBoxPoints);
 		cout << "[ DEBUG] [findPercBoundEachPlane] Completed\n";
 		// cout << "[ DEBUG ] Step 5: getContinuousBoundingBox Success!!!\n";

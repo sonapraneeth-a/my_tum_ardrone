@@ -484,7 +484,6 @@ class ControlUINode
 
 		std::vector<double> targetPoint;
 		std::list<std_msgs::String> commands;
-		std::list<std_msgs::String> just_navigation_commands;
 		std::list<std::vector<double> > targetPoints;
 		std::vector<int> startTargePtIndex;
 		int numberOfPlanes;
@@ -503,10 +502,49 @@ class ControlUINode
 		float pollingTime; // Interval at which polling is done to check the drone position
 		bool targetSet;
 		bool currentCommand;
-		// Only for navigating the quadcopter
-		bool  justNavigation; 
 		bool recordNow;
 		bool notRecording;
+
+		/* New pose cb channel */
+		ros::Subscriber new_pose_sub;
+
+		/* Both are obtained from ImageView -> TopView */
+		list<double> _node_main_angles;
+		list<RotateDirection> _node_main_directions;
+
+		/* Get current position of drone in this vector */
+		vector<double> _node_current_pos_of_drone;
+		/* Get destination positoin of drone wrt current position of drone in this vector */
+		vector<double> _node_dest_pos_of_drone;
+		/* Get actual destination positoin of drone wrt origin of drone in this vector */
+		vector<double> _node_ac_dest_pos_of_drone;
+		/* Path to be used for planning internal navigation */
+		vector< vector<double> > _interm_path;
+
+		bool _stage_of_plane_observation;
+		bool _is_big_plane;
+		bool _is_plane_covered;
+		bool _is_able_to_see_new_plane;
+
+		float _node_max_height_of_plane;
+		float _node_min_height_of_plane;
+		float _node_min_distance;
+		float _node_max_distance;
+		int _node_number_of_planes;
+		int _node_completed_number_of_planes;
+
+		RotateDirection _next_plane_dir;
+		double _next_plane_angle;
+
+		// Only for navigating the quadcopter
+		bool justNavigation;
+		int changeyawLockReleased;
+		bool traverseComplete;
+		bool linearTraversal;
+		unsigned int just_navigation_command_number;
+		unsigned int just_navigation_total_commands;
+		std::list<std_msgs::String> just_navigation_commands;
+
 
 		// distance between two 2d points
 		/**
@@ -527,12 +565,42 @@ class ControlUINode
 		static pthread_mutex_t keyPoint_CS;
 		static pthread_mutex_t pose_CS;
 		static pthread_mutex_t command_CS;
+		static pthread_mutex_t changeyaw_CS;
+
 
 
 	public:
 
 		ImageView *image_gui;
-		bool got_points;
+
+		/* Plane parameters for all planes obtained from jlinkage */
+		vector< vector<float> > jlink_all_plane_parameters;
+		/* Continuous bounding box points for all planes obtained from jlinkage */
+		vector< vector<Point3f> > jlink_all_continuous_bounding_box_points;
+		/* Percentage of points from each plane obtained from jlinkage */
+		vector< float > jlink_all_percentage_of_each_plane;
+		/* Vector for adding three dim points of points obtained form jlinkage */
+		vector< vector<Point3f> > jlink_three_d_points;
+
+		/* Plane parameters for a single plane (to be used anywhere) */
+		vector<float> this_plane_parameters;
+		/* Continuous bounding box points for a single plane (to be used anywhere) */
+		vector<Point3f> this_continuous_bounding_box_points;
+
+		/* Plane parameters for all planes visited till now */
+		vector< vector<float> > visited_plane_parameters;
+		/* Continuous bounding box points for all planes visited till now */
+		vector< vector<Point3f> > visited_continuous_bounding_box_points;
+		/* Plane parameters for all planes visited till now */
+		vector< vector<float> > this_visited_plane_parameters;
+		/* Continuous bounding box points for all planes visited till now */
+		vector< vector<Point3f> > this_visited_continuous_bounding_box_points;
+
+		/* Vector for adding three dim points of points to be (if needed) for bestFitPlane */
+		vector<Point3f> aug_three_d_points;
+		vector<Point3f> aug_plane_bounding_box_points;
+
+
 		/**
 		 * @brief Constructor for ControlUINode
 		 * @details Callbacks called from Constructor -> keyPointDataCb,
@@ -852,35 +920,42 @@ class ControlUINode
 		// bool recordVideo ();
 
 
-		/*** NEWER FUNCTIONS ***/
-		vector<float>
-		fitPlane3dForTheCurrentPlane();
+		/*** PRANEETH's CODE ***/
+		void
+		newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr);
 
 		void
 		sendLand();
 
 		void
-		getCurrentPositionOfDrone(vector<double> &curr_pos_of_drone);
+		setMainAngles(const vector<double> &main_angles);
 
-		/**
-		 * @brief Calculate distance from the plane to see the height
-		 * @param [int] max_height_of_plane
-		 */
-		float
-		getDistanceToSeePlane(int height_of_plane);
+		void
+		setMainDirections(const vector<RotateDirection> &main_directions);
 
-		vector<Point2f>
-		GenerateMy2DPoints();
+		void
+		setValues(int number_of_planes, float min_height_of_plane, float min_distance, float max_height_of_plane, float max_distance);
 
-		vector<Point3f>
-		GenerateMy3DPoints(float width, float height);
+		void
+		getCurrentPositionOfDrone();
+
+		void
+		getCurrentPositionOfDrone(vector<double> &current_drone_pos);
+
+		/*void
+		copyPlaneParameters(const vector<float> &copy_plane_parameters, 
+								vector<float> &to_copy_plane_parameters);
+
+		void
+		copyBoundingBoxPoints(const vector<Point3f> &copy_continuous_bounding_box_points, 
+								vector<Point3f> &to_copy_continuous_bounding_box_points);*/
 
 		void
 		getMultiplePlanes3d (const vector<int> &ccPoints, const vector< vector<int> > &pointsClicked,
-									vector< vector<float> > &planeParameters,
-									vector< vector<Point3f> > &continuousBoundingBoxPoints,
-									vector< vector<Point3f> > &sorted_3d_points,
-									vector<float> &percentageOfEachPlane);
+								vector< vector<float> > &planeParameters,
+								vector< vector<Point3f> > &continuousBoundingBoxPoints,
+								vector< vector<Point3f> > &sorted_3d_points,
+								vector<float> &percentageOfEachPlane);
 
 		void
 		getMultiplePlanes3d (vector< vector<float> > &planeParameters,
@@ -888,147 +963,48 @@ class ControlUINode
 								vector< vector<Point3f> > &sorted_3d_points,
 								vector<float> &percentageOfEachPlane);
 
-		float
-		getPointPlaneDistance(const vector<double> &current_pos_of_drone,
-								const vector<float> &planeParameters);
-
-		int
-		getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
-									const vector< vector<float> > &temp_plane_parameters,
-									const vector<float> &percentagePlane);
-
-		/**
-		 * @brief Move the drone to the destination point
-		 * @details
-		 * @param [vector<double>] dest_point - Final Destination of quadcopter
-		 * 									Includes yaw in the vector
-		 * @return
-		 */
 		void
-		moveDroneToPosition(const vector<double> &dest_point);
+		testUtility(int test_no);
 
-		/**
-		 * @brief Move the drone to the destination point via a set of points
-		 * @details
-		 * @param [vector< vector<double> >] dest_points - Points to where quadcopter has to travel
-		 * 									Includes yaw in the vector
-		 * @return
-		 */
+		vector<float>
+		fitPlane3dForTheCurrentPlane();
+
+		void
+		captureTheCurrentPlane();
+
 		void
 		moveDroneViaSetOfPoints(const vector< vector<double> > &dest_points);
 
-		/**
-		 * @brief Generates the set of points (smoothly distributed) which drone has to follow to move from start to end
-		 * @details
-		 * @param [in] [vector< double >] start - Starting position of quadcopter @todo-me (With/Without yaw?) I suppose with yaw
-		 * @param [in] [vector< double >] end - Ending position of quadcopter (With/Without yaw?)
-		 * @param [out] [vector< vector<double> >] end - Intermediate points from start to end (With/Without yaw?)
-		 * @return
-		 */
-		void
-		designPathForDrone(const vector< double > &start,
-							const vector< double > &end,
-							vector< vector<double> > &path);
-
 		void
 		designPathToChangeYaw(const vector<double> &curr_point,
-						double dest_yaw, vector< vector<double> > &xyz_yaw);
+								double dest_yaw);
 
 		void
-		clearDoubleVector(vector< vector<double> > &xyz_yaw);
+		alignQuadcopterToCurrentPlane();
 
 		void
-		convertWRTQuadcopterOrigin(const vector<double> &current_pos_of_drone,
-										const vector<double> &dest_pos_of_drone,
-										vector<double> &ac_dest_pos_of_drone);
-
-		vector<float>
-		bestFitPlane(const vector<Point3f> &threed_points);
-
-		/**
-		 * @brief Get the bounding box points of each plane by autonomously navigating the quadcopter
-		 *
-		 */
-		void
-		getMeTheMap(const vector< double > &angles,
-						const vector< RotateDirection > &directions,
-						float min_distance,
-						float max_distance);
+		adjustForNextCapture();
 
 		void
-		projectPointsOnPlane (const vector<Point3f> &points,
-								const vector<float> &planeParameters,
-								vector<Point3f> &projectedPoints);
+		designPathForDrone(const vector< double > &start,
+								const vector< double > &end);
 
 		void
-		alignQuadcopterToCurrentPlane(const vector<double> &current_pos_of_drone,
-										const vector<float> &planeParameters);
+		alignQuadcopterToNextPlane();
 
 		void
-		moveForward(float min_distance, float max_distance);
+		alignQuadcopterToNextPlaneAdvanced();
 
 		void
-		moveBackward(float min_distance, float max_distance);
+		adjustTopBottomEdges();
 
-		bool
-		isNewPlaneVisible(const vector< vector<float> > &plane_parameters,
-							const vector< vector<float> > &planeParameters,
-							const vector<float> &percentagePlane);
-
-		/**
-		 * @brief Cover the current plane visible to the quadcopter camera
-		 * @details
-		 * @param [int] plane_num - Which plane you're covering
-		 * @param [float] max_height - Maximum height of the plane
-		 * @param [Point3f] current_pos_of_drone - Current position in 3D of the quadcopter
-		 * @return
-		 */
 		void
-		CoverTheCurrentPlane (int plane_num, float min_distance, float max_distance,
-								RotateDirection dir, double next_plane_angle,
-								const vector< vector<Point3f> > &all_planes_bounding_box_points,
-								const vector< vector<float> > &all_planes_plane_parameters,
-								vector< Point3f > &current_bounding_box_points,
-								vector< float > &current_plane_parameters);
-
-
-		/**
-		 * @brief Calculate the optimal position of quadcopter such that it can see the top and bottom
-		 * 			edge of the plane
-		 * @details
-		 * @param
-		 * @return
-		 */
-		bool
-		AdjustToSeeCurrentPlane(float min_distance, float max_distance,
-								const vector< vector<float> > &plane_parameters, bool stage);
+		adjustLeftEdge();
 
 		int
-		checkVisibility(const vector<float> &planeParameters, const vector<Point3f> &continuous_bounding_box_points,
-						bool which_side);
-
-		/**
-		 * @brief Move the quadcopter to the next plane such that it can see the left edge of the new plane
-		 * @param [RotateDirection] Rotation Direction Of Quadcopter: CLOCKWISE, COUNTERCLOCKWISE
-		 */
-		void
-		MoveQuadcopterToNextPlane(RotateDirection dir, double angle,
-									const vector< vector<float> > &plane_parameters);
-
-		void
-		testJLinkageOutput();
-
-		double
-		getHeightFromGround(const vector<float> &planeParameters, 
-							const vector<Point3f> &continuousBoundingBoxPoints);
-
-		/**** UNNECESSARY FUNCTIONS ****/
-		void
-		get3DPointsOfCapturedPlane(const vector<int> &ccPoints,
-									const vector<vector<int> > &pointsClicked,
-									vector< Point3f > &threed_points);
-
-
+		checkVisibility(const vector<float> &planeParameters, 
+								const vector<Point3f> &continuous_bounding_box_points,
+								bool which_side);
 
 };
 
