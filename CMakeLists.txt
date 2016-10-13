@@ -17,6 +17,7 @@ project(tum_ardrone)
 #else()
 #        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 #support. Please use a different C++ compiler.")
 #endif()
+#MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CMAKE_BINARY_DIR} )
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
