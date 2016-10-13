@@ -525,6 +525,7 @@ class ControlUINode
 		bool _is_big_plane;
 		bool _is_plane_covered;
 		bool _is_able_to_see_new_plane;
+		int _sig_plane_index;
 
 		float _node_max_height_of_plane;
 		float _node_min_height_of_plane;
@@ -532,9 +533,15 @@ class ControlUINode
 		float _node_max_distance;
 		int _node_number_of_planes;
 		int _node_completed_number_of_planes;
+		float _plane_d;
+		int _plane_d_num = 0;
+		float _step_distance;
+		float _fixed_distance;
+		float _fixed_height;
 
 		RotateDirection _next_plane_dir;
 		double _next_plane_angle;
+		bool _is_adjusted;
 
 		// Only for navigating the quadcopter
 		bool justNavigation;
@@ -591,9 +598,9 @@ class ControlUINode
 		vector< vector<float> > visited_plane_parameters;
 		/* Continuous bounding box points for all planes visited till now */
 		vector< vector<Point3f> > visited_continuous_bounding_box_points;
-		/* Plane parameters for all planes visited till now */
+		/* Plane parameters for all planes visited till now (temporary) */
 		vector< vector<float> > this_visited_plane_parameters;
-		/* Continuous bounding box points for all planes visited till now */
+		/* Continuous bounding box points for all planes visited till now (temporary) */
 		vector< vector<Point3f> > this_visited_continuous_bounding_box_points;
 
 		/* Vector for adding three dim points of points to be (if needed) for bestFitPlane */
@@ -1004,7 +1011,54 @@ class ControlUINode
 		int
 		checkVisibility(const vector<float> &planeParameters, 
 								const vector<Point3f> &continuous_bounding_box_points,
-								bool which_side);
+								int which_side);
+
+		void
+		moveUp(double step_distance = 0.5);
+
+		void
+		moveDown(double step_distance = 0.5);
+
+		void
+		moveLeft(double step_distance = 0.5);
+
+		void
+		moveRight(double step_distance = 0.5);
+
+		void
+		moveForward(double step_distance = 0.5);
+
+		void
+		moveBackward(double step_distance = 0.5);
+
+		void
+		rotateClockwise(double step_angle = 5.0);
+
+		void
+		rotateCounterClockwise(double step_angle = 5.0);
+
+		void
+		doJLinkage();
+
+		void
+		augmentInfo();
+
+		void
+		copyNecessaryInfo();
+
+		void
+		checkPlaneParametersSign(const vector<double> &position, 
+															const vector<Point3f> &points,
+															vector<float> &plane_parameters);
+
+		void
+		getCompleteCurrentPlaneInfo(const vector< vector<float> > &plane_parameters,
+																	const vector< vector<Point3f> > &cbb,
+																	const vector< vector<Point3f> > &points,
+																	const vector<float> &percPlane,
+																	int currPlaneIndex,
+																	vector<float> &out_plane_parameters,
+																	vector<Point3f> &out_cbb);
 
 };
 

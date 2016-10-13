@@ -63,6 +63,8 @@ ImageView::ImageView(ControlUINode *cnode)
 	considerAllLevels = true;
 	renderPoly = false;
 	renderRect = false;
+	renderSignificantPlane = false;
+	renderVisitedPlanes = false;
 
 	numFile = 0;
 	translateDistance = 0.5;
@@ -294,10 +296,9 @@ ImageView::renderFrame()
 		glEnd();
 	}
 	if(renderRect)
-	{		
-		int size = continuousBoundingBoxPoints.size();
-		
-		for(int planeIndex = 0; planeIndex<size; planeIndex++)
+	{
+		unsigned int size = continuousBoundingBoxPoints.size();
+		for(unsigned int planeIndex = 0; planeIndex<size; planeIndex++)
 		{
 			vector<Point3f> planeBoundingBoxPoints = continuousBoundingBoxPoints[planeIndex];
 			vector< vector<int> > planePts2D;
@@ -327,7 +328,6 @@ ImageView::renderFrame()
 				p[1] = imagePts[pointIndex].y;
 				glVertex2i(p[0],p[1]);
 			}
-		
 			glEnd();
 		}
 	}
@@ -345,6 +345,28 @@ ImageView::renderFrame()
 			glVertex2i(p[0], p[1]);
 		}
 		glEnd();
+	}
+	if(renderVisitedPlanes)
+	{
+		unsigned int size = visitedBoundingBoxPoints.size();
+		for(unsigned int planeIndex = 0; planeIndex < size; planeIndex++)
+		{
+			vector<Point3f> planeBoundingBoxPoints = visitedBoundingBoxPoints[planeIndex];
+			vector< vector<int> > planePts2D;
+			glColor3f(0.0, 0.0, 0.0);
+			glBegin(GL_LINE_STRIP);
+			vector<Point2f> imagePts;
+			node->project3DPointsOnImage(planeBoundingBoxPoints, imagePts);
+			for(unsigned int pointIndex = 0; pointIndex<imagePts.size(); pointIndex++)
+			{
+				vector<int> p(2);
+				p[0] = imagePts[pointIndex].x;
+				p[1] = imagePts[pointIndex].y;
+				glVertex2i(p[0],p[1]);
+			}
+		
+			glEnd();
+		}
 	}
 	glDisable(GL_BLEND);
 
@@ -371,11 +393,14 @@ ImageView::renderFrame()
  *			Key + - [NOT IMPLEMENTED]
  *			Key - - [NOT IMPLEMENTED]
  *			Key 0-9 - [Used stage 01] Testing
+ *			Key X - [Used in stage 01] Overall testing - Start Capturing
+ *			Key Q - [Used in stage 01] Overall testing - Align the quadcopter to the current plane
  * @param [int] key - ASCII value of key
  */
 void
 ImageView::on_key_down(int key)
 {
+	cout << "[ DEBUG] [on_key_down] Key pressed: " << key << ", " << (char)key << "\n";
 	// Key b - Extracts bounding rect
 	if(key == 'b')
 	{
@@ -385,7 +410,7 @@ ImageView::on_key_down(int key)
 		extractBoundingRect();
 	}
 	// Key d - Clear the vectors 'pointsClicked' and 'keyPointsNearest'
-	if(key == 'd')
+	else if(key == 'd')
 	{
 		// node->publishCommand("i delete");
 		// Need to delete the last point
@@ -401,7 +426,7 @@ ImageView::on_key_down(int key)
 		}
 	}
 	// Key e - Extract Multiple planes using Jlinkage and store the bounding box points for the planess
-	if(key == 'e')
+	else if(key == 'e')
 	{
 		/*
 		 * TODO Currently commented code which fits single plane and moves the drone accordingly
@@ -442,7 +467,7 @@ ImageView::on_key_down(int key)
 		//vector<float> translatedPlane = node->translatePlane (translateDistance);
 	}
 	// Key g - Navigating the planes using the planned path and collecting the video footage
-	if(key == 'g')
+	else if(key == 'g')
 	{
 		// Cover multiple planes
 		if(renderRect)
@@ -452,7 +477,7 @@ ImageView::on_key_down(int key)
 		}
 	}
 	// Key r - Reset all the vectors and rendering
-	if(key == 'r')
+	else if(key == 'r')
 	{
 		// node->publishCommand("i reset");
 		// Need to reset all the entire points to initial state
@@ -465,14 +490,14 @@ ImageView::on_key_down(int key)
 		renderSignificantPlane = false;
 	}
 	// Key s - Saves the keypoint information '_3d_points' to file named by 'numFile'
-	if(key == 's')
+	else if(key == 's')
 	{
 		// save all the keypoint information
 		node->saveKeyPointInformation(numFile);
 		numFile++;
 	}
 	//Key  t - Extracts bounding polygon
-	if(key == 't')
+	else if(key == 't')
 	{
 		// renders the polygon
 		//renderRect = false;
@@ -480,7 +505,7 @@ ImageView::on_key_down(int key)
 		extractBoundingPoly();
 	}
 	// Key space
-	if(key == 32)
+	else if(key == 32)
 	{
 		// node->publishCommand("i run");
 		// Send control commands to drone. TODO need to implement
@@ -488,7 +513,7 @@ ImageView::on_key_down(int key)
 	/* Below are the keys to be implemented properly fro mtp stage 01 */
 	/** PRANEETH's CODE **/
 	// Key a - Just for testing
-	if(key == 'a')
+	else if(key == 'a')
 	{
 		int min_height_of_plane = 2.0;
 		int max_height_of_plane = 5.0;
@@ -536,7 +561,7 @@ ImageView::on_key_down(int key)
 		WriteInfoToFile(bounding_box_points, plane_parameters, plane_num_test, filename);
 	}
 	// Key c - Collect the bounding box points and plane parameters for all the planes
-	if(key == 'c')
+	else if(key == 'c')
 	{
 		/* Launches GUI: Return approx. angles and orientations */
 		/* Angle with which	quadcopter has to rotate to orient itself to the new plane */
@@ -610,26 +635,145 @@ ImageView::on_key_down(int key)
 			}
 			cout << "\n";
 			int min_height_of_plane = 2.0;
-			/*
-			float min_distance = node->getDistanceToSeePlane(min_height_of_plane);
-			float max_distance = node->getDistanceToSeePlane(max_height_of_plane);
+			
+			float min_distance = getDistanceToSeePlane(min_height_of_plane);
+			float max_distance = getDistanceToSeePlane(max_height_of_plane);
 			cout << "[Key 'c'] Min. Distance: " << min_distance << ", Max. Distance: " << max_distance << "\n";
 			node->setValues(number_of_planes, min_height_of_plane, min_distance, max_height_of_plane, max_distance);
 			node->setMainAngles(main_angles);
 			node->setMainDirections(main_directions);
-			node->adjustToSeeCurrentPlane();
-			*/
+			node->alignQuadcopterToCurrentPlane();
+			
 		}
 	}
 	// Key 0-9 - For testing
-	if(key >= '0' && key <= '9')
+	else if(key >= '0' && key <= '9')
 	{
 		cout << "Pressed Key 1\n";
 		int num = key-'0';
 		node->testUtility(num);
 	}
+	else if(key == 'Z')
+	{
+		int min_height_of_plane = 2;
+		int max_height_of_plane = 4;
+		float min_distance = getDistanceToSeePlane(min_height_of_plane);
+		float max_distance = getDistanceToSeePlane(max_height_of_plane);
+		int number_of_planes = 1;
+		/* Angle with which	quadcopter has to rotate to orient itself to the new plane */
+		std::vector< double > main_angles;
+		/* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
+		std::vector< RotateDirection > main_directions;
+		main_angles.clear();
+		main_directions.clear();
+		cout << "[ DEBUG] [on_key_down] Setting the values\n";
+		node->setValues(number_of_planes, min_height_of_plane, min_distance, max_height_of_plane, max_distance);
+		node->setMainAngles(main_angles);
+		node->setMainDirections(main_directions);
+		node->alignQuadcopterToCurrentPlane();
+	}
+	// X
+	else if(key == 'X')
+	{
+		if(numPointsClicked == 4)
+		{
+			/*int min_height_of_plane = 2;
+			int max_height_of_plane = 4;
+			float min_distance = getDistanceToSeePlane(min_height_of_plane);
+			float max_distance = getDistanceToSeePlane(max_height_of_plane);
+			node->setValues(1, min_height_of_plane, min_distance, max_height_of_plane, max_distance);*/
+			cout << "[ DEBUG] [on_key_down] pointsClicked are:\n";
+			for(unsigned int i = 0; i < pointsClicked.size(); i++)
+			{
+				cout << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
+			}
+			cout << "\n";
+			cout << "[ DEBUG] [on_key_down] Capturing the current plane\n";
+			node->captureTheCurrentPlane();
+			// Clear all Vectors
+			clearInputVectors();
+			numPointsClicked = 0;
+		}
+		else
+		{
+			cout << "[ DEBUG] [on_key_down] Please click 4 points on the screen and press press key 'p' again\n";
+		}
+	}
+	else if(key == 'Q')
+	{
+		int min_height_of_plane = 3;
+		int max_height_of_plane = 5;
+		float min_distance = getDistanceToSeePlane(min_height_of_plane);
+		float max_distance = getDistanceToSeePlane(max_height_of_plane);
+		int number_of_planes = 2;
+		RotateDirection dir = COUNTERCLOCKWISE;
+		double angle = 30.0;
+		/* Angle with which	quadcopter has to rotate to orient itself to the new plane */
+		std::vector< double > main_angles;
+		/* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
+		std::vector< RotateDirection > main_directions;
+		main_angles.clear();
+		main_directions.clear();
+		main_angles.push_back(angle);
+		main_directions.push_back(dir);
+		cout << "[ DEBUG] [on_key_down] Setting the values\n";
+		node->setValues(number_of_planes, min_height_of_plane, min_distance, max_height_of_plane, max_distance);
+		node->setMainAngles(main_angles);
+		node->setMainDirections(main_directions);
+		node->alignQuadcopterToCurrentPlane();
+	}
+	// W
+	else if(key == 'W')
+	{
+		if(numPointsClicked == 4)
+		{
+			/*int min_height_of_plane = 2;
+			int max_height_of_plane = 4;
+			float min_distance = getDistanceToSeePlane(min_height_of_plane);
+			float max_distance = getDistanceToSeePlane(max_height_of_plane);
+			node->setValues(1, min_height_of_plane, min_distance, max_height_of_plane, max_distance);*/
+			cout << "[ DEBUG] [on_key_down] pointsClicked are:\n";
+			for(unsigned int i = 0; i < pointsClicked.size(); i++)
+			{
+				cout << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
+			}
+			cout << "\n";
+			cout << "[ DEBUG] [on_key_down] Capturing the current plane\n";
+			node->captureTheCurrentPlane();
+			// Clear all Vectors
+			clearInputVectors();
+			numPointsClicked = 0;
+		}
+		else
+		{
+			cout << "[ DEBUG] [on_key_down] Please click 4 points on the screen and press press key 'p' again\n";
+		}
+	}
+	else if(key == 'E')
+	{
+		int min_height_of_plane = 1;
+		int max_height_of_plane = 2;
+		float min_distance = getDistanceToSeePlane(min_height_of_plane);
+		float max_distance = getDistanceToSeePlane(max_height_of_plane);
+		int number_of_planes = 2;
+		RotateDirection dir = CLOCKWISE;
+		double angle = 15.0;
+		/* Angle with which	quadcopter has to rotate to orient itself to the new plane */
+		std::vector< double > main_angles;
+		/* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
+		std::vector< RotateDirection > main_directions;
+		main_angles.clear();
+		main_directions.clear();
+		main_angles.push_back(angle);
+		main_directions.push_back(dir);
+		cout << "[ DEBUG] [on_key_down] Setting the values\n";
+		node->setValues(number_of_planes, min_height_of_plane, min_distance, max_height_of_plane, max_distance);
+		node->setMainAngles(main_angles);
+		node->setMainDirections(main_directions);
+		node->alignQuadcopterToCurrentPlane();
+	}
 	// Key n - Uses the points written from a file (obtained from key c)
-	if(key == 'n')
+	else if(key == 'n')
 	{
 		string inputDirectory = "/home/vrlab/";
 		string filename = inputDirectory + "Plane_Info.txt";
@@ -677,6 +821,39 @@ ImageView::on_key_down(int key)
 		cout << "[ DEBUG] Calling moveQuadcopter()\n";
 		node->moveQuadcopter(sortedPlaneParameters, continuousBoundingBoxPoints);
 	}
+	/* Movement letter keys */
+	else if(key == 'F')
+	{
+		node->moveForward();
+	}
+	else if(key == 'B')
+	{
+		node->moveBackward();
+	}
+	else if(key == 'L')
+	{
+		node->moveLeft();
+	}
+	else if(key == 'R')
+	{
+		node->moveRight();
+	}
+	else if(key == 'U')
+	{
+		node->moveUp();
+	}
+	else if(key == 'D')
+	{
+		node->moveDown();
+	}
+	else if(key == 'C')
+	{
+		node->rotateClockwise();
+	}
+	else if(key == 'A')
+	{
+		node->rotateCounterClockwise();
+	}
 }
 
 void
@@ -715,20 +892,20 @@ ImageView::on_mouse_down(CVD::ImageRef where, int state, int button)
 	v.push_back(y);
 	pointsClicked.push_back(v);
 	search(v);
-	if(numPointsClicked == 4)
-	{
-		numPointsClicked = 0;
-		cout << "[ DEBUG] pointsClicked are:\n";
-		for(unsigned int i = 0; i < pointsClicked.size(); i++)
-		{
-			cout << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
-		}
-		cout << "\n";
-		cout << "[ DEBUG] [on_mouse_down] Capturing the current plane\n";
-		node->captureTheCurrentPlane();
-		// Clear all Vectors
-		clearInputVectors();
-	}
+	// if(numPointsClicked == 4)
+	// {
+	// 	numPointsClicked = 0;
+	// 	cout << "[ DEBUG] pointsClicked are:\n";
+	// 	for(unsigned int i = 0; i < pointsClicked.size(); i++)
+	// 	{
+	// 		cout << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
+	// 	}
+	// 	cout << "\n";
+	// 	cout << "[ DEBUG] [on_mouse_down] Capturing the current plane\n";
+	// 	node->captureTheCurrentPlane();
+	// 	// Clear all Vectors
+	// 	clearInputVectors();
+	// }
 }
 
 
@@ -1039,6 +1216,27 @@ ImageView::setContinuousBoundingBoxPoints(const vector< vector<Point3f> > &conti
 }
 
 void
+ImageView::setVisitedBoundingBoxPoints(const vector< vector<Point3f> > &visit_bound_box_points)
+{
+	unsigned int size = visitedBoundingBoxPoints.size();
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		visitedBoundingBoxPoints[i].clear();
+	}
+	visitedBoundingBoxPoints.clear();
+	vector<Point3f> dummy_points;
+	for (unsigned int i = 0; i < visit_bound_box_points.size(); ++i)
+	{
+		dummy_points.clear();
+		for (unsigned int j = 0; j < visit_bound_box_points[i].size(); ++j)
+		{
+			dummy_points.push_back(visit_bound_box_points[i][j]);
+		}
+		continuousBoundingBoxPoints.push_back(dummy_points);
+	}
+}
+
+void
 ImageView::getPlaneParameters(vector< vector<float> > &plane_parameters)
 {
 	unsigned int size = plane_parameters.size();
@@ -1114,11 +1312,12 @@ ImageView::getCCPoints(vector<int> &cc_points)
 }
 
 void
-ImageView::setRender(bool render_poly, bool render_rect, bool render_significant_plane)
+ImageView::setRender(bool render_poly, bool render_rect, bool render_significant_plane, bool render_visit_plane = false)
 {
 	renderPoly = render_poly;
 	renderRect = render_rect;
 	renderSignificantPlane = render_significant_plane;
+	renderVisitedPlanes = render_visit_plane;
 }
 
 void

@@ -440,8 +440,8 @@ TopView::calculateAngles()
 			Orientation src_to_dest = line1.perp().calculateOrientation(drawing_option, _viewing_direction, line2.perp());
 			angles.push_back(src_to_dest.angle);
 			direction.push_back(src_to_dest.dir);
-			_number_of_planes = angles.size();
 		}
+		_number_of_planes = angles.size();
 	}
 	else
 	{
@@ -460,11 +460,15 @@ TopView::calculateAngles()
 
 		}
 	}
-	if( drawing_option == POLYLINE && _points.size() > 2)
+	/*if( drawing_option == POLYLINE && _points.size() > 2)
 	{
 		_number_of_planes++;
 	}
 	else if( drawing_option == POLYGON && _points.size() > 1)
+	{
+		_number_of_planes++;
+	}*/
+	if ( _points.size() > 2 )
 	{
 		_number_of_planes++;
 	}

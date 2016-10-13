@@ -107,7 +107,7 @@ int findMultiplePlanes(
 
 		// Step 3: Perform K-means for the new set of planes obtained
 		Mat pointsMatrix = Mat(newPoints.size(), 3, CV_32F);
-		int i;
+		unsigned int i;
 		// Create a pointsMatrix from vector<Point3f> data
 		for(i=0; i<newPoints.size(); i++) {
 			float * ptr = (float*)(&pointsMatrix.at<float>(i,0));
@@ -194,12 +194,12 @@ int findMultiplePlanes(
 		cout << "[ DEBUG ] Number of planes is less than or equal to 1.\n";
 		vector<float> planeParameters;
 		vector<Point3f> projectionsOf3DPoints;
-		fitPlane3D(newPoints, planeParameters);	
+		fitPlane3D(newPoints, planeParameters);
 		float a = planeParameters[0];
 		float b = planeParameters[1];
 		float c = planeParameters[2];
-		float d = planeParameters[3];	
-		for (int j = 0; j < newPoints.size(); ++j) {
+		float d = planeParameters[3];
+		for (unsigned int j = 0; j < newPoints.size(); ++j) {
 			float x0 = newPoints[j].x;
 			float y0 = newPoints[j].y;
 			float z0 = newPoints[j].z;
@@ -259,7 +259,7 @@ void findPercBoundEachPlane(
 
 		// Step 3: Perform K-means for the new set of planes obtained
 		Mat pointsMatrix = Mat(newPoints.size(), 3, CV_32F);
-		int i;
+		unsigned int i;
 		// Create a pointsMatrix from vector<Point3f> data
 		for(i=0; i<newPoints.size(); i++) {
 			float * ptr = (float*)(&pointsMatrix.at<float>(i,0));
@@ -362,7 +362,7 @@ void findPercBoundEachPlane(
 		float b = planeParameters[1];
 		float c = planeParameters[2];
 		float d = planeParameters[3];
-		for (int j = 0; j < newPoints.size(); ++j) {
+		for (unsigned int j = 0; j < newPoints.size(); ++j) {
 			float x0 = newPoints[j].x;
 			float y0 = newPoints[j].y;
 			float z0 = newPoints[j].z;
@@ -431,7 +431,7 @@ int findMultiplePlanes1(
 
 		// Step 3: Perform K-means for the new set of planes obtained
 		Mat pointsMatrix = Mat(newPoints.size(), 3, CV_32F);
-		int i;
+		unsigned int i;
 		// Create a pointsMatrix from vector<Point3f> data
 		for(i=0; i<newPoints.size(); i++) {
 			float * ptr = (float*)(&pointsMatrix.at<float>(i,0));

@@ -136,6 +136,8 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		std::vector< std::vector<cv::Point3f> > continuousBoundingBoxPoints;
 		// corners of significant plane bounding boxes in 3D
 		std::vector<cv::Point3f> sigPlaneBoundingBoxPoints;
+		// Visited Bounding box points
+		std::vector< std::vector<cv::Point3f> > visitedBoundingBoxPoints;
 		// Plane parameters
 		std::vector< std::vector<float> > planeParameters;
 		// corners of the bounding rectangle
@@ -148,6 +150,8 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		bool renderPoly;
 		// Render bounding rectangle or not
 		bool renderRect;
+		//
+		bool renderVisitedPlanes;
 		// 
 		bool renderSignificantPlane;
 		// Distance by which the extracted plane should be translated
@@ -310,6 +314,9 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		setSigPlaneBoundingBoxPoints(const vector<Point3f> &sigplane_bounding_box_points);
 
 		void
+		setVisitedBoundingBoxPoints(const vector< vector<Point3f> > &visit_bound_box_points);
+
+		void
 		getPlaneParameters(vector< vector<float> > &planeParameters);
 
 		void
@@ -322,7 +329,7 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 		getCCPoints(vector<int> &ccPoints);
 
 		void
-		setRender(bool renderPoly, bool renderRect, bool renderSignificantPlane);
+		setRender(bool renderPoly, bool renderRect, bool renderSignificantPlane, bool renderVisitedPlanes);
 
 		void
 		setNumberOfPoints(int numPointsClicked, int numKeyPointsDetected);

@@ -202,6 +202,7 @@ projectPoint(std::vector<float> plane, std::vector<float> pt)
 	std::vector<float> normal = getNormal(plane);
 	float dist = innerProduct(normal, pt) + plane[3];
 	std::vector<float> pPoint;
+	// BUG: It can be +- dist
 	for(int i = 0; i < 3; i++)
 	{
 		float p = pt[i] - dist*normal[i];
@@ -570,6 +571,7 @@ convertWRTQuadcopterOrigin(const vector<double> &current_pos_of_drone,
 											const vector<double> &dest_pos_of_drone,
 											vector<double> &ac_dest_pos_of_drone)
 {
+	assert(current_pos_of_drone.size() == dest_pos_of_drone.size());
 	ac_dest_pos_of_drone.clear();
 	Mat rotationMatrix = Mat::eye(3, 3, CV_64F);
 	double angle = current_pos_of_drone[3];
@@ -596,7 +598,7 @@ convertWRTQuadcopterOrigin(const vector<double> &current_pos_of_drone,
 	ac_dest_pos_of_drone.push_back(x.at<double>(0, 0));
 	ac_dest_pos_of_drone.push_back(x.at<double>(1, 0));
 	ac_dest_pos_of_drone.push_back(x.at<double>(2, 0));
-	ac_dest_pos_of_drone.push_back(angle+dest_pos_of_drone[3]);
+	ac_dest_pos_of_drone.push_back(current_pos_of_drone[3]+dest_pos_of_drone[3]);
 }
 
 /**
@@ -645,11 +647,17 @@ bestFitPlane(const vector<Point3f> &threed_points)
 		val2 += (X.at<float>(1,i) * X.at<float>(2,i));
 	}
 	float D = (val11*val22) - (val12*val21);
-	float a = ((val2*val12) - (val1*val22))/D;
-	float b = ((val12*val1) - (val11*val2))/D;
-	float c = 1.0;
+	a = ((val2*val12) - (val1*val22))/D;
+	b = ((val12*val1) - (val11*val2))/D;
+	c = 1.0;
+	d = 0.0;
 	float mag = sqrt(a*a + b*b + c*c);
-	cout << "Method 1: (" << a/mag << ", " << b/mag << ", " << c/mag << ")\n";*/
+	cout << "Method 1: (" << a/mag << ", " << b/mag << ", " << c/mag << ")\n";
+	normal.push_back(a/mag);
+	normal.push_back(b/mag);
+	normal.push_back(c/mag);
+	normal.push_back(d);*/
+	vector<float> normal;
 	// Method 2: SVD Method
 	// http://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
 	// http://www.ltu.se/cms_fs/1.51590!/svd-fitting.pdf
@@ -660,7 +668,6 @@ bestFitPlane(const vector<Point3f> &threed_points)
 	cout << "U:\n" << u << "\n";
 	cout << "S:\n" << w << "\n";
 	cout << "Method 2: (" << u.at<float>(0, 2) << ", " << u.at<float>(1, 2) << ", " << u.at<float>(2, 2) << ")\n";
-	vector<float> normal;
 	a = u.at<float>(0, 2);
 	b = u.at<float>(1, 2);
 	c = u.at<float>(2, 2);
@@ -814,15 +821,64 @@ projectPointsOnPlane (const vector<Point3f> &points, const vector<float> &planeP
 								vector<Point3f> &projectedPoints)
 {
 	projectedPoints.clear();
-	vector<float> point, v;
+	vector<float> v;
+	vector<double> point;
 	Point3f pp;
+	float distance, t;
+	float a = planeParameters[0];
+	float b = planeParameters[1];
+	float c = planeParameters[2];
+	float d = planeParameters[3];
+	/*if( !(fabs(a-0.0) <= 0.001 ) )
+	{
+		p.x = -d/a;
+		p.y = 0.0;
+		p.z = 0.0;
+	}
+	else if( !(fabs(b-0.0) <= 0.001 ) )
+	{
+		p.x = 0.0;
+		p.y = -d/b;
+		p.z = 0.0;
+	}
+	else if( !(fabs(c-0.0) <= 0.001 ) )
+	{
+		p.x = 0.0;
+		p.y = 0.0;
+		p.z = -d/c;
+	}
+	else
+	{
+		 cout << "[ ERROR] [projectPointsOnPlane] None of a, b, c are non-zero\n";
+	}*/
+	int numberOfPointsInThisPlane = points.size();
+	// Create a matrix out of the vector of points: Dimension: numberOfPoints*3
+	Mat pointsMatrixTemp(numberOfPointsInThisPlane, 3, CV_32F);
+	for (unsigned int j = 0; j < numberOfPointsInThisPlane; ++j) {
+		pointsMatrixTemp.at<float>(j, 0) = points[j].x;
+		pointsMatrixTemp.at<float>(j, 1) = points[j].y;
+		pointsMatrixTemp.at<float>(j, 2) = points[j].z;
+	}
+	// Calculate the centroid of the points
+	float centroidX = (mean(pointsMatrixTemp.col(0)))[0];
+	float centroidY = (mean(pointsMatrixTemp.col(1)))[0];
+	float centroidZ = (mean(pointsMatrixTemp.col(2)))[0];
+	Point3f p(centroidX, centroidY, centroidZ), qp;
+	float mag = ((a*a)+(b*b)+(c*c));
 	for(unsigned int i = 0; i < points.size(); i++)
 	{
 		point.clear();
-		point.push_back(points[i].x);
-		point.push_back(points[i].y);
-		point.push_back(points[i].z);
-		v = projectPoint(planeParameters, point);
+		point.push_back((double)points[i].x);
+		point.push_back((double)points[i].y);
+		point.push_back((double)points[i].z);
+		// v = projectPoint(planeParameters, point);
+		// distance = getPointToPlaneDistance(planeParameters, point);
+		qp = points[i] - p;
+		t = (qp.x * (a/mag)) + (qp.y * (b/mag)) + ((qp.z * (c/mag)));
+		v.clear();
+		v.push_back(points[i].x - a*t);
+		v.push_back(points[i].y - b*t);
+		v.push_back(points[i].z - c*t);
 		pp.x = v[0]; pp.y = v[1]; pp.z = v[2];
 		projectedPoints.push_back(pp);
 		v.clear();
@@ -835,6 +891,7 @@ getHeightFromGround(const vector<float> &planeParameters,
 						const vector<Point3f> &continuousBoundingBoxPoints,
 						const vector<double> &current_pos_of_drone)
 {
+	cout << "[ DEBUG] [getHeightFromGround] Started\n";
 	double height;
 	Point3f top_mid = (continuousBoundingBoxPoints[0]+continuousBoundingBoxPoints[1]);
 	top_mid.x = top_mid.x/(float)2.0;
@@ -848,6 +905,10 @@ getHeightFromGround(const vector<float> &planeParameters,
 	mid.x = (top_mid.x+bottom_mid.x)/(float)2.0;
 	mid.y = (top_mid.y+bottom_mid.y)/(float)2.0;
 	mid.z = (top_mid.z+bottom_mid.z)/(float)2.0;
+	cout << "[ DEBUG] [getHeightFromGround] Top mid: " << top_mid << "\n";
+	cout << "[ DEBUG] [getHeightFromGround] Mid: " << mid << "\n";
+	cout << "[ DEBUG] [getHeightFromGround] Bottom mid: " << bottom_mid << "\n";
+	cout << "[ DEBUG] [getHeightFromGround] Height of plane's mid point: " << mid << "\n";
 	Point3f normal_plane(planeParameters[0], planeParameters[1], planeParameters[2]);
 	float mag_normal_plane = sqrt(normal_plane.x*normal_plane.x +
 						normal_plane.y*normal_plane.y + normal_plane.z*normal_plane.z);
@@ -858,6 +919,7 @@ getHeightFromGround(const vector<float> &planeParameters,
 	cout << "Values x: " << mid.x + t*normal_plane.x << "\n";
 	cout << "Values y: " << mid.y + t*normal_plane.y << "\n";
 	cout << "Values z: " << mid.z + t*normal_plane.z << "\n";
+	cout << "[ DEBUG] [getHeightFromGround] Completed\n";
 	return height;
 }
 
@@ -873,6 +935,47 @@ copyVector(const vector<T> vec1, vector<T> &vec2)
 	return ;
 }
 
+/**
+ * @brief
+ * @details
+ */
+template<typename T>
+inline static void
+print2dVector(const vector< vector<T> > &two_d_vector, string vec_name = "vector")
+{
+	//cout << "Printing the vector: " << vec_name << "\n";
+	cout << vec_name << "\n";
+	for (unsigned int i = 0; i < two_d_vector.size(); ++i)
+	{
+		cout << "[ ";
+		for (unsigned int j = 0; j < two_d_vector[i].size(); ++j)
+		{
+			cout << two_d_vector[i][j] << "; ";
+		}
+		cout << "]\n";
+	}
+	//cout << "\n";
+	return ;
+}
+
+/**
+ * @brief
+ * @details
+ */
+template<typename T>
+inline static void
+print1dVector(const vector<T> &one_d_vector, string vec_name = "vector")
+{
+	//cout << "Printing the vector: " << vec_name << "\n";
+	cout << vec_name << "\n";
+	cout << "[ ";
+	for (unsigned int i = 0; i < one_d_vector.size(); ++i)
+	{
+		cout << one_d_vector[i] << "; ";
+	}
+	cout << "]\n";
+	return ;
+}
 
 
 #endif

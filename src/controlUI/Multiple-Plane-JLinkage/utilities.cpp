@@ -425,14 +425,20 @@ int writePointsToCSVForGPlot(
 
 }
 
-double findAngle(Point3f vec1, Point3f vec2){
+double findAngle(Point3f vec1, Point3f vec2)
+{
+	cout << "[ DEBUG] [findAngle] Started\n";
 	double dotProduct = vec1.dot(vec2);
 	double mag1 =  sqrt( vec1.x*vec1.x + vec1.y*vec1.y + vec1.z*vec1.z );
 	double mag2 =  sqrt( vec2.x*vec2.x + vec2.y*vec2.y + vec2.z*vec2.z );
 	double angle = acos(dotProduct/(mag1*mag2));
+	cout << "[ DEBUG] [findAngle] Angle: " << angle << "\n";
 	Point3f crossProduct = vec1.cross(vec2);
+	cout << "[ DEBUG] [findAngle] crossProduct: " << crossProduct << "\n";
 	Point3f ref(0,0,1);
 	double sign = ref.dot(crossProduct);
+	cout << "[ DEBUG] [findAngle] Sign: " << sign << "\n";
+	cout << "[ DEBUG] [findAngle] Completed\n";
 	if(sign>0)
 		return angle;
 	else

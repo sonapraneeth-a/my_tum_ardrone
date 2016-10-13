@@ -49,9 +49,9 @@ void removeUnnecessaryPlanes(
 		}
 	}
 
-	/*cout << "[ DEBUG ] Detected number of planes before removing unnecessary planes : " << numberOfUniquePlanes << "\n";
+	cout << "[ DEBUG] Detected number of planes before removing unnecessary planes : " << numberOfUniquePlanes << "\n";
 	for (map<int,int>::iterator it=numberOfPointsPerPlane.begin(); it!=numberOfPointsPerPlane.end(); ++it)
-		cout << "[ DEBUG ] " << it->first << " => " << it->second << "\n";*/
+		cout << "[ DEBUG] " << it->first << " => " << it->second << "\n";
 
 	// Remove those planes which having less than minimum number of points in them
 	for (i = 0; i < numberOfUniquePlanes; i++) {
@@ -72,12 +72,12 @@ void removeUnnecessaryPlanes(
 
 	// Number of planes found after removal of unnecessary planes
 	numberOfPlanes = numberOfPointsPerPlane.size();
-	/*cout << "[ DEBUG ] Detected number of planes after removing unnecessary planes: " << numberOfPlanes << "\n";
+	cout << "[ DEBUG] Detected number of planes after removing unnecessary planes: " << numberOfPlanes << "\n";
 	for (map<int,int>::iterator it=numberOfPointsPerPlane.begin(); it!=numberOfPointsPerPlane.end(); ++it)
-		cout << "[ DEBUG ] " << it->first << " => " << it->second << "\n";
-	cout << "[ DEBUG ] Old indices mapped to new indices" << endl;
+		cout << "[ DEBUG] " << it->first << " => " << it->second << "\n";
+	cout << "[ DEBUG] Old indices mapped to new indices" << endl;
 	for (map<int,int>::iterator it=oldToNewPlaneIndices.begin(); it!=oldToNewPlaneIndices.end(); ++it)
-		cout << "[ DEBUG ] " << it->first << " => " << it->second << "\n";*/
+		cout << "[ DEBUG] " << it->first << " => " << it->second << "\n";
 
 	// Create the new data after removing unnecessary planes and also new indices
 	// corresponding to the newPlaneDataPoints
