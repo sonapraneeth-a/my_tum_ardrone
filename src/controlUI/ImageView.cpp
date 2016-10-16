@@ -596,7 +596,7 @@ ImageView::on_key_down(int key)
 			cout << "[Key 'c'] Max Height of the plane (as estimated by the user): " << max_height_of_plane << "\n";
 			if(type_of_surface == 0)
 			{
-				cout << "[Key 'c']c Surface Drawn: " << "Open Surface" << "\n";
+				cout << "[Key 'c'] Surface Drawn: " << "Open Surface" << "\n";
 				if(view_dir == 0)
 				{
 					cout << "[Key 'c'] Viewing the surface from front\n";

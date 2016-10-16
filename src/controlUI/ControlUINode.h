@@ -39,6 +39,8 @@ using namespace cv;
 
 class ImageView;
 
+enum MOVE_DIRECTIONS {LEFT, RIGHT, FORWARD, BACKWARD, UP, DOWN, CLOCK, COUNTERCLOCK};
+
 /**
  * @brief @todo Structure for creating a small square in a whole grid
  * @details @todo
@@ -526,6 +528,7 @@ class ControlUINode
 		bool _is_plane_covered;
 		bool _is_able_to_see_new_plane;
 		int _sig_plane_index;
+		int _actual_plane_index;
 
 		float _node_max_height_of_plane;
 		float _node_min_height_of_plane;
@@ -538,10 +541,13 @@ class ControlUINode
 		float _step_distance;
 		float _fixed_distance;
 		float _fixed_height;
+		double _move_heuristic;
+		double _angle_heuristic;
 
 		RotateDirection _next_plane_dir;
 		double _next_plane_angle;
 		bool _is_adjusted;
+		float _plane_heuristic;
 
 		// Only for navigating the quadcopter
 		bool justNavigation;
@@ -598,6 +604,8 @@ class ControlUINode
 		vector< vector<float> > visited_plane_parameters;
 		/* Continuous bounding box points for all planes visited till now */
 		vector< vector<Point3f> > visited_continuous_bounding_box_points;
+		//
+		vector< vector<double> > visited_motion_points;
 		/* Plane parameters for all planes visited till now (temporary) */
 		vector< vector<float> > this_visited_plane_parameters;
 		/* Continuous bounding box points for all planes visited till now (temporary) */
@@ -949,14 +957,6 @@ class ControlUINode
 		void
 		getCurrentPositionOfDrone(vector<double> &current_drone_pos);
 
-		/*void
-		copyPlaneParameters(const vector<float> &copy_plane_parameters, 
-								vector<float> &to_copy_plane_parameters);
-
-		void
-		copyBoundingBoxPoints(const vector<Point3f> &copy_continuous_bounding_box_points, 
-								vector<Point3f> &to_copy_continuous_bounding_box_points);*/
-
 		void
 		getMultiplePlanes3d (const vector<int> &ccPoints, const vector< vector<int> > &pointsClicked,
 								vector< vector<float> > &planeParameters,
@@ -995,6 +995,9 @@ class ControlUINode
 		void
 		designPathForDrone(const vector< double > &start,
 								const vector< double > &end);
+
+		void
+		designPathForDroneRelative(double dest, int direction);
 
 		void
 		alignQuadcopterToNextPlane();
@@ -1060,7 +1063,14 @@ class ControlUINode
 																	vector<float> &out_plane_parameters,
 																	vector<Point3f> &out_cbb);
 
+		void
+		adjustYawToCurrentPlane();
+
+		void
+		move(double distance, int i);
+
 };
+
 
 
 
