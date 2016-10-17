@@ -485,7 +485,7 @@ getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
 		planeIndex = -1;
 		plane_normal_1.clear();
 		plane_normal_1.push_back(0.0);
-		plane_normal_1.push_back(1.0); //@todo-me Check if it is +1.0 or -1.0
+		plane_normal_1.push_back(1.0);
 		plane_normal_1.push_back(0.0);
 		for (unsigned int i = 0; i < temp_plane_parameters.size(); ++i)
 		{
@@ -513,6 +513,12 @@ getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
 				{
 					planeIndex = (unsigned int)i; break;
 				}
+				/*if(fabs(plane_normal_1[0]-plane_normal_1[0]) < 0.08 &&
+					  fabs(plane_normal_1[1]-plane_normal_1[1]) < 0.08 &&
+					  fabs(plane_normal_1[2]-plane_normal_1[2]) < 0.08 )
+				{
+					planeIndex = (unsigned int)i; break;
+				}*/
 			}
 		}
 		if(planeIndex < 0)
@@ -561,6 +567,13 @@ getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
 					{
 						found = true; break;
 					}
+					/*if(fabs(plane_normal_1[0]-plane_normal_1[0]) < 0.08 &&
+					  fabs(plane_normal_1[1]-plane_normal_1[1]) < 0.08 &&
+					  fabs(plane_normal_1[2]-plane_normal_1[2]) < 0.08 &&
+					  fabs(temp_plane_parameters[i][3]-plane_parameters[j][3]) < 0.08 )
+					{
+						found = true; break;
+					}*/
 				}
 			}
 			if(!found)
@@ -1285,6 +1298,9 @@ getHeightFromGround(const vector<float> &planeParameters,
 	mid.x = (top_mid.x+bottom_mid.x)/(float)2.0;
 	mid.y = (top_mid.y+bottom_mid.y)/(float)2.0;
 	mid.z = (top_mid.z+bottom_mid.z)/(float)2.0;
+	/*mid.x = top_mid.x;
+	mid.y = top_mid.y;
+	mid.z = top_mid.z/(float)2.0;*/
 	cout << "[ DEBUG] [getHeightFromGround] Top mid: " << top_mid << "\n";
 	cout << "[ DEBUG] [getHeightFromGround] Mid: " << mid << "\n";
 	cout << "[ DEBUG] [getHeightFromGround] Bottom mid: " << bottom_mid << "\n";
