@@ -33,6 +33,8 @@
 
 #include <vector>
 #include <string>
+#include <ctime>
+#include <chrono>
 
 using namespace std;
 using namespace cv;
@@ -548,6 +550,11 @@ class ControlUINode
 		double _next_plane_angle;
 		bool _is_adjusted;
 		float _plane_heuristic;
+		std::chrono::high_resolution_clock::time_point _capture_start, _capture_end;
+		std::chrono::high_resolution_clock::time_point _align_current_start, _align_current_end;
+		std::chrono::high_resolution_clock::time_point _align_next_start, _align_next_end;
+		std::chrono::high_resolution_clock::time_point _plane_start, _plane_end;
+
 
 		// Only for navigating the quadcopter
 		bool justNavigation;

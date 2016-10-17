@@ -46,6 +46,7 @@
 #include <sstream>
 #include <list>
 
+
 using namespace std;
 using namespace cv;
 
@@ -1837,7 +1838,7 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
 	{
 		pthread_mutex_unlock(&changeyaw_CS);
 		changeyawLockReleased = 0;
-		cout << "[ DEBUG] [poseCb] Released first changeyaw_CS Lock\n";
+		cout << "[ DEBUG] [newPoseCb] Released first changeyaw_CS Lock\n";
 	}
 	else if(just_navigation_commands.size() > 0 && !justNavigation)
 	{
@@ -1849,7 +1850,7 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
 		pthread_mutex_unlock(&tum_ardrone_CS);
 		targetPoint.clear();
 		targetPoint = targetPoints.front();
-		printf("[ INFO] [poseCb] (%u) Just Navigation Current target %u: %lf %lf %lf %lf\n", 
+		printf("[ INFO] [newPoseCb] (%u) Just Navigation Current target %u: %lf %lf %lf %lf\n", 
 			just_navigation_total_commands, just_navigation_command_number, targetPoint[0], 
 			targetPoint[1] , targetPoint[2], targetPoint[3] );
 	}
@@ -1866,6 +1867,11 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
 		cout << "[ DEBUG] [poseCb] " << fabs(x-x_drone) << ", " << fabs(y-y_drone) << ", "
 					<< fabs(z-z_drone) << ", " << fabs(ya-yaw) << "\n";*/
 		//printf("[ DEBUG] [poseCb] Error %lf\n", ea);
+		getCurrentPositionOfDrone();
+		print1dVector(_node_current_pos_of_drone, "[ DEBUG] [newPoseCb] Current position of drone");
+		cout << " [DEBUG] [newPoseCb] x: " << x << ", y: " << y << ", z: " << z << "\n";
+		cout << "[ DEBUG] [newPoseCb] Error: " << fabs(x-x_drone) << ", " << fabs(y-y_drone) << ", "
+					<< fabs(z-z_drone) << ", " << fabs(ya-yaw) << "\n";
 		pthread_mutex_unlock(&pose_CS);
 		if( fabs(x-x_drone) < 0.08 &&
 			  fabs(y-y_drone) < 0.08 &&
@@ -1882,9 +1888,9 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
 				targetPoints.pop_front();
 				targetPoint.clear();
 				pthread_mutex_unlock(&command_CS);
-				cout << "[ DEBUG] [poseCb] Released elseif command_CS Lock\n";
+				cout << "[ DEBUG] [newPoseCb] Released elseif command_CS Lock\n";
 				getCurrentPositionOfDrone();
-				print1dVector(_node_current_pos_of_drone, "[ DEBUG] [poseCb] Current position of drone after command");
+				print1dVector(_node_current_pos_of_drone, "[ DEBUG] [newPoseCb] Current position of drone after command");
 				if(just_navigation_commands.size() == 0) {changeyawLockReleased = -1;}
 				return;
 			}
@@ -2308,6 +2314,35 @@ ControlUINode::rotateClockwise(double step_angle)
 	cout << "[ DEBUG] [rotateClockwise] Started\n";
 	getCurrentPositionOfDrone();
 	designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]+step_angle);
+	/*double current_angle = _node_current_pos_of_drone[3];
+	double dest_angle = _node_current_pos_of_drone[3]+step_angle;
+	vector<double> interm_point;
+	bool to_rotate = true;
+	double move = 1.0;
+	while(to_rotate)
+	{
+		if(fabs(dest_angle - current_angle) < _angle_heuristic)
+		{
+			current_angle = dest_angle;
+			to_rotate = false;
+		}
+		else
+		{
+			current_angle += (move * (double)_angle_heuristic);
+			if(current_angle >= 180.0)
+			{
+				current_angle = -360.0+current_angle;
+				dest_angle = -360.0+dest_angle;
+			}
+			to_rotate = true;
+		}
+		interm_point.clear();
+		interm_point.push_back(_node_current_pos_of_drone[0]);
+		interm_point.push_back(_node_current_pos_of_drone[1]);
+		interm_point.push_back(_node_current_pos_of_drone[2]);
+		interm_point.push_back(current_angle);
+		_interm_path.push_back(interm_point);
+	}*/
 	moveDroneViaSetOfPoints(_interm_path);
 	cout << "[ DEBUG] [rotateClockwise] Completed\n";
 	return ;
@@ -2317,8 +2352,38 @@ void
 ControlUINode::rotateCounterClockwise(double step_angle)
 {
 	cout << "[ DEBUG] [rotateCounterClockwise] Started\n";
+	clear2dVector(_interm_path);
 	getCurrentPositionOfDrone();
 	designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]-step_angle);
+	/*double current_angle = _node_current_pos_of_drone[3];
+	double dest_angle = _node_current_pos_of_drone[3]-step_angle;
+	vector<double> interm_point;
+	bool to_rotate = true;
+	double move = -1.0;
+	while(to_rotate)
+	{
+		if(fabs(dest_angle - current_angle) < _angle_heuristic)
+		{
+			current_angle = dest_angle;
+			to_rotate = false;
+		}
+		else
+		{
+			current_angle += (move * (double)_angle_heuristic);
+			if(current_angle < -180.0)
+			{
+				current_angle = 360.0+current_angle;
+				dest_angle = 360.0+dest_angle;
+			}
+			to_rotate = true;
+		}
+		interm_point.clear();
+		interm_point.push_back(_node_current_pos_of_drone[0]);
+		interm_point.push_back(_node_current_pos_of_drone[1]);
+		interm_point.push_back(_node_current_pos_of_drone[2]);
+		interm_point.push_back(current_angle);
+		_interm_path.push_back(interm_point);
+	}*/
 	moveDroneViaSetOfPoints(_interm_path);
 	cout << "[ DEBUG] [rotateCounterClockwise] Completed\n";
 	return ;
@@ -2341,7 +2406,7 @@ ControlUINode::designPathToChangeYaw(const vector<double> &curr_point,
 	cout << "[ DEBUG] [designPathToChangeYaw] Changing yaw by " << _angle_heuristic << " step\n";
 	cout << "[ DEBUG] [designPathToChangeYaw] Current Yaw: " << currentYaw << "\n";
 	cout << "[ DEBUG] [designPathToChangeYaw] Destination Yaw: " << desiredYaw << "\n";
-	double move; bool to_move = false;
+	double move; bool to_move = true;
 	if(currentYaw > desiredYaw) {move = -1.0;}
 	else {move = 1.0;}
 	cout << "[ DEBUG] [designPathToChangeYaw] Started\n";
@@ -2354,7 +2419,7 @@ ControlUINode::designPathToChangeYaw(const vector<double> &curr_point,
 	{
 		cout << "[ DEBUG] [designPathToChangeYaw] Move counter-clockwise\n";
 	}
-	if(fabs(desiredYaw - prog_yaw) < _angle_heuristic)
+	/*if(fabs(desiredYaw - prog_yaw) < _angle_heuristic)
 	{
 		interm_point.clear();
 		interm_point.push_back(curr_point[0]); interm_point.push_back(curr_point[1]);
@@ -2365,17 +2430,57 @@ ControlUINode::designPathToChangeYaw(const vector<double> &curr_point,
 	else
 	{
 		to_move = true;
-	}
+	}*/
 	while(to_move)
 	{
 		if(fabs(desiredYaw - prog_yaw) < _angle_heuristic)
 		{
-			prog_yaw = desiredYaw;
+			//prog_yaw = desiredYaw;
+			if(move == -1.0)
+			{
+				if(desiredYaw < -180.0)
+				{
+					desiredYaw = 360.0+desiredYaw;
+					prog_yaw = desiredYaw;
+				}
+			}
+			else if(move == 1.0)
+			{
+				if(desiredYaw >= 180.0)
+				{
+					desiredYaw = -360.0+desiredYaw;
+					prog_yaw = desiredYaw;
+				}
+			}
+			else
+			{
+
+			}
 			to_move = false;
 		}
 		else
 		{
 			prog_yaw += (move * (double)_angle_heuristic);
+			if(move == -1.0)
+			{
+				if(prog_yaw < -180.0)
+				{
+					prog_yaw = 360.0+prog_yaw;
+					desiredYaw = 360.0+desiredYaw;
+				}
+			}
+			else if(move == 1.0)
+			{
+				if(prog_yaw >= 180.0)
+				{
+					prog_yaw = -360.0+prog_yaw;
+					desiredYaw = -360.0+desiredYaw;
+				}
+			}
+			else
+			{
+
+			}
 			to_move = true;
 		}
 		interm_point.clear();
@@ -3040,7 +3145,7 @@ ControlUINode::alignQuadcopterToCurrentPlane()
 		_next_plane_angle = _node_main_angles.front();
 	}
 	cout << "[ INFO] [alignQuadcopterToCurrentPlane] Number of planes: " << _node_number_of_planes <<
-				", CompletedNumber of planes: " << _node_completed_number_of_planes << 
+				", Completed Number of planes: " << _node_completed_number_of_planes << 
 				", Next plane dir: " << _next_plane_dir << ", Next plane angle: " << _next_plane_angle << "\n";
 	adjustYawToCurrentPlane();
 	cout << "[ INFO] [alignQuadcopterToCurrentPlane] Observing the plane: " << _stage_of_plane_observation << "\n";
@@ -3726,6 +3831,7 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 	cout << "[ INFO] [alignQuadcopterToNextPlaneAdvanced] Completed no. of planes: " 
 			<< _node_completed_number_of_planes
 			<< ", Total number of planes: " << _node_number_of_planes << "\n";
+
 	if(_next_plane_dir == COUNTERCLOCKWISE)
 	{
 		bool yaw_change = false;
