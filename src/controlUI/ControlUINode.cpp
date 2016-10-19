@@ -1868,15 +1868,16 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
 					<< fabs(z-z_drone) << ", " << fabs(ya-yaw) << "\n";*/
 		//printf("[ DEBUG] [poseCb] Error %lf\n", ea);
 		getCurrentPositionOfDrone();
-		print1dVector(_node_current_pos_of_drone, "[ DEBUG] [newPoseCb] Current position of drone");
+		/*print1dVector(_node_current_pos_of_drone, "[ DEBUG] [newPoseCb] Current position of drone");
 		cout << " [DEBUG] [newPoseCb] x: " << x << ", y: " << y << ", z: " << z << "\n";
 		cout << "[ DEBUG] [newPoseCb] Error: " << fabs(x-x_drone) << ", " << fabs(y-y_drone) << ", "
-					<< fabs(z-z_drone) << ", " << fabs(ya-yaw) << "\n";
+					<< fabs(z-z_drone) << ", " << fabs(ya-yaw) << "\n";*/
 		pthread_mutex_unlock(&pose_CS);
-		if( fabs(x-x_drone) < 0.08 &&
-			  fabs(y-y_drone) < 0.08 &&
-			  fabs(z-z_drone) < 0.08 &&
-			  fabs(ya-yaw) < 0.5)
+		bool var1 = (fabs(x-x_drone) < 0.08);
+		bool var2 = (fabs(y-y_drone) < 0.08);
+		bool var3 = (fabs(z-z_drone) < 0.08);
+		bool var4 = (fabs(ya-yaw) < 0.3);
+		if( var1 & var2 & var3 & var4 )
 		{
 			// cout << "[ DEBUG] [poseCb] Destination reached for command no. " << just_navigation_number << "\n";
 			if(just_navigation_command_number <= just_navigation_total_commands)
@@ -3498,7 +3499,7 @@ ControlUINode::captureTheCurrentPlane()
 	image_gui->setSigPlaneBoundingBoxPoints(this_continuous_bounding_box_points);
 	image_gui->setVisitedBoundingBoxPoints(visited_continuous_bounding_box_points);
 	cout << "[ INFO] [captureTheCurrentPlane] Rendering the frames in the DRONE CAMERA FEED GUI\n";
-	image_gui->setRender(false, true, true, true);
+	image_gui->setRender(false, false, false, true);
 	cout << "[ DEBUG] [captureTheCurrentPlane] SigPlaneIndex: " << _sig_plane_index << "\n";
 	cout << "[ DEBUG] [captureTheCurrentPlane] ActualPlaneIndex: " << _actual_plane_index << "\n";
 	cout << "[ DEBUG] [captureTheCurrentPlane] Rendering poly and sig plane and visited planes\n";
@@ -3636,8 +3637,8 @@ ControlUINode::adjustForNextCapture()
 		cout << "[ INFO] [adjustForNextCapture] Next plane is CLOCKWISE wrt current plane\n";
 		getCurrentPositionOfDrone();
 		cout << "[ INFO] [adjustForNextCapture] Moving by width of plane by 3\n";
-		moveRight(width_of_3d_plane/(double)3.0);
-		cout << "[ INFO] [adjustForNextCapture] Changing the yaw clockwise by " << (fabs(_next_plane_angle)/2.0) << "\n";
+		moveRight(width_of_3d_plane/(double)4.0);
+		cout << "[ INFO] [adjustForNextCapture] Changing the yaw clockwise by " << (fabs(_next_plane_angle)/4.0) << "\n";
 		rotateClockwise(fabs(_next_plane_angle)/2.0);
 		cout << "[ INFO] [adjustForNextCapture] Moving backwards by 0.5\n";
 		moveBackward(0.5);
@@ -3680,7 +3681,7 @@ ControlUINode::adjustForNextCapture()
 						getPointToPlaneDistance(jlink_all_plane_parameters[_actual_plane_index+1], 
 												_node_current_pos_of_drone);
 				cout << "[ DEBUG] [adjustForNextCapture] Check_dist: " << check_dist << ", Max. Dist: " << _node_max_distance << "\n";
-				if(check_dist > _node_max_distance)
+				if(check_dist > _node_max_distance+1.0)
 				{
 					_is_plane_covered = false;
 				}
@@ -3831,7 +3832,7 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 	cout << "[ INFO] [alignQuadcopterToNextPlaneAdvanced] Completed no. of planes: " 
 			<< _node_completed_number_of_planes
 			<< ", Total number of planes: " << _node_number_of_planes << "\n";
-
+	float angle;
 	if(_next_plane_dir == COUNTERCLOCKWISE)
 	{
 		bool yaw_change = false;
@@ -3879,7 +3880,7 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 		image_gui->setContinuousBoundingBoxPoints(jlink_all_continuous_bounding_box_points);
 		image_gui->setSigPlaneBoundingBoxPoints(this_continuous_bounding_box_points);
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Rendering poly and sig plane\n";
-		image_gui->setRender(false, true, true, true);
+		image_gui->setRender(false, false, false, true);
 		image_gui->renderFrame();
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] _sig_plane_index: " << _sig_plane_index << "\n";
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] _actual_plane_index: " << _actual_plane_index << "\n";
@@ -3936,7 +3937,6 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 			}
 			int rounds = 0;
 			double angle_to_rotate;
-			float angle;
 			do
 			{
 				rounds++;
@@ -3956,6 +3956,7 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 					rotateCounterClockwise(angle_to_rotate);
 				}
 				yaw_change = true;
+				doJLinkage();
 				cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Linearly translating along X by " << initial_move << "\n";
 				getCurrentPositionOfDrone();
 				float point_distance = getPointToPlaneDistance(this_plane_parameters, _node_current_pos_of_drone);
@@ -4068,11 +4069,12 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 												(top_right.z - top_left.z)*(top_right.z - top_left.z) ));
 			cout << "[ INFO] [alignQuadcopterToNextPlaneAdvanced] Width of the plane is: " << width_of_3d_plane << "\n";
 			cout << "[ INFO] [alignQuadcopterToNextPlaneAdvanced] Moving the drone horizontally by " << width_of_3d_plane/3.0 << "\n";
-			moveRight(width_of_3d_plane/(double)3.0);
+			moveRight(width_of_3d_plane/(double)4.0);
 			do
 			{
 				cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Not adjusted. Can't see a new plane\n";
 				rotateClockwise(fabs(_next_plane_angle)/denom);
+				doJLinkage();
 				denom = denom + 1.0;
 			}while(_sig_plane_index == -1);
 		}
@@ -4080,25 +4082,29 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 		{
 			do
 			{
-				cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Not adjusted. Can't see a new plane\n";
+				cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Adjusted. Can't see a new plane\n";
 				rotateClockwise(fabs(_next_plane_angle)/denom);
+				doJLinkage();
 				denom = denom + 1.0;
 			}while(_sig_plane_index == -1);
 		}
 		_is_adjusted = false;
+		rotateClockwise(fabs(_next_plane_angle)/denom);
+		denom = denom + 1.0;
+		rotateClockwise(fabs(_next_plane_angle)/denom);
 		doJLinkage();
-		cout << "[ INFO] [alignQuadcopterToNextPlaneAdvanced] Next plane is counter clockwise to current plane\n";
+		cout << "[ INFO] [alignQuadcopterToNextPlaneAdvanced] Next plane is clockwise to current plane\n";
 		image_gui->setContinuousBoundingBoxPoints(jlink_all_continuous_bounding_box_points);
 		image_gui->setSigPlaneBoundingBoxPoints(this_continuous_bounding_box_points);
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Rendering poly and sig plane\n";
-		image_gui->setRender(false, true, true, true);
+		image_gui->setRender(false, false, false, true);
 		image_gui->renderFrame();
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] _sig_plane_index: " << _sig_plane_index << "\n";
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] _actual_plane_index: " << _actual_plane_index << "\n";
-		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Moving backwards by 0.5\n";
-		moveBackward(0.5);
-		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Moving forwards by 0.5\n";
-		moveForward(0.5);
+		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Moving backwards by 0.4\n";
+		moveBackward(0.4);
+		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Moving forwards by 0.4\n";
+		moveForward(0.4);
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Aligning the quadcoper to the new plane\n";
 		alignQuadcopterToCurrentPlane();
 	}

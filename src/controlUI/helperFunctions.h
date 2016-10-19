@@ -505,20 +505,20 @@ getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
 			}
 			else
 			{
-				float magnitude = ( pow((plane_normal_1[0] - plane_normal_2[0]), 2) + 
+				/*float magnitude = ( pow((plane_normal_1[0] - plane_normal_2[0]), 2) + 
 									pow((plane_normal_1[1] - plane_normal_2[1]), 2) + 
 									pow((plane_normal_1[2] - plane_normal_2[2]), 2) );
 				cout << "[ DEBUG] [getCurrentPlaneIndex] magnitude: " << magnitude << "\n";
 				if(magnitude <= 0.3)
 				{
 					planeIndex = (unsigned int)i; break;
-				}
-				/*if(fabs(plane_normal_1[0]-plane_normal_1[0]) < 0.08 &&
-					  fabs(plane_normal_1[1]-plane_normal_1[1]) < 0.08 &&
-					  fabs(plane_normal_1[2]-plane_normal_1[2]) < 0.08 )
+				}*/
+				if(fabs(plane_normal_2[0]-plane_normal_1[0]) < 0.08 &&
+					  fabs(plane_normal_2[1]-plane_normal_1[1]) < 0.08 &&
+					  fabs(plane_normal_2[2]-plane_normal_1[2]) < 0.08 )
 				{
 					planeIndex = (unsigned int)i; break;
-				}*/
+				}
 			}
 		}
 		if(planeIndex < 0)
@@ -555,25 +555,28 @@ getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
 				cout << "[ DEBUG] [getCurrentPlaneIndex] dot_p: " << dot_p << "\n";
 				if(dot_p >= plane_heuristic)
 				{
-					found = true; break;
+					if(fabs(temp_plane_parameters[i][3]-plane_parameters[j][3]) < 0.8)
+						found = true; break;
 				}
 				else
 				{
-					float magnitude = ( pow((plane_normal_1[0] - plane_normal_2[0]), 2) + 
+					/*float magnitude = ( pow((plane_normal_1[0] - plane_normal_2[0]), 2) + 
 										pow((plane_normal_1[1] - plane_normal_2[1]), 2) + 
 										pow((plane_normal_1[2] - plane_normal_2[2]), 2) );
 					cout << "[ DEBUG] [getCurrentPlaneIndex] magnitude: " << magnitude << "\n";
 					if(magnitude <= 0.3)
 					{
 						found = true; break;
-					}
-					/*if(fabs(plane_normal_1[0]-plane_normal_1[0]) < 0.08 &&
-					  fabs(plane_normal_1[1]-plane_normal_1[1]) < 0.08 &&
-					  fabs(plane_normal_1[2]-plane_normal_1[2]) < 0.08 &&
-					  fabs(temp_plane_parameters[i][3]-plane_parameters[j][3]) < 0.08 )
+					}*/
+					bool var1 = (fabs(plane_normal_2[0]-plane_normal_1[0]) < 0.15);
+					bool var2 = (fabs(plane_normal_2[1]-plane_normal_1[1]) < 0.15);
+					bool var3 = (fabs(plane_normal_2[2]-plane_normal_1[2]) < 0.15);
+					bool var4 = (fabs(temp_plane_parameters[i][3]-plane_parameters[j][3]) < 0.8);
+					cout << "[ DEBUG] [getCurrentPlaneIndex] Var1: " << var1 << ", Var2: " << var2 << ", Var3: " << var3 << ", Var4: " << var4 << "\n";
+					if(var1 & var2 & var3 & var4)
 					{
 						found = true; break;
-					}*/
+					}
 				}
 			}
 			if(!found)
@@ -622,6 +625,7 @@ getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
 		planeIndex = (int)temp_plane_parameters.size()-1;
 	}
 	cout << "[ DEBUG] [getCurrentPlaneIndex] Changed Current Plane Index: " << planeIndex << "\n";*/
+	cout << "[ DEBUG] [getCurrentPlaneIndex] Completed\n";
 	return planeIndex;
 }
 
@@ -1276,6 +1280,12 @@ projectPointsOnPlane (const vector<Point3f> &points, const vector<float> &planeP
 		projectedPoints.push_back(pp);
 		v.clear();
 	}
+	return ;
+}
+
+inline static void
+genPointAlongNormalAtDistance()
+{
 	return ;
 }
 
