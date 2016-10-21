@@ -568,12 +568,29 @@ getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
 					{
 						found = true; break;
 					}*/
-					bool var1 = (fabs(plane_normal_2[0]-plane_normal_1[0]) < 0.15);
-					bool var2 = (fabs(plane_normal_2[1]-plane_normal_1[1]) < 0.15);
-					bool var3 = (fabs(plane_normal_2[2]-plane_normal_1[2]) < 0.15);
-					bool var4 = (fabs(temp_plane_parameters[i][3]-plane_parameters[j][3]) < 0.8);
+					float a_1, a_2, a_3, a_4;
+					float b_1, b_2, b_3, b_4;
+					a_1 = plane_normal_2[0];
+					a_2 = plane_normal_2[1];
+					a_3 = plane_normal_2[2];
+					a_4 = temp_plane_parameters[i][3];
+					b_1 = plane_normal_1[0];
+					b_2 = plane_normal_1[1];
+					b_3 = plane_normal_1[2];
+					b_4 = plane_parameters[j][3];
+					bool var1 = (fabs(a_1-b_1) < 0.15);
+					bool var2 = (fabs(a_2-b_2) < 0.15);
+					bool var3 = (fabs(a_3-b_3) < 0.15);
+					bool var4 = (fabs(a_4-b_4) < 0.8);
+					float mag = ( pow((a_1-b_1),2) + pow((a_2-b_2),2) + pow((a_3-b_3),2) );
+					bool var5 = (mag <= 0.25);
+					cout << "[ DEBUG] [getCurrentPlaneIndex] Magnitude: " << mag << ", D_Diff: " << fabs(a_4-b_4) << "\n";
 					cout << "[ DEBUG] [getCurrentPlaneIndex] Var1: " << var1 << ", Var2: " << var2 << ", Var3: " << var3 << ", Var4: " << var4 << "\n";
-					if(var1 & var2 & var3 & var4)
+					/*if(var1 & var2 & var3 & var4)
+					{
+						found = true; break;
+					}*/
+					if(var4 & var5)
 					{
 						found = true; break;
 					}
@@ -1251,7 +1268,8 @@ projectPointsOnPlane (const vector<Point3f> &points, const vector<float> &planeP
 	int numberOfPointsInThisPlane = points.size();
 	// Create a matrix out of the vector of points: Dimension: numberOfPoints*3
 	Mat pointsMatrixTemp(numberOfPointsInThisPlane, 3, CV_32F);
-	for (unsigned int j = 0; j < numberOfPointsInThisPlane; ++j) {
+	for (unsigned int j = 0; j < numberOfPointsInThisPlane; ++j)
+	{
 		pointsMatrixTemp.at<float>(j, 0) = points[j].x;
 		pointsMatrixTemp.at<float>(j, 1) = points[j].y;
 		pointsMatrixTemp.at<float>(j, 2) = points[j].z;

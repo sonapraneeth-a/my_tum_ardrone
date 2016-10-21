@@ -606,6 +606,8 @@ class ControlUINode
 		vector<float> this_plane_parameters;
 		/* Continuous bounding box points for a single plane (to be used anywhere) */
 		vector<Point3f> this_continuous_bounding_box_points;
+		/* */
+		vector<Point3f> this_sorted_3d_points;
 
 		/* Plane parameters for all planes visited till now */
 		vector< vector<float> > visited_plane_parameters;
@@ -1068,13 +1070,19 @@ class ControlUINode
 																	const vector<float> &percPlane,
 																	int currPlaneIndex,
 																	vector<float> &out_plane_parameters,
-																	vector<Point3f> &out_cbb);
+																	vector<Point3f> &out_cbb,
+																	vector<Point3f> &out_3d_points);
 
 		void
 		adjustYawToCurrentPlane();
 
 		void
 		move(double distance, int i);
+
+		void
+		moveInDirection(const vector<float> &dir, 
+										const vector<double> &position,
+										const vector<Point3f> &points);
 
 };
 
