@@ -542,6 +542,7 @@ class ControlUINode
 		int _plane_d_num = 0;
 		float _step_distance;
 		float _fixed_distance;
+		bool _fixed_height_set;
 		float _fixed_height;
 		double _move_heuristic;
 		double _angle_heuristic;

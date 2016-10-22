@@ -130,6 +130,7 @@ ControlUINode::ControlUINode()
 	_step_distance = 0.5;
 	_fixed_distance = _node_max_distance;
 	_fixed_height = 0.7;
+	_fixed_height_set = false;
 	_is_adjusted = false;
 	_move_heuristic = 0.5;
 	_angle_heuristic = 4.0;
@@ -3214,7 +3215,10 @@ ControlUINode::adjustTopBottomEdges()
 	cout << "[ INFO] [adjustTopBottomEdges] Started\n";
 	float step_distance;
 	float point_distance, height;
+	print1dVector(this_plane_parameters, "[ DEBUG] [adjustTopBottomEdges] Sig PP");
+	print1dVector(this_continuous_bounding_box_points, "[ DEBUG] [adjustTopBottomEdges] Sig CBB");
 	getCurrentPositionOfDrone();
+	print1dVector(_node_current_pos_of_drone, "[ DEBUG] [adjustTopBottomEdges] Current position of drone");
 	point_distance = getPointToPlaneDistance(this_plane_parameters, _node_current_pos_of_drone);
 	cout << "[ DEBUG] [adjustTopBottomEdges] Distance from the plane: " << point_distance << "\n";
 	step_distance = fabs(_node_max_distance - point_distance);
@@ -3230,15 +3234,22 @@ ControlUINode::adjustTopBottomEdges()
 		cout << "[ DEBUG] [adjustTopBottomEdges] Moving forwards\n";
 		designPathForDroneRelative(step_distance, MOVE_DIRECTIONS::FORWARD);
 	}
-	print1dVector(_node_current_pos_of_drone, "[ DEBUG] [adjustTopBottomEdges] Current position of drone");
-	print1dVector(_node_dest_pos_of_drone, "[ DEBUG] [adjustTopBottomEdges] Dest position of drone");
-	print1dVector(_node_ac_dest_pos_of_drone, "[ DEBUG] [adjustTopBottomEdges] Actual Dest position of drone");
-	print1dVector(this_continuous_bounding_box_points, "[ DEBUG] [adjustTopBottomEdges] Sig CBB");
 	getCurrentPositionOfDrone();
-	height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
-	cout << "[ DEBUG] [adjustTopBottomEdges] Height: " << height << "\n";
-	move = (_node_current_pos_of_drone[2] >= height) ? -1: 1;
-	step_distance = fabs(_node_current_pos_of_drone[2] - height);
+	print1dVector(_node_current_pos_of_drone, "[ DEBUG] [adjustTopBottomEdges] Current position of drone");
+	if(!_fixed_height_set)
+	{
+		cout << "[ DEBUG] [adjustTopBottomEdges] Fixed height not set\n";
+		height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
+		cout << "[ DEBUG] [adjustTopBottomEdges] Height: " << height << "\n";
+		move = (_node_current_pos_of_drone[2] >= height) ? -1: 1;
+		step_distance = fabs(_node_current_pos_of_drone[2] - height);
+	}
+	else
+	{
+		cout << "[ DEBUG] [adjustTopBottomEdges] Fixed height set. Fixed Height: " << _fixed_height << "\n";
+		move = (_node_current_pos_of_drone[2] >= _fixed_height) ? -1: 1;
+		step_distance = fabs(_node_current_pos_of_drone[2] - _fixed_height);
+	}
 	if(move == -1)
 	{
 		cout << "[ DEBUG] [adjustTopBottomEdges] Moving down\n";
@@ -3612,6 +3623,7 @@ ControlUINode::captureTheCurrentPlane()
 		getCurrentPositionOfDrone();
 		float height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
 		_fixed_height = height;
+		_fixed_height_set = true;
 		move = (_node_current_pos_of_drone[2] >= height) ? -1: 1;
 		step_distance = fabs(_node_current_pos_of_drone[2] - height);
 		if(move == -1)
