@@ -581,11 +581,11 @@ getCurrentPlaneIndex(const vector< vector<float> > &plane_parameters,
 					bool var1 = (fabs(a_1-b_1) < 0.15);
 					bool var2 = (fabs(a_2-b_2) < 0.15);
 					bool var3 = (fabs(a_3-b_3) < 0.15);
-					bool var4 = (fabs(a_4-b_4) < 0.8);
+					bool var4 = (fabs(a_4-b_4) < 1.5);
 					float mag = ( pow((a_1-b_1),2) + pow((a_2-b_2),2) + pow((a_3-b_3),2) );
 					bool var5 = (mag <= 0.25);
 					cout << "[ DEBUG] [getCurrentPlaneIndex] Magnitude: " << mag << ", D_Diff: " << fabs(a_4-b_4) << "\n";
-					cout << "[ DEBUG] [getCurrentPlaneIndex] Var1: " << var1 << ", Var2: " << var2 << ", Var3: " << var3 << ", Var4: " << var4 << "\n";
+					cout << "[ DEBUG] [getCurrentPlaneIndex] Var1: " << var1 << ", Var2: " << var2 << ", Var3: " << var3 << ", Var4: " << var4 << ", Var5: " << var5 << "\n";
 					/*if(var1 & var2 & var3 & var4)
 					{
 						found = true; break;

@@ -2636,6 +2636,16 @@ ControlUINode::checkVisibility(const vector<float> &plane_parameters,
 		{
 			move = 1;
 		}
+		/*if( (right_edge.start.x >= 240.0 && right_edge.start.x <= 580.0) ||
+			(right_edge.end.x >= 240.0 && right_edge.end.x <= 580.0) )
+		{
+			move = 0;
+		}
+		else if( (right_edge.start.x >= 580.0 && right_edge.start.x <= 640.0) ||
+				(right_edge.end.x >= 580.0 && right_edge.end.x <= 640.0) )
+		{
+			move = 1;
+		}*/
 		else
 		{
 			move = -1;
@@ -3567,7 +3577,7 @@ ControlUINode::captureTheCurrentPlane()
 	image_gui->setNumberOfPoints(0, 0);
 	// RendeRect: false, RenderPoly: false, RenderSignificantPlane: false
 	cout << "[ DEBUG] [captureTheCurrentPlane] Stopped rendering of frame\n";
-	image_gui->setRender(false, false, false, false);
+	image_gui->setRender(false, false, true, true);
 	image_gui->getPointsClicked(points_clicked);
 	cout << "[ INFO] [captureTheCurrentPlane] Extracting Bounding Poly\n";
 	image_gui->extractBoundingPoly();
@@ -3722,12 +3732,19 @@ ControlUINode::adjustForNextCapture()
 		getCurrentPositionOfDrone();
 		/*cout << "[ INFO] [adjustForNextCapture] Moving by width of plane by 4\n";
 		moveRight(width_of_3d_plane/(double)4.0);*/
-		cout << "[ INFO] [adjustForNextCapture] Changing the yaw clockwise by " << (3*fabs(_next_plane_angle)/4.0) << "\n";
-		rotateClockwise(3*fabs(_next_plane_angle)/4.0);
-		cout << "[ INFO] [adjustForNextCapture] Moving backwards by 0.5\n";
-		moveBackward(0.5);
-		cout << "[ INFO] [adjustForNextCapture] Moving forwards by 0.5\n";
-		moveForward(0.5);
+		if(_node_completed_number_of_planes != _node_number_of_planes-1)
+		{
+			cout << "[ INFO] [adjustForNextCapture] Changing the yaw clockwise by " << (3*fabs(_next_plane_angle)/4.0) << "\n";
+			rotateClockwise(3*fabs(_next_plane_angle)/4.0);
+			cout << "[ INFO] [adjustForNextCapture] Moving backwards by 0.5\n";
+			moveBackward(0.5);
+			cout << "[ INFO] [adjustForNextCapture] Moving forwards by 0.5\n";
+			moveForward(0.5);
+		}
+		else
+		{
+			cout << "[ DEBUG] [adjustForNextCapture] Last plane to cover\n";
+		}
 		cout << "[ INFO] [adjustForNextCapture] Estimating multiple planes -> call to JLinkage\n";
 		doJLinkage();
 		// Adding the currently seeing plane to find out if a new plane another than the
@@ -3799,9 +3816,15 @@ ControlUINode::adjustForNextCapture()
 			// _is_plane_covered = false;
 			cout << "[ INFO] [adjustForNextCapture] Restoring the yaw back and moving right by width_of_plane by 2\n";
 			_is_big_plane = true;
-			getCurrentPositionOfDrone();
-			cout << "[ DEBUG] [adjustForNextCapture] Restoring the yaw. Rotating CounterClockwise by " << 3*fabs(_next_plane_angle)/4.0 << "\n";
-			rotateCounterClockwise(3*fabs(_next_plane_angle)/4.0);
+			if(_node_completed_number_of_planes != _node_number_of_planes-1)
+			{
+				cout << "[ DEBUG] [adjustForNextCapture] Restoring the yaw. Rotating CounterClockwise by " << 3*fabs(_next_plane_angle)/4.0 << "\n";
+				rotateCounterClockwise(3*fabs(_next_plane_angle)/4.0);
+			}
+			else
+			{
+				cout << "[ DEBUG] [adjustForNextCapture] Last plane to cover. Moving right\n";
+			}
 			cout << "[ DEBUG] [adjustForNextCapture] Moving right by " << width_of_3d_plane/(double)2.0 << "\n";
 			moveRight(width_of_3d_plane/(double)2.0);
 		}
@@ -4139,6 +4162,8 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 		}
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Aligning quadcopter to the new plane\n";
 		alignQuadcopterToCurrentPlane();
+		doJLinkage();
+		adjustLeftEdge();
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Aligned quadcopter to the new plane\n";
 	}
 	else if(_next_plane_dir == CLOCKWISE)
@@ -4199,6 +4224,7 @@ ControlUINode::alignQuadcopterToNextPlaneAdvanced()
 		moveForward(0.4);
 		cout << "[ DEBUG] [alignQuadcopterToNextPlaneAdvanced] Aligning the quadcoper to the new plane\n";
 		alignQuadcopterToCurrentPlane();
+		adjustLeftEdge();
 	}
 	_stage_of_plane_observation = true;
 	_node_main_directions.pop_front();
