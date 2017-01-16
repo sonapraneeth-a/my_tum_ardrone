@@ -50,6 +50,8 @@
 using namespace std;
 using namespace cv;
 
+
+
 pthread_mutex_t ControlUINode::keyPoint_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::pose_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::tum_ardrone_CS = PTHREAD_MUTEX_INITIALIZER;

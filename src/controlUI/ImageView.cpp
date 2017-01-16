@@ -17,7 +17,6 @@
  * 23-Sep-2016	Sona Praneeth Akula			* Added code for testing path planning
  *****************************************************************************************/
 
-
 #include "ros/ros.h"
 #include "ImageView.h"
 #include <cvd/gl_helpers.h>
@@ -31,7 +30,8 @@
 #include "std_msgs/String.h"
 #include "../HelperFunctions.h"
 #include "ControlUINode.h"
-#include "helperFunctions.h"
+#include "Helper.h"
+#include "VisionHelper.h"
 
 /*typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Polyhedron_3<K> Polyhedron_3;

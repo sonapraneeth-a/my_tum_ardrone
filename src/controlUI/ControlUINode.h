@@ -21,7 +21,8 @@
 #include "tum_ardrone/keypoint_coord.h"
 #include "tum_ardrone/filter_state.h"
 #include "std_msgs/String.h"
-#include "helperFunctions.h"
+#include "Helper.h"
+#include "VisionHelper.h"
 #include <list>
 #include <opencv2/core/core.hpp>
 
@@ -38,6 +39,7 @@
 
 using namespace std;
 using namespace cv;
+
 
 class ImageView;
 

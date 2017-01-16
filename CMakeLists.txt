@@ -289,7 +289,9 @@ set(CONTROLUI_HEADER_FILES
     src/controlUI/GLWindow2.h
     src/controlUI/GLWindowMenu.h
     src/controlUI/ImageView.h
-    src/controlUI/helperFunctions.h
+    src/controlUI/Helper.h
+    src/controlUI/VisionHelper.h
+    src/controlUI/Headers.h
     ${MULTIPLEPLANEJLINKAGE_HEADER_FILES}
     ${TOPVIEW_HEADER_FILES})
 

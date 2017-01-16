@@ -30,8 +30,8 @@
 #include "std_msgs/String.h"
 #include <vector>
 #include <opencv2/core/core.hpp>
-#include "helperFunctions.h"
-
+#include "Helper.h"
+#include "VisionHelper.h"
 
 #include "Line2.hpp"
 #include "AllHeaders.hpp"
