@@ -772,7 +772,7 @@ ImageView::on_key_down(int key)
 	// Key n - Uses the points written from a file (obtained from key c)
 	else if(key == 'n')
 	{
-		string inputDirectory = "/home/vrlab/";
+		string inputDirectory = "/home/sonapraneeth/";
 		string filename = inputDirectory + "Plane_Info.txt";
 		vector< vector<float> > sortedPlaneParameters;
 		vector< vector<Point3f> > boundingBoxPoints;
