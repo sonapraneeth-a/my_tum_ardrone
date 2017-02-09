@@ -18,24 +18,18 @@
 #ifndef _IMAGEVIEW_H
 #define _IMAGEVIEW_H
 
-#include "ros/ros.h"
 #include "GLWindow2.h"
 #include "sensor_msgs/Image.h"
-#include "cvd/thread.h"
-#include "cvd/image.h"
-#include "cvd/byte.h"
-#include "cvd/rgb.h"
 #include "MouseKeyHandler.h"
 #include "boost/thread.hpp"
 #include "std_msgs/String.h"
-#include <vector>
-#include <opencv2/core/core.hpp>
+
 #include "Helper.h"
 #include "VisionHelper.h"
 
 #include "Line2.hpp"
 #include "AllHeaders.hpp"
-#include <map>
+
 #include "TopView.hpp"
 #include "DebugUtility.hpp"
 #include "LogUtility.hpp"

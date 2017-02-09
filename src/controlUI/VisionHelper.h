@@ -16,21 +16,7 @@
 #ifndef _VISION_HELPER_H
 #define _VISION_HELPER_H
 
-#include <cmath>
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include <vector>
-
-#include "Line2.hpp"
-#include "Multiple-Plane-JLinkage/utilities.hpp"
-
-
-using namespace std;
-using namespace cv;
-
+#include "Headers.h"
 /**
  * @brief @todo Why R-z is being returned which is identity
  * @details

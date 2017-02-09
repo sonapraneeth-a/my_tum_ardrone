@@ -19,20 +19,8 @@
 #ifndef _HELPER_FUNCTIONS_H
 #define _HELPER_FUNCTIONS_H
 
-#include <cmath>
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "Headers.h"
 
-#include <vector>
-
-#include "Line2.hpp"
-#include "Multiple-Plane-JLinkage/utilities.hpp"
-
-
-using namespace std;
-using namespace cv;
 
 /**
  * @brief Get the sign of the number

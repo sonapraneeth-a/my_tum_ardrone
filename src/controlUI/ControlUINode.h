@@ -17,28 +17,15 @@
 #ifndef _CONTROLUINODE_H
 #define _CONTROLUINODE_H
 
-#include "ros/ros.h"
-#include "tum_ardrone/keypoint_coord.h"
-#include "tum_ardrone/filter_state.h"
 #include "std_msgs/String.h"
 #include "Helper.h"
 #include "VisionHelper.h"
-#include <list>
-#include <opencv2/core/core.hpp>
 
 #include "Line2.hpp"
 #include "AllHeaders.hpp"
 #include "TopView.hpp"
 #include "DebugUtility.hpp"
 #include "LogUtility.hpp"
-
-#include <vector>
-#include <string>
-#include <ctime>
-#include <chrono>
-
-using namespace std;
-using namespace cv;
 
 
 class ImageView;

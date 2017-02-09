@@ -16,19 +16,10 @@
  *****************************************************************************************/
 
 #include "ControlUINode.h"
-#include "ros/ros.h"
-#include "tum_ardrone/keypoint_coord.h"
-#include "tum_ardrone/filter_state.h"
 #include "ransacPlaneFit.h"
 #include "ImageView.h"
 #include "allHeaders.hpp"
 
-
-// OpenCV related stuff
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/highgui/highgui.hpp"
 
 #include "ardrone_autonomy/RecordEnable.h"
 #include "Multiple-Plane-JLinkage/conversion.hpp"
@@ -38,19 +29,6 @@
 
 #include "std_msgs/String.h"
 #include "std_msgs/Empty.h"
-
-#include <string>
-#include <fstream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <sstream>
-#include <list>
-
-
-using namespace std;
-using namespace cv;
-
-
 
 pthread_mutex_t ControlUINode::keyPoint_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::pose_CS = PTHREAD_MUTEX_INITIALIZER;
