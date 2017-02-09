@@ -438,14 +438,14 @@ class ControlUINode
 {
 	private:
 
-		ros::Subscriber keypoint_coord_sub;
-		ros::Subscriber pose_sub;
+		ros::Subscriber keypoint_coord_sub;     // Key point co-ordinates subscriber
+		ros::Subscriber pose_sub;               // Pose information (x, y, z, roll pitch, yaw) subscriber
 		ros::Time lastKeyStamp;
 		ros::Subscriber tum_ardrone_sub;
 		ros::Publisher tum_ardrone_pub;
-		ros::Publisher land_pub;
+		ros::Publisher land_pub;                // Publish land command
 		std::string land_channel;
-		ros::NodeHandle nh_;
+		ros::NodeHandle nh_;                    // Node handler for controlUINode
 
 		ros::ServiceClient video;
 
@@ -455,18 +455,18 @@ class ControlUINode
 		ros::Time last;
 
 		// Key point information
-		std::vector<std::vector<float> > _3d_points;
-		std::vector<std::vector<float> > _2d_points;
-		std::vector<int> _levels;
+		std::vector<std::vector<float> > _3d_points;    // 3d world key point information
+		std::vector<std::vector<float> > _2d_points;    // 2d image co-ordinates infoprmation
+		std::vector<int> _levels;                       // Level (resolution) at which feature points were captured
 		bool calibrated;
-		cv::Mat cameraMatrix;
+		cv::Mat cameraMatrix;                           // Camera matrix of the quadcopter
 		cv::Mat distCoeffs;
-		std::vector<cv::Mat> rvecs, tvecs;
+		std::vector<cv::Mat> rvecs, tvecs;              // Rotation and translation vectors
 
 		int numPoints;
 
-		float scale; // PTAM X-Y scale
-		float scale_z; // PTAM Z scale
+		float scale;                        // PTAM X-Y scale
+		float scale_z;                      // PTAM Z scale
 		float x_offset, y_offset, z_offset; // PTAM offsets
 
 		// Drone state variables
@@ -482,9 +482,10 @@ class ControlUINode
 		int numberOfPlanes;
 		int planeIndex;
 
-		std::string keypoint_channel; // channel on which keypoint info is received
-		std::string command_channel; // channel on which commands can be posted or received
-		std::string pose_channel; // channel on which pose info is received
+		std::string keypoint_channel;   // channel on which keypoint info is received
+		std::string command_channel;    // channel on which commands can be posted or received
+		std::string pose_channel;       // channel on which pose info is received
+        std::string navdata_channel;    // channel on which ardrone navdata is received
 
 		bool ransacVerbose; // Whether we need the ransac verbose output or not
 		bool useScaleFactor; // Using scale factors. MUST BE SET TO TRUE
@@ -551,8 +552,8 @@ class ControlUINode
 		int changeyawLockReleased;
 		bool traverseComplete;
 		bool linearTraversal;
-		unsigned int just_navigation_command_number;
-		unsigned int just_navigation_total_commands;
+		int just_navigation_command_number;
+		int just_navigation_total_commands;
 		std::list<std_msgs::String> just_navigation_commands;
 
 
@@ -707,8 +708,8 @@ class ControlUINode
 		 */
 		void
 		fitMultiplePlanes3d (vector<int> &ccPoints, vector< vector<int> > &pointsClicked,
-															vector< vector<float> > &planeParameters,
-															vector< vector<Point3f> > &continuousBoundingBoxPoints);
+                            vector< vector<float> > &planeParameters,
+                            vector< vector<Point3f> > &continuousBoundingBoxPoints);
 
 		// Move Quadopter to required position
 		/**
@@ -730,7 +731,7 @@ class ControlUINode
 		 */
 		void
 		getInitialPath(const vector<double> &prevPosition, const vector<double> &tPoint,
-												double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw);
+                       double prevYaw, double desiredYaw, vector<vector<double> > &xyz_yaw);
 
 		//Find target points for plane not parallel to XZ plane
 		/**
@@ -741,7 +742,7 @@ class ControlUINode
 		 */
 		void
 		getPTargetPoints(const pGrid &g, const vector<float> & plane,
-													const vector<Point3f> &uvAxes, vector<vector<double> > &tPoints );
+                         const vector<Point3f> &uvAxes, vector<vector<double> > &tPoints );
 
 		//sort target points according to Z
 		/**
@@ -751,7 +752,9 @@ class ControlUINode
 		 * @return
 		 */
 		void
-		sortTargetPoints(int numRows, const vector<int> &numColsPerRow, const vector< vector<double> > &tPoints, vector< vector<double> > &sortedTPoints);
+		sortTargetPoints(int numRows, const vector<int> &numColsPerRow,
+                         const vector< vector<double> > &tPoints,
+                         vector< vector<double> > &sortedTPoints);
 
 		//Get UV Grid corners
 		/**
@@ -928,13 +931,9 @@ class ControlUINode
 		// Records the video for a fixed amount of time
 		// bool recordVideo ();
 
-
-		/*** NEWER FUNCTIONS ***/
 		// Records the video for a fixed amount of time
 		// bool recordVideo ();
 
-
-		/*** PRANEETH's CODE ***/
 		void
 		newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr);
 
@@ -1002,9 +1001,6 @@ class ControlUINode
 		alignQuadcopterToNextPlane();
 
 		void
-		alignQuadcopterToNextPlaneAdvanced();
-
-		void
 		adjustTopBottomEdges();
 
 		void
@@ -1050,18 +1046,18 @@ class ControlUINode
 
 		void
 		checkPlaneParametersSign(const vector<double> &position, 
-															const vector<Point3f> &points,
-															vector<float> &plane_parameters);
+                                const vector<Point3f> &points,
+                                vector<float> &plane_parameters);
 
 		void
 		getCompleteCurrentPlaneInfo(const vector< vector<float> > &plane_parameters,
-																	const vector< vector<Point3f> > &cbb,
-																	const vector< vector<Point3f> > &points,
-																	const vector<float> &percPlane,
-																	int currPlaneIndex,
-																	vector<float> &out_plane_parameters,
-																	vector<Point3f> &out_cbb,
-																	vector<Point3f> &out_3d_points);
+                                    const vector< vector<Point3f> > &cbb,
+                                    const vector< vector<Point3f> > &points,
+                                    const vector<float> &percPlane,
+                                    int currPlaneIndex,
+                                    vector<float> &out_plane_parameters,
+                                    vector<Point3f> &out_cbb,
+                                    vector<Point3f> &out_3d_points);
 
 		void
 		adjustYawToCurrentPlane();
@@ -1071,8 +1067,8 @@ class ControlUINode
 
 		void
 		moveInDirection(const vector<float> &dir, 
-										const vector<double> &position,
-										const vector<Point3f> &points);
+                        const vector<double> &position,
+                        const vector<Point3f> &points);
 
 };
 
