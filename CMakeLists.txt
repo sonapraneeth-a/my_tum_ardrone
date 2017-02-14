@@ -259,17 +259,23 @@ set(MULTIPLEPLANEJLINKAGE_HEADER_FILES
     src/controlUI/Multiple-Plane-JLinkage/readingData.hpp
 	${JLINKAGE_HEADER_FILES})
 
+set(DEBUG_LOG_HDR_FILES
+    src/controlUI/DebugUtility/DebugUtility.hpp
+    src/controlUI/LogUtility/LogUtility.hpp)
+
+set(DEBUG_LOG_SRC_FILES
+    src/controlUI/DebugUtility/DebugUtility.cpp
+    src/controlUI/LogUtility/LogUtility.cpp)
+
 set(TOPVIEW_SOURCE_FILES
     src/controlUI/TopView-GUI/Line/Line2.cpp
-    src/controlUI/TopView-GUI/DebugUtility/DebugUtility.cpp
-    src/controlUI/TopView-GUI/LogUtility/LogUtility.cpp
+    ${DEBUG_LOG_SRC_FILES}
     src/controlUI/TopView-GUI/TopView/TopView.cpp)
 
 set(TOPVIEW_HEADER_FILES
     src/controlUI/TopView-GUI/AllHeaders.hpp
     src/controlUI/TopView-GUI/Line/Line2.hpp
-    src/controlUI/TopView-GUI/DebugUtility/DebugUtility.hpp
-    src/controlUI/TopView-GUI/LogUtility/LogUtility.hpp
+    ${DEBUG_LOG_HDR_FILES}
     src/controlUI/TopView-GUI/TopView/TopView.hpp)
 
 set(CONTROLUI_SOURCE_FILES
