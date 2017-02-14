@@ -548,15 +548,8 @@ class ControlUINode
 
 
         // Only for navigating the quadcopter
-        bool justNavigation;
-        int changeyawLockReleased;
-        bool traverseComplete;
         bool printDebugInfo;
         bool logInfo;
-        bool linearTraversal;
-        int just_navigation_command_number;
-        int just_navigation_total_commands;
-        std::list<std_msgs::String> just_navigation_commands;
 
 
         // distance between two 2d points
