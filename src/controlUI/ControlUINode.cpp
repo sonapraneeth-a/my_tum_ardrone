@@ -31,6 +31,9 @@
 #include "std_msgs/String.h"
 #include "std_msgs/Empty.h"
 
+#include "DebugUtility.hpp"
+#include "LogUtility.hpp"
+
 pthread_mutex_t ControlUINode::keyPoint_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::pose_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::tum_ardrone_CS = PTHREAD_MUTEX_INITIALIZER;
@@ -42,7 +45,7 @@ pthread_mutex_t ControlUINode::command_CS = PTHREAD_MUTEX_INITIALIZER;
  */
 ControlUINode::ControlUINode()
 {
-    printf("[ DEBUG] ControlUINode Constructor\n");
+    DEBUG_PRINT(1, "ControlUINode Constructor\n");
     /* Channels */
     // Command channel for sending/receiving commands (goto)
     command_channel = nh_.resolveName("tum_ardrone/com");
@@ -60,7 +63,7 @@ ControlUINode::ControlUINode()
     // Subscribing for key point channel
     keypoint_coord_sub = nh_.subscribe(keypoint_channel, 10, &ControlUINode::keyPointDataCb, this);
     // Subscribing for pose channel
-    pose_sub = nh_.subscribe(pose_channel, 10, &ControlUINode::newPoseCb, this);
+    // pose_sub = nh_.subscribe(pose_channel, 10, &ControlUINode::poseCb, this);
     // Channel for controlling landing commands
     land_pub = nh_.advertise<std_msgs::Empty>(land_channel, 1);
 
@@ -123,6 +126,11 @@ ControlUINode::ControlUINode()
     _angle_heuristic = 4.0;
     _sig_plane_index = 0;
     _actual_plane_index = 0;
+    // Subscribing for pose channel
+    setDebug(2);
+    DEBUG_PRINT(1, "[ ControlUINode] Subscribing to newPoseCb\n");
+    new_pose_sub = nh_.subscribe(pose_channel, 10, &ControlUINode::newPoseCb, this);
+    DEBUG_PRINT(1, "[ ControlUINode] Subscribed to newPoseCb\n");
 
 }
 
@@ -259,39 +267,33 @@ ControlUINode::poseCb (const tum_ardrone::filter_stateConstPtr statePtr)
 void
 ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
 {
-    printf("[ DEBUG] newPoseCb\n");
-    // Apply a pose_CS lock to gather updated position of the quadcopter
     pthread_mutex_lock(&pose_CS);
-    // Get the scale and pose information from tum_ardrone
+
     scale = statePtr->scale;
     scale_z = statePtr->scale_z;
     x_offset = statePtr->x_offset;
     y_offset = statePtr->y_offset;
     z_offset = statePtr->z_offset;
+
     x_drone = statePtr->x;
     y_drone = statePtr->y;
     z_drone = statePtr->z;
     yaw = statePtr->yaw;
-    roll = statePtr->roll;
-    pitch = statePtr->pitch;
-    // Unlock the pose_CS lock
+
     pthread_mutex_unlock(&pose_CS);
 
-    // Apply command_CS lock to execute commands atomically
     // Goto commands left to be executed
-    pthread_mutex_lock(&command_CS);
-    static int numCommands = 0;
-
     if(commands.size() > 0 && !currentCommand) {
         currentCommand = true;
         pthread_mutex_lock(&tum_ardrone_CS);
         tum_ardrone_pub.publish(commands.front());
         pthread_mutex_unlock(&tum_ardrone_CS);
         targetPoint = targetPoints.front();
-        printf("[ DEBUG] Command started\n");
         printf(" Current target: %lf %lf %lf\n", targetPoint[0], targetPoint[1] , targetPoint[2] );
     }
     else if(currentCommand && !recordNow) {
+        static int numCommands = 0;
+        numCommands++;
         double x = targetPoint[0];
         double y = targetPoint[1];
         double z = targetPoint[2];
@@ -301,16 +303,15 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
         //printf("Error %lf\n", ea);
         pthread_mutex_unlock(&pose_CS);
         if(ea < error_threshold) {
-            printf("[ DEBUG] Target Reached");
-            pthread_mutex_lock(&pose_CS);
+            DEBUG_PRINT(1, "Target Reached\n");
             getCurrentPositionOfDrone();
-            pthread_mutex_unlock(&pose_CS);
-            currentCommand = false;
+            print1dVector(_node_current_pos_of_drone, "Current position of drone");
+            currentCommand = false; 
             commands.pop_front();
             targetPoints.pop_front();
             ros::Duration(3).sleep();
-            pthread_mutex_unlock(&command_CS);
-            return ;
+            last = ros::Time::now();
+            return;
         }
         else {
             recordNow = false;
@@ -323,9 +324,10 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
                 srv.request.enable = true;
                 video.call(srv);
                 notRecording = false;
+                popen("rosbag record /ardrone/image_raw /ardrone/predictedPose --duration=5", "r");
             }
             else if(!notRecording) {
-
+                
             }
         }
         else {
@@ -1868,12 +1870,12 @@ void
 ControlUINode::getCurrentPositionOfDrone()
 {
     _node_current_pos_of_drone.clear();
-    //pthread_mutex_lock(&pose_CS);
+    pthread_mutex_lock(&pose_CS);
         _node_current_pos_of_drone.push_back((double)x_drone);
         _node_current_pos_of_drone.push_back((double)y_drone);
         _node_current_pos_of_drone.push_back((double)z_drone);
         _node_current_pos_of_drone.push_back((double)yaw);
-    //pthread_mutex_unlock(&pose_CS);
+    pthread_mutex_unlock(&pose_CS);
 }
 
 /**
@@ -1885,12 +1887,12 @@ void
 ControlUINode::getCurrentPositionOfDrone(vector<double> &current_drone_pos)
 {
     current_drone_pos.clear();
-    //pthread_mutex_lock(&pose_CS);
+    pthread_mutex_lock(&pose_CS);
         current_drone_pos.push_back((double)x_drone);
         current_drone_pos.push_back((double)y_drone);
         current_drone_pos.push_back((double)z_drone);
         current_drone_pos.push_back((double)yaw);
-    //pthread_mutex_unlock(&pose_CS);
+    pthread_mutex_unlock(&pose_CS);
 }
 
 /**
@@ -2021,11 +2023,11 @@ ControlUINode::moveDroneViaSetOfPoints(const vector< vector<double> > &dest_poin
     char buf[100];
     commands.clear();
     targetPoints.clear();
-    unsigned int total_commands = dest_points.size();
-    cout << "[ DEBUG] [moveDroneViaSetOfPoints] Total Commands: " << total_commands << "\n";
+    cout << "[ DEBUG] [moveDroneViaSetOfPoints] Total Commands: " << dest_points.size() << "\n";
     print2dVector(dest_points, "[ DEBUG] [moveDroneViaSetOfPoints] Moving points");
     for (unsigned int i = 0; i < dest_points.size(); ++i)
     {
+        cout << "[ DEBUG] [moveDroneViaSetOfPoints] Commands to execute: " << commands.size() << "\n";
         snprintf(buf, 100, "c goto %lf %lf %lf %lf",
             dest_points[i][0], dest_points[i][1], dest_points[i][2], dest_points[i][3]);
         visited_motion_points.push_back(dest_points[i]);
@@ -2035,7 +2037,6 @@ ControlUINode::moveDroneViaSetOfPoints(const vector< vector<double> > &dest_poin
         targetPoints.push_back(dest_points[i]);
     }
     getCurrentPositionOfDrone();
-    print1dVector(_node_current_pos_of_drone, "[ DEBUG] [moveDroneViaSetOfPoints] Current position of drone after movement");
 }
 
 void

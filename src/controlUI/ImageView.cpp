@@ -42,7 +42,7 @@ int plane_num_test = 0;
 
 ImageView::ImageView(ControlUINode *cnode)
 {
-    printf("[ DEBUG] ImageView Constructor\n");
+    DEBUG_PRINT(1, "[ ImageView] ImageView Constructor\n");
     frameWidth = frameHeight = 0;
 
     video_channel = nh_.resolveName("ardrone/front/image_raw"); // Change this for undistorted image
@@ -159,9 +159,9 @@ ImageView::run()
     ResetInternal();
 
     // Create window
-    myGLWindow = new GLWindow2(CVD::ImageRef(frameWidth, frameHeight), "DRONE CAMERA FEED", this);
-    myGLWindow->set_title("DRONE CAMERA FEED");
-    printf("[ DEBUG] new window created\n");
+    myGLWindow = new GLWindow2(CVD::ImageRef(frameWidth, frameHeight), "Drone Camera Feed", this);
+    myGLWindow->set_title("Drone Camera Feed");
+    DEBUG_PRINT(1, "[ ImageView] New Drone Camera Feed window created\n");
 
     changeSizeNextRender = true;
     if (frameWidth < 640)
