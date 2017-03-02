@@ -40,6 +40,7 @@ pthread_mutex_t ControlUINode::pose_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::tum_ardrone_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::command_CS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ControlUINode::navdata_CS = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t ControlUINode::motion_CS = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * @brief Constructor for ControlUINode (ROS Node for the project)
@@ -141,6 +142,7 @@ ControlUINode::ControlUINode()
     _angle_heuristic = 4.0;
     _sig_plane_index = 0;
     _actual_plane_index = 0;
+    _is_drone_moving = false;
     // Subscribing for pose channel
     LOG_PRINT(3, "[ ControlUINode] Subscribing to newPoseCb\n");
     new_pose_sub = nh_.subscribe(pose_channel, 10, &ControlUINode::newPoseCb, this);
@@ -331,6 +333,7 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
         LOG_MSG << "Current target: " << targetPoint[0] << ", " << targetPoint[1] << ", " << targetPoint[2] 
                 << ", " << targetPoint[3] << "\n";
         PRINT_LOG_MESSAGE(1);
+        _is_drone_moving = true;
     }
     // Current command but not recording
     else if(currentCommand && !recordNow)
@@ -364,6 +367,11 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
             targetPoints.pop_front();
             ros::Duration(1).sleep();
             last = ros::Time::now();
+            if(targetPoints.size() == 0)
+            {
+                _is_drone_moving = false;
+                pthread_mutex_unlock(&motion_CS);
+            }
             return;
         }
         else
@@ -3106,14 +3114,18 @@ ControlUINode::adjustLeftEdge()
         if(move == -1)
         {
             cout << "[ DEBUG] [adjustLeftEdge] Moving left\n";
+            pthread_mutex_lock(&motion_CS);
             designPathForDroneRelative(_move_heuristic, MOVE_DIRECTIONS::LEFT);
         }
         else if(move == 1)
         {
             cout << "[ DEBUG] [adjustLeftEdge] Moving right\n";
+            pthread_mutex_lock(&motion_CS);
             designPathForDroneRelative(_move_heuristic, MOVE_DIRECTIONS::RIGHT);
         }
+        pthread_mutex_lock(&motion_CS);
         doJLinkage();
+        pthread_mutex_unlock(&motion_CS);
         move = checkVisibility(this_plane_parameters, this_continuous_bounding_box_points, 1);
         cout << "[ DEBUG] [adjustLeftEdge] Move: " << move << "\n";
         if(move==0) {planeLeftVisible = true;}

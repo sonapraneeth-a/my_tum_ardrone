@@ -541,6 +541,7 @@ class ControlUINode
         float _fixed_height;
         double _move_heuristic;
         double _angle_heuristic;
+        bool _is_drone_moving = false;
 
         RotateDirection _next_plane_dir;
         double _next_plane_angle;
@@ -577,6 +578,7 @@ class ControlUINode
         static pthread_mutex_t pose_CS;
         static pthread_mutex_t command_CS;
         static pthread_mutex_t navdata_CS;
+        static pthread_mutex_t motion_CS;
 
 
 
