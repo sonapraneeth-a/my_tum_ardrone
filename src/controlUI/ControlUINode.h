@@ -11,7 +11,7 @@
  *      Description:
  *
  * Date             Author                          Modification
- * 12-Sep-2016  Sona Praneeth Akula Added       Added comments to the code
+ * 12-Sep-2016  Sona Praneeth Akula Added       * Added comments to the code
  *****************************************************************************************/
 
 #ifndef _CONTROLUINODE_H
@@ -24,12 +24,14 @@
 #include "Line2.hpp"
 #include "AllHeaders.hpp"
 #include "TopView.hpp"
-#include "DebugUtility.hpp"
-#include "LogUtility.hpp"
+#include "Headers.h"
+#include "ardrone_autonomy/RecordEnable.h"
+#include "ardrone_autonomy/Navdata.h"
 
 
 class ImageView;
 
+// Enum Constants for specifying moving directions - 8 possible direction
 enum MOVE_DIRECTIONS {LEFT, RIGHT, FORWARD, BACKWARD, UP, DOWN, CLOCK, COUNTERCLOCK};
 
 /**
@@ -440,6 +442,7 @@ class ControlUINode
 
         ros::Subscriber keypoint_coord_sub;     // Key point co-ordinates subscriber
         ros::Subscriber pose_sub;               // Pose information (x, y, z, roll pitch, yaw) subscriber
+        ros::Subscriber navdata_sub;
         ros::Time lastKeyStamp;
         ros::Subscriber tum_ardrone_sub;
         ros::Publisher tum_ardrone_pub;
@@ -514,6 +517,8 @@ class ControlUINode
         vector<double> _node_ac_dest_pos_of_drone;
         /* Path to be used for planning internal navigation */
         vector< vector<double> > _interm_path;
+        /* */
+        vector<double> _last_drone_position;
 
         bool _stage_of_plane_observation;
         bool _is_big_plane;
@@ -571,7 +576,7 @@ class ControlUINode
         static pthread_mutex_t keyPoint_CS;
         static pthread_mutex_t pose_CS;
         static pthread_mutex_t command_CS;
-        static pthread_mutex_t changeyaw_CS;
+        static pthread_mutex_t navdata_CS;
 
 
 
@@ -614,14 +619,14 @@ class ControlUINode
         /**
          * @brief Constructor for ControlUINode
          * @details Callbacks called from Constructor -> keyPointDataCb,
-         *                  &poseCb, comCb
+         *                  &poseCb, comCb, newPoseCb
          * @param
          * @return
          */
         ControlUINode ();
 
         /**
-         * @brief Destructor forControlUINode
+         * @brief Destructor for ControlUINode
          * @details Currently Empty
          * @param
          * @return
@@ -629,9 +634,15 @@ class ControlUINode
         ~ControlUINode ();
 
         // ROS message callbacks
-        void keyPointDataCb (const tum_ardrone::keypoint_coordConstPtr coordPtr);
-        void poseCb (const tum_ardrone::filter_stateConstPtr statePtr);
-        void comCb (const std_msgs::StringConstPtr str);
+        void
+        keyPointDataCb (const tum_ardrone::keypoint_coordConstPtr coordPtr);
+        void
+        poseCb (const tum_ardrone::filter_stateConstPtr statePtr);
+        void
+        comCb (const std_msgs::StringConstPtr str);
+        void
+        navDataCb(const ardrone_autonomy::Navdata navPtr);
+
         inline bool
         isCalibrated()
         {
@@ -674,7 +685,7 @@ class ControlUINode
          */
         void
         load3dPoints (std::vector<float> t_3dPoints_x,
-                                        std::vector<float> t_3dPoints_y,    std::vector<float> t_3dPoints_z);
+                      std::vector<float> t_3dPoints_y, std::vector<float> t_3dPoints_z);
 
         /**
          * @brief writes a string message to "/tum_ardrone/com"

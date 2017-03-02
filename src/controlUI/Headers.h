@@ -39,6 +39,9 @@
 #include "Line2.hpp"
 #include "Multiple-Plane-JLinkage/utilities.hpp"
 
+#include "DebugUtility/DebugUtility.hpp"
+#include "LogUtility/LogUtility.hpp"
+
 // Namespaces
 using namespace std;
 using namespace cv;

@@ -1,6 +1,6 @@
 /**
  * @defgroup LogUtility LogUtility
- * @brief	 This code handles logging to file/console
+ * @brief    This code handles logging to file/console
  */
 
 /*****************************************************************************************
@@ -12,10 +12,10 @@
  *        Project: Data_Structures_and_Algorithms
  *        Description: Code to handle logging
  *
- * Date				Author							Modification
- * 25-Aug-2016	Sona Praneeth Akula	* Added detailed comment
- * 										* Added SET_LOG_TO_FILE(level, filename)
- * 										* Renamed SET_LOG_TO_FILE(filename) to SET_LOG_FILE(filename)
+ * Date             Author                          Modification
+ * 25-Aug-2016  Sona Praneeth Akula * Added detailed comment
+ *                                      * Added SET_LOG_TO_FILE(level, filename)
+ *                                      * Renamed SET_LOG_TO_FILE(filename) to SET_LOG_FILE(filename)
  *****************************************************************************************/
 
 #ifndef LOGUTILITY_LOGUTILITY_HPP_
@@ -33,14 +33,14 @@ extern ofstream logOutFile;
 extern stringstream logMessage;
 extern stringstream logExceptionMessage;
 
-#define LOG_MSG if(LOG_ACTIVATE) logMessage << "[ LOG] " 
+#define LOG_MSG if(LOG_ACTIVATE) logMessage
 
 #define SET_LOG setLog()
 #define SET_LOG_LEVEL(level) setLog(level)
 #define SET_LOG_TO_FILE(level, filename) setLog(level); setLog(filename)
 #define SET_LOG_FILE(filename) setLog(filename)
-#define LOG_INFO(level, logMessage) printLogMessage(level, logMessage)
-
+#define LOG_PRINT(level, logMessage) printLogMessage(level, logMessage)
+#define PRINT_LOG_MESSAGE(level) printLogMessage(level, logMessage)
 
 /**
  * @brief Clear the log stringstream
@@ -60,7 +60,7 @@ void setLog();
  * @brief Set the log level for logging purpose
  *
  * @param [int] level - 1,2,3.
- * 				1 - highest preference message. 3 - least preference message
+ *              1 - highest preference message. 3 - least preference message
  *
  */
 void setLog(int level);

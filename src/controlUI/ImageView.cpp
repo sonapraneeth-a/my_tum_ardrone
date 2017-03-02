@@ -161,7 +161,7 @@ ImageView::run()
     // Create window
     myGLWindow = new GLWindow2(CVD::ImageRef(frameWidth, frameHeight), "Drone Camera Feed", this);
     myGLWindow->set_title("Drone Camera Feed");
-    DEBUG_PRINT(1, "[ ImageView] New Drone Camera Feed window created\n");
+    DEBUG_PRINT(1, "[ ImageView] New \"Drone Camera Feed\" window created\n");
 
     changeSizeNextRender = true;
     if (frameWidth < 640)
@@ -332,7 +332,8 @@ ImageView::renderFrame()
     }
     if(renderSignificantPlane)
     {
-        glColor3f(1.0, 1.0, 1.0); 
+        LOG_PRINT(4, "Rendering Significant plane with white border\n");
+        glColor3f(1.0, 1.0, 1.0);
         glBegin(GL_LINE_STRIP);
         vector<Point2f> imagePts;
         node->project3DPointsOnImage(sigPlaneBoundingBoxPoints, imagePts);
@@ -347,6 +348,7 @@ ImageView::renderFrame()
     }
     if(renderVisitedPlanes)
     {
+        LOG_PRINT(4, "Rendering Visited plane with black border\n");
         unsigned int size = visitedBoundingBoxPoints.size();
         for(unsigned int planeIndex = 0; planeIndex < size; planeIndex++)
         {
@@ -356,14 +358,13 @@ ImageView::renderFrame()
             glBegin(GL_LINE_STRIP);
             vector<Point2f> imagePts;
             node->project3DPointsOnImage(planeBoundingBoxPoints, imagePts);
-            for(unsigned int pointIndex = 0; pointIndex<imagePts.size(); pointIndex++)
+            for(unsigned int pointIndex = 0; pointIndex < imagePts.size(); pointIndex++)
             {
                 vector<int> p(2);
                 p[0] = imagePts[pointIndex].x;
                 p[1] = imagePts[pointIndex].y;
-                glVertex2i(p[0],p[1]);
+                glVertex2i(p[0], p[1]);
             }
-        
             glEnd();
         }
     }
@@ -391,18 +392,28 @@ ImageView::renderFrame()
  *          Key space - [NOT IMPLEMENTED]
  *          Key + - [NOT IMPLEMENTED]
  *          Key - - [NOT IMPLEMENTED]
- *          Key 0-9 - [Used stage 01] Testing
- *          Key X - [Used in stage 01] Overall testing - Start Capturing
- *          Key Q - [Used in stage 01] Overall testing - Align the quadcopter to the current plane
+ *          Key 0-9 - Testing keys (numeric keys) See ControlUINode.cpp
+ *          Key X - Overall testing - Start Capturing
+ *          Key Q - Overall testing - Align the quadcopter to the current plane
+ *          Key A - Rotate the drone anti-clockwise along the plane
+ *          Key C - Rotate the drone clockwise along the plane
+ *          Key U - Move the drone in up direction (perpendicular to ground plane)
+ *          Key D - Move the drone in down direction (perpendicular to ground plane)
+ *          Key F - Move the drone in forward direction (parallel to ground plane)
+ *          Key B - Move the drone in backward direction (parallel to ground plane)
+ *          Key L - Move the drone in left direction (parallel to ground plane)
+ *          Key R - Move the drone in right direction (parallel to ground plane)
  * @param [int] key - ASCII value of key
  */
 void
 ImageView::on_key_down(int key)
 {
-    cout << "[ DEBUG] [on_key_down] Key pressed: " << key << ", " << (char)key << "\n";
+    LOG_MSG << "[ ImageView] [on_key_down] Key pressed: " << key << ", " << (char)key << "\n";
+    PRINT_LOG_MESSAGE(1);
     // Key b - Extracts bounding rect
     if(key == 'b')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'b'] Extract Bounding Rectangle requested\n");
         // renders the bounding rectangle
         // renderPoly = false;
         // renderRect = !renderRect;
@@ -411,6 +422,7 @@ ImageView::on_key_down(int key)
     // Key d - Clear the vectors 'pointsClicked' and 'keyPointsNearest'
     else if(key == 'd')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'd'] Pop a point from pointsClicked and keyPointsNearest (GUI)\n");
         // node->publishCommand("i delete");
         // Need to delete the last point
         if(numPointsClicked != 0)
@@ -453,7 +465,7 @@ ImageView::on_key_down(int key)
         planeParameters.clear();
         // Calls JLinkage
         node->fitMultiplePlanes3d(ccPoints, pointsClicked, planeParameters, continuousBoundingBoxPoints);
-        cout << "[ DEBUG ] continuousBoundingBoxPoints from ImageView\n";
+        cout << "[ DEBUG] continuousBoundingBoxPoints from ImageView\n";
         size = continuousBoundingBoxPoints.size();
         for (i = 0; i < size; ++i)
         {
@@ -468,6 +480,7 @@ ImageView::on_key_down(int key)
     // Key g - Navigating the planes using the planned path and collecting the video footage
     else if(key == 'g')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'g'] Move the drone near to the plane to capture high resolution photos\n");
         // Cover multiple planes
         if(renderRect)
         {
@@ -480,6 +493,7 @@ ImageView::on_key_down(int key)
     {
         // node->publishCommand("i reset");
         // Need to reset all the entire points to initial state
+        LOG_PRINT(1, "[on_key_down] [Key 'r'] Reset all variables requested\n");
         numPointsClicked = 0;
         numKeyPointsDetected = 0;
         pointsClicked.clear();
@@ -491,6 +505,7 @@ ImageView::on_key_down(int key)
     // Key s - Saves the keypoint information '_3d_points' to file named by 'numFile'
     else if(key == 's')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 's'] Save keypoint information to file requested\n");
         // save all the keypoint information
         node->saveKeyPointInformation(numFile);
         numFile++;
@@ -498,6 +513,7 @@ ImageView::on_key_down(int key)
     //Key  t - Extracts bounding polygon
     else if(key == 't')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 't'] Extract Bounding Polygon requested\n");
         // renders the polygon
         //renderRect = false;
         renderPoly = !renderPoly;
@@ -506,11 +522,10 @@ ImageView::on_key_down(int key)
     // Key space
     else if(key == 32)
     {
+        LOG_PRINT(1, "[on_key_down] [Key ' '] NOT IMPLEMENTED\n");
         // node->publishCommand("i run");
         // Send control commands to drone. TODO need to implement
     }
-    /* Below are the keys to be implemented properly fro mtp stage 01 */
-    /** PRANEETH's CODE **/
     // Key a - Just for testing
     else if(key == 'a')
     {
@@ -571,7 +586,7 @@ ImageView::on_key_down(int key)
         TopView *top = new TopView();
         top->startSystem();
         /* GUI has been closed here */
-        cout << "[Key 'c'] Calling the GUI for drawing top view sketch of the surface\n";
+        LOG_PRINT(1, "[Key 'c'] Calling the GUI for drawing top view sketch of the surface\n");
         while(!(top->getExitStatus()))
         {}
         /* Get the directions, angles and number of planes */
@@ -591,53 +606,54 @@ ImageView::on_key_down(int key)
         }
         else
         {
-            cout << "[Key 'c'] Number of planes: " << number_of_planes << "\n";
-            cout << "[Key 'c'] Max Height of the plane (as estimated by the user): " << max_height_of_plane << "\n";
+            LOG_MSG << "[Key 'c'] Number of planes: " << number_of_planes << "\n";
+            LOG_MSG << "[Key 'c'] Max Height of the plane (as estimated by the user): " << max_height_of_plane << "\n";
             if(type_of_surface == 0)
             {
-                cout << "[Key 'c'] Surface Drawn: " << "Open Surface" << "\n";
+                LOG_MSG << "[Key 'c'] Surface Drawn: " << "Open Surface" << "\n";
                 if(view_dir == 0)
                 {
-                    cout << "[Key 'c'] Viewing the surface from front\n";
+                    LOG_MSG << "[Key 'c'] Viewing the surface from front\n";
                 }
                 if(view_dir == 1)
                 {
-                    cout << "[Key 'c'] Viewing the surface from back\n";
+                    LOG_MSG << "[Key 'c'] Viewing the surface from back\n";
                 }
             }
             if(top->getTypeOfSurface() == 1)
             {
-                cout << "[Key 'c'] Surface Drawn: " << "Closed Surface" << "\n";
+                LOG_MSG << "[Key 'c'] Surface Drawn: " << "Closed Surface" << "\n";
                 if(view_dir == 2)
                 {
-                    cout << "[Key 'c'] Viewing the surface from outside the structure\n";
+                    LOG_MSG << "[Key 'c'] Viewing the surface from outside the structure\n";
                 }
                 if(view_dir == 3)
                 {
-                    cout << "[Key 'c'] Viewing the surface from inside the structure\n";
+                    LOG_MSG << "[Key 'c'] Viewing the surface from inside the structure\n";
                 }
             }
             top->destroy();
-            cout << "[Key 'c'] Angles: ";
+            LOG_MSG << "[Key 'c'] Angles: ";
             for (unsigned int i = 0; i < main_angles.size(); ++i)
             {
-                cout << main_angles[i] << " ";
+                LOG_MSG << main_angles[i] << " ";
             }
-            cout << "\n";
-            cout << "[Key 'c'] Directions: ";
+            LOG_MSG << "\n";
+            LOG_MSG << "[Key 'c'] Directions: ";
             for (unsigned int i = 0; i < main_directions.size(); ++i)
             {
                 if(main_directions[i] == 0)
-                    cout << "CLOCKWISE" << " ";
+                    LOG_MSG << "CLOCKWISE" << " ";
                 else if(main_directions[i] == 1)
-                    cout << "ANTI-CLOCKWISE" << " ";
+                    LOG_MSG << "ANTI-CLOCKWISE" << " ";
             }
-            cout << "\n";
+            LOG_MSG << "\n";
             int min_height_of_plane = 2.0;
             
             float min_distance = getDistanceToSeePlane(min_height_of_plane);
             float max_distance = getDistanceToSeePlane(max_height_of_plane);
-            cout << "[Key 'c'] Min. Distance: " << min_distance << ", Max. Distance: " << max_distance << "\n";
+            LOG_MSG << "[Key 'c'] Min. Distance: " << min_distance << ", Max. Distance: " << max_distance << "\n";
+            PRINT_LOG_MESSAGE(1);
             node->setValues(number_of_planes, min_height_of_plane, min_distance, max_height_of_plane, max_distance);
             node->setMainAngles(main_angles);
             node->setMainDirections(main_directions);
@@ -645,15 +661,16 @@ ImageView::on_key_down(int key)
             
         }
     }
-    // Key 0-9 - For testing
+    // Key 0-9 - For testing (See ControlUNode.cpp for details)
     else if(key >= '0' && key <= '9')
     {
-        cout << "Pressed Key 1\n";
+        LOG_PRINT(1, "[on_key_down] [Key 'num'] Requested for testing utility");
         int num = key-'0';
         node->testUtility(num);
     }
     else if(key == 'Z')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'Z'] Align the quadcopter to the current plane requrested\n");
         int min_height_of_plane = 2;
         int max_height_of_plane = 4;
         float min_distance = getDistanceToSeePlane(min_height_of_plane);
@@ -666,14 +683,18 @@ ImageView::on_key_down(int key)
         main_angles.clear();
         main_directions.clear();
         cout << "[ DEBUG] [on_key_down] Setting the values\n";
+        // Set the required values in ControlUINode.cpp
         node->setValues(number_of_planes, min_height_of_plane, min_distance, max_height_of_plane, max_distance);
         node->setMainAngles(main_angles);
         node->setMainDirections(main_directions);
+        // Align the quadcopter to the current plane if not yet aligned
         node->alignQuadcopterToCurrentPlane();
     }
-    // X
+    // X - Captures the plane enclosed by 4 points clicked on the "Drone Camera Feed" Window, else displays a warning
+    // message
     else if(key == 'X')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'X'] Capture the current plane requested\n");
         if(numPointsClicked == 4)
         {
             /*int min_height_of_plane = 2;
@@ -681,13 +702,17 @@ ImageView::on_key_down(int key)
             float min_distance = getDistanceToSeePlane(min_height_of_plane);
             float max_distance = getDistanceToSeePlane(max_height_of_plane);
             node->setValues(1, min_height_of_plane, min_distance, max_height_of_plane, max_distance);*/
-            cout << "[ DEBUG] [on_key_down] pointsClicked are:\n";
+            DEBUG_PRINT(3, "[on_key_down] pointsClicked are:\n");
+            // Print the clicked points on the feed window
             for(unsigned int i = 0; i < pointsClicked.size(); i++)
             {
-                cout << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
+                DEBUG_MSG << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
             }
-            cout << "\n";
-            cout << "[ DEBUG] [on_key_down] Capturing the current plane\n";
+            DEBUG_MSG << "\n";
+            PRINT_DEBUG_MESSAGE(3);
+            LOG_PRINT(2, "[on_key_down] Capturing the current plane\n");
+            // Capture the plane enclosed by the 4 points clicked the user and pick the one which is the
+            // last unseen
             node->captureTheCurrentPlane();
             // Clear all Vectors
             clearInputVectors();
@@ -695,7 +720,7 @@ ImageView::on_key_down(int key)
         }
         else
         {
-            cout << "[ DEBUG] [on_key_down] Please click 4 points on the screen and press press key 'p' again\n";
+            LOG_PRINT(1, "[on_key_down] Please click 4 points on the screen and press press key 'X' again\n");
         }
     }
     else if(key == 'Q')
@@ -720,33 +745,6 @@ ImageView::on_key_down(int key)
         node->setMainAngles(main_angles);
         node->setMainDirections(main_directions);
         node->alignQuadcopterToCurrentPlane();
-    }
-    // W
-    else if(key == 'W')
-    {
-        if(numPointsClicked == 4)
-        {
-            /*int min_height_of_plane = 2;
-            int max_height_of_plane = 4;
-            float min_distance = getDistanceToSeePlane(min_height_of_plane);
-            float max_distance = getDistanceToSeePlane(max_height_of_plane);
-            node->setValues(1, min_height_of_plane, min_distance, max_height_of_plane, max_distance);*/
-            cout << "[ DEBUG] [on_key_down] pointsClicked are:\n";
-            for(unsigned int i = 0; i < pointsClicked.size(); i++)
-            {
-                cout << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
-            }
-            cout << "\n";
-            cout << "[ DEBUG] [on_key_down] Capturing the current plane\n";
-            node->captureTheCurrentPlane();
-            // Clear all Vectors
-            clearInputVectors();
-            numPointsClicked = 0;
-        }
-        else
-        {
-            cout << "[ DEBUG] [on_key_down] Please click 4 points on the screen and press press key 'p' again\n";
-        }
     }
     else if(key == 'E')
     {
@@ -774,6 +772,7 @@ ImageView::on_key_down(int key)
     // Key n - Uses the points written from a file (obtained from key c)
     else if(key == 'n')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'n'] Move the quadcopter based on captured plane parameters\n");
         string inputDirectory = "/home/sonapraneeth/";
         string filename = inputDirectory + "Plane_Info.txt";
         vector< vector<float> > sortedPlaneParameters;
@@ -823,34 +822,42 @@ ImageView::on_key_down(int key)
     /* Movement letter keys */
     else if(key == 'F')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'F'] Move Forward Requested\n");
         node->moveForward();
     }
     else if(key == 'B')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'B']  Move Backward Requested\n");
         node->moveBackward();
     }
     else if(key == 'L')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'L'] Move Left Requested\n");
         node->moveLeft();
     }
     else if(key == 'R')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'R'] Move Right Requested\n");
         node->moveRight();
     }
     else if(key == 'U')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'U'] Move Up Requested\n");
         node->moveUp();
     }
     else if(key == 'D')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'D'] Move Down Requested\n");
         node->moveDown();
     }
     else if(key == 'C')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'C'] Rotate Clockwise Requested\n");
         node->rotateClockwise();
     }
     else if(key == 'A')
     {
+        LOG_PRINT(1, "[on_key_down] [Key 'C'] Rotate Anti-Clockwise Requested\n");
         node->rotateCounterClockwise();
     }
 }

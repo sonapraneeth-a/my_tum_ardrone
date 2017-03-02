@@ -511,7 +511,7 @@ getDistanceToSeePlane(int height)
   Mat rotinv;
   transpose(rot, rotinv);
   tvec = -rotinv * tvec;
-  cout << "Expected Quadcopter Location to see height: " << height << "and width: " << width 
+  cout << "Expected Quadcopter Location to see height: " << height << " and width: " << width 
     << ": (" << tvec.at<double>(0) << ", " << tvec.at<double>(2) << ", " << -tvec.at<double>(1) << ")\n";
   double dist = tvec.at<double>(2);
   return dist;

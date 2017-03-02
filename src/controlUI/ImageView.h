@@ -31,8 +31,7 @@
 #include "AllHeaders.hpp"
 
 #include "TopView.hpp"
-#include "DebugUtility.hpp"
-#include "LogUtility.hpp"
+#include "Headers.h"
 #include "makeBoundingRects.hpp"
 
 

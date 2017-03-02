@@ -1,6 +1,6 @@
 /**
  * @defgroup DebugUtility DebugUtility
- * @brief	 This code handles debugging to file/console
+ * @brief    This code handles debugging to file/console
  */
 
 /*****************************************************************************************
@@ -12,10 +12,10 @@
  *        Project: Data_Structures_and_Algorithms
  *        Description: Code to handle debugging
  *
- * Date				Author							Modification
- * 25-Aug-2016	Sona Praneeth Akula		* Added detailed comment
- * 										* Added SET_DEBUG_TO_FILE(level, filename)
- * 										* Renamed SET_DEBUG_TO_FILE(filename) to SET_DEBUG_FILE(filename)
+ * Date             Author                          Modification
+ * 25-Aug-2016  Sona Praneeth Akula     * Added detailed comment
+ *                                      * Added SET_DEBUG_TO_FILE(level, filename)
+ *                                      * Renamed SET_DEBUG_TO_FILE(filename) to SET_DEBUG_FILE(filename)
  *****************************************************************************************/
 
 #ifndef DEBUGUTILITY_DEBUGUTILITY_HPP_
@@ -39,6 +39,7 @@ extern ofstream debugOutFile;
 #define SET_DEBUG_FILE(filename) setDebug(filename)
 #define SET_DEBUG_TO_FILE(level, filename) setDebug(level); setDebug(filename)
 #define DEBUG_PRINT(level, debugMessage) printDebugMessage(level, debugMessage)
+#define PRINT_DEBUG_MESSAGE(level) printDebugMessage(level, debugMessage)
 
 
 /**
@@ -59,7 +60,7 @@ void setDebug();
  * @brief Set the debug level for debugging purpose
  *
  * @param [int] level - 1,2,3.
- * 				1 - highest preference message. 3 - least preference message
+ *              1 - highest preference message. 3 - least preference message
  *
  */
 void setDebug(int level);

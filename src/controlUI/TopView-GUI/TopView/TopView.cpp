@@ -327,7 +327,7 @@ TopView::checkMenu(float x, float y)
 		glutDestroyWindow(_window);
 		glutLeaveMainLoop();
 		stopSystem();
-		cout << "[ INFO] Exiting TopView Application...";
+		cout << "[ INFO] Exiting TopView Application...\n";
 		_exit_app = true;
 		return ;
 	}
