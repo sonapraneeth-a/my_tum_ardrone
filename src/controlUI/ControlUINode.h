@@ -989,6 +989,9 @@ class ControlUINode
         moveDroneViaSetOfPoints(const vector< vector<double> > &dest_points);
 
         void
+        makeTargetMotionPoints(const vector< vector<double> > &dest_points);
+
+        void
         designPathToChangeYaw(const vector<double> &curr_point,
                                 double dest_yaw);
 

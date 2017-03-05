@@ -2130,6 +2130,295 @@ ControlUINode::fitPlane3dForTheCurrentPlane ()
 }
 
 /**
+ *
+ */
+void
+ControlUINode::designPathForDroneRelative(double dest, int direction)
+{
+    // 1 - Left
+    // 2 - Right
+    // 3 - Front
+    // 4 - Back
+    // 5 - Top
+    // 6 - Back
+    LOG_PRINT(1, "[designPathForDroneRelative] Started\n");
+    cout << "[ DEBUG] [designPathForDroneRelative] Direction: " << direction << "\n";
+    if(direction == MOVE_DIRECTIONS::LEFT) // Left
+    {
+        moveLeft(dest);
+    }
+    else if(direction == MOVE_DIRECTIONS::RIGHT) // Right
+    {
+        moveRight(dest);
+    }
+    else if(direction == MOVE_DIRECTIONS::FORWARD) // Front
+    {
+        moveForward(dest);
+    }
+    else if(direction == MOVE_DIRECTIONS::BACKWARD) // Back
+    {
+        moveBackward(dest);
+    }
+    else if(direction == MOVE_DIRECTIONS::UP) // Up
+    {
+        moveUp(dest);
+    }
+    else if(direction == MOVE_DIRECTIONS::DOWN) // Down
+    {
+        moveDown(dest);
+    }
+    else if(direction == MOVE_DIRECTIONS::CLOCK) // Clockwise
+    {
+        rotateClockwise(dest);
+    }
+    else if(direction == MOVE_DIRECTIONS::COUNTERCLOCK) // CounterClockwise
+    {
+        rotateCounterClockwise(dest);
+    }
+    else
+    {
+        cout << "[ DEBUG] [designPathForDroneRelative] I don't understand this direction\n";
+    }
+    LOG_PRINT(1, "[designPathForDroneRelative] Completed\n");
+    return ;
+}
+
+void
+ControlUINode::move(double distance, int i)
+{
+    cout << "[ DEBUG] [move] Started\n";
+    clear2dVector(_interm_path);
+    getCurrentPositionOfDrone();
+    print1dVector(_last_drone_position, "[ DEBUG] Last drone position");
+    print1dVector(_node_current_pos_of_drone, "[ DEBUG] Current drone position");
+    // vector<double> _last_drone_position = targetPoints.back();
+    cout << "[ DEBUG] targetPoints size: " << targetPoints.size() << "\n";
+    cout << "[ DEBUG] _last_drone_position size: " << _last_drone_position.size() << "\n";
+    _node_dest_pos_of_drone.clear();
+    _node_dest_pos_of_drone.push_back(0.0);
+    _node_dest_pos_of_drone.push_back(0.0);
+    _node_dest_pos_of_drone.push_back(0.0);
+    _node_dest_pos_of_drone.push_back(0.0);
+    print1dVector(_last_drone_position, "[ DEBUG] [move] Current position of drone");
+    cout << "[ DEBUG] [move] Requested movement: " << distance << ", Direction: " << i << "\n";
+    double start = 0.0;
+    double move;
+    if(signbit(distance))
+    {
+        move = -1.0;
+    }
+    else
+    {
+        move = 1.0;
+    }
+    cout << "[ DEBUG] [move] Move: " << move << "\n";
+    bool to_move = false;
+    if(fabs(start - distance) < _move_heuristic)
+    {
+        start = distance;
+        _node_dest_pos_of_drone[i] = start;
+        print1dVector(_node_dest_pos_of_drone, "[ DEBUG] [move] Dest position of drone (relative)");
+        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        /*if(targetPoints.size() == 0)
+        {
+            convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        }
+        else
+        {
+            convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        }*/
+        _interm_path.push_back(_node_ac_dest_pos_of_drone);
+    }
+    else
+    {
+        to_move = true;
+    }
+    while(to_move)
+    {
+        if(fabs(start - distance) < _move_heuristic)
+        {
+            start = distance;
+            to_move = false;
+        }
+        else
+        {
+            start += (move * _move_heuristic);
+            to_move = true;
+        }
+        _node_dest_pos_of_drone[i] = start;
+        print1dVector(_node_dest_pos_of_drone, "[ DEBUG] [move] Dest position of drone (relative)");
+        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        /*if(targetPoints.size() == 0)
+        {
+            convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        }
+        else
+        {
+            convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        }*/
+        _interm_path.push_back(_node_ac_dest_pos_of_drone);
+    }
+    if(fabs(start - distance) < _move_heuristic)
+    {
+        start = distance;
+        _node_dest_pos_of_drone[i] = start;
+        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        /*if(targetPoints.size() == 0)
+        {
+            convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        }
+        else
+        {
+            convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        }*/
+        _interm_path.push_back(_node_ac_dest_pos_of_drone);
+    }
+    // moveDroneViaSetOfPoints(_interm_path);
+    cout << "[ DEBUG] [move] Completed\n";
+    return ;
+}
+
+void
+ControlUINode::moveUp(double up_distance)
+{
+    cout << "[ DEBUG] [moveUp] Started\n";
+    move(up_distance, 2);
+    cout << "[ DEBUG] [moveUp] Completed\n";
+    return ;
+}
+
+void
+ControlUINode::moveDown(double down_distance)
+{
+    cout << "[ DEBUG] [moveDown] Started\n";
+    move(-down_distance, 2);
+    cout << "[ DEBUG] [moveDown] Completed\n";
+    return ;
+}
+
+void
+ControlUINode::moveLeft(double left_distance)
+{
+    cout << "[ DEBUG] [moveLeft] Started\n";
+    move(-left_distance, 0);
+    cout << "[ DEBUG] [moveLeft] Completed\n";
+    return ;
+}
+
+void
+ControlUINode::moveRight(double right_distance)
+{
+    cout << "[ DEBUG] [moveRight] Started\n";
+    move(right_distance, 0);
+    cout << "[ DEBUG] [moveRight] Completed\n";
+    return ;
+}
+
+void
+ControlUINode::moveForward(double forward_distance)
+{
+    cout << "[ DEBUG] [moveForward] Started\n";
+    move(forward_distance, 1);
+    cout << "[ DEBUG] [moveForward] Completed\n";
+    return ;
+}
+
+void
+ControlUINode::moveBackward(double backward_distance)
+{
+    cout << "[ DEBUG] [moveBackward] Started\n";
+    move(-backward_distance, 1);
+    cout << "[ DEBUG] [moveBackward] Completed\n";
+    return ;
+}
+
+void
+ControlUINode::moveInDirection(const vector<float> &dir, 
+                                const vector<double> &position,
+                                const vector<Point3f> &points)
+{
+    cout << "[ DEBUG] [moveInDirection] Started\n";
+    float point_distance = getPointToPlaneDistance(dir, position);
+    int move = (_fixed_distance >= point_distance) ? -1: 1;
+    float step_distance = fabs(_fixed_distance - point_distance);
+    cout << "[ DEBUG] [moveInDirection] Drone Distance: " << point_distance
+                << ", Fixed Distance: " << _fixed_distance << "\n";
+    cout << "[ DEBUG] [moveInDirection] Move: " << move << ", Step Distance: " << step_distance << "\n";
+    if(move == -1)
+    {
+        cout << "[ DEBUG] [moveInDirection] Moving backwards\n";
+    }
+    else if(move == 1)
+    {
+        cout << "[ DEBUG] [moveInDirection] Moving forwards\n";
+    }
+    Point3f pp, pos((float)position[0], (float)position[1], (float)position[2]);
+    float t, avg_a = 0.0, avg_b = 0.0, avg_c = 0.0;
+    float a = dir[0];
+    float b = dir[1];
+    float c = dir[2];
+    print1dVector(dir, "[ DEBUG] [moveInDirection] Plane Parameters for distance adjustment");
+    print1dVector(position, "[ DEBUG] [moveInDirection] Current position of drone");
+    unsigned int numberOfPointsInThisPlane = points.size();
+    for (unsigned int j = 0; j < numberOfPointsInThisPlane; ++j)
+    {
+        avg_a += points[j].x;
+        avg_b += points[j].y;
+        avg_c += points[j].z;
+    }
+    avg_a /= (float)points.size();
+    avg_b /= (float)points.size();
+    avg_c /= (float)points.size();
+    Point3f p(avg_a, avg_b, avg_c), qp;
+    float mag = ((a*a)+(b*b)+(c*c));
+    qp = pos - p;
+    t = (qp.x * (a/mag)) + (qp.y * (b/mag)) + ((qp.z * (c/mag)));
+    Point3f proj(pos.x - a*t, pos.y - b*t, pos.z - c*t);
+    Point3f dest;
+    cout << "[ DEBUG] [moveInDirection] t: " << t << "\n";
+    if(signbit(t)) {t = -1.0;}
+    else {t = 1.0;}
+    dest.x = proj.x + a*t*(_fixed_distance);
+    dest.y = proj.y + b*t*(_fixed_distance);
+    dest.z = proj.z + c*t*(_fixed_distance);
+    cout << "[ DEBUG] [moveInDirection] t: " << t*(_fixed_distance) << "\n";
+    cout << "[ DEBUG] [moveInDirection] Point on plane: " << proj << ", Point to move: " << dest << "\n";
+    vector<double> init_pos, dest_pos;
+    init_pos.push_back(position[0]);
+    init_pos.push_back(position[1]);
+    init_pos.push_back(position[2]);
+    dest_pos.push_back((double)dest.x);
+    dest_pos.push_back((double)dest.y);
+    dest_pos.push_back((double)dest.z);
+    clear2dVector(_interm_path);
+    getInitialPath(init_pos, dest_pos, position[3], position[3], _interm_path);
+    moveDroneViaSetOfPoints(_interm_path);
+    cout << "[ DEBUG] [moveInDirection] Completed\n";
+    return ;
+}
+
+void
+makeTargetMotionPoints(const vector< vector<double> > &dest_points)
+{
+    DEBUG_PRINT(1, "[makeTargetMotionPoints] Started\n");
+    char buf[100];
+    // targetPoints.clear();
+    cout << "[ DEBUG] [makeTargetMotionPoints] Total Commands: " << dest_points.size() << "\n";
+    print2dVector(dest_points, "[ DEBUG] [makeTargetMotionPoints] Moving points");
+    for (unsigned int i = 0; i < dest_points.size(); ++i)
+    {
+        cout << "[ DEBUG] [makeTargetMotionPoints] Commands to execute: " << commands.size() << "\n";
+        /*snprintf(buf, 100, "c goto %lf %lf %lf %lf",
+            dest_points[i][0], dest_points[i][1], dest_points[i][2], dest_points[i][3]);*/
+        // visited_motion_points.push_back(dest_points[i]);
+        targetPoints.push_back(dest_points[i]);
+    }
+    _last_drone_position = targetPoints.back();
+    getCurrentPositionOfDrone();
+    DEBUG_PRINT(1, "[makeTargetMotionPoints] Completed\n");
+}
+
+/**
  * @brief Move the drone to the destination point via a set of points
  * @details Each point is represented as (x, y, z, yaw)
  * @param [vector< vector<double> >] dest_points - Points to where quadcopter has to travel
@@ -2141,8 +2430,7 @@ ControlUINode::moveDroneViaSetOfPoints(const vector< vector<double> > &dest_poin
 {
     DEBUG_PRINT(1, "[moveDroneViaSetOfPoints] Started\n");
     char buf[100];
-    commands.clear();
-    targetPoints.clear();
+    // commands.clear();
     cout << "[ DEBUG] [moveDroneViaSetOfPoints] Total Commands: " << dest_points.size() << "\n";
     print2dVector(dest_points, "[ DEBUG] [moveDroneViaSetOfPoints] Moving points");
     for (unsigned int i = 0; i < dest_points.size(); ++i)
@@ -2154,9 +2442,7 @@ ControlUINode::moveDroneViaSetOfPoints(const vector< vector<double> > &dest_poin
         std_msgs::String s;
         s.data = buf;
         commands.push_back(s);
-        targetPoints.push_back(dest_points[i]);
     }
-    _last_drone_position = targetPoints.back();
     getCurrentPositionOfDrone();
     DEBUG_PRINT(1, "[moveDroneViaSetOfPoints] Completed\n");
 }
@@ -3116,12 +3402,14 @@ ControlUINode::adjustLeftEdge()
             cout << "[ DEBUG] [adjustLeftEdge] Moving left\n";
             pthread_mutex_lock(&motion_CS);
             designPathForDroneRelative(_move_heuristic, MOVE_DIRECTIONS::LEFT);
+            moveDroneViaSetOfPoints(_interm_path);
         }
         else if(move == 1)
         {
             cout << "[ DEBUG] [adjustLeftEdge] Moving right\n";
             pthread_mutex_lock(&motion_CS);
             designPathForDroneRelative(_move_heuristic, MOVE_DIRECTIONS::RIGHT);
+            moveDroneViaSetOfPoints(_interm_path);
         }
         pthread_mutex_lock(&motion_CS);
         doJLinkage();
@@ -3132,274 +3420,6 @@ ControlUINode::adjustLeftEdge()
         else {planeLeftVisible = false;}
     }
     LOG_PRINT(1, "[adjustLeftEdge] Completed\n");
-}
-
-/**
- *
- */
-void
-ControlUINode::designPathForDroneRelative(double dest, int direction)
-{
-    // 1 - Left
-    // 2 - Right
-    // 3 - Front
-    // 4 - Back
-    // 5 - Top
-    // 6 - Back
-    LOG_PRINT(1, "[designPathForDroneRelative] Started\n");
-    cout << "[ DEBUG] [designPathForDroneRelative] Direction: " << direction << "\n";
-    if(direction == MOVE_DIRECTIONS::LEFT) // Left
-    {
-        moveLeft(dest);
-    }
-    else if(direction == MOVE_DIRECTIONS::RIGHT) // Right
-    {
-        moveRight(dest);
-    }
-    else if(direction == MOVE_DIRECTIONS::FORWARD) // Front
-    {
-        moveForward(dest);
-    }
-    else if(direction == MOVE_DIRECTIONS::BACKWARD) // Back
-    {
-        moveBackward(dest);
-    }
-    else if(direction == MOVE_DIRECTIONS::UP) // Up
-    {
-        moveUp(dest);
-    }
-    else if(direction == MOVE_DIRECTIONS::DOWN) // Down
-    {
-        moveDown(dest);
-    }
-    else if(direction == MOVE_DIRECTIONS::CLOCK) // Clockwise
-    {
-        rotateClockwise(dest);
-    }
-    else if(direction == MOVE_DIRECTIONS::COUNTERCLOCK) // CounterClockwise
-    {
-        rotateCounterClockwise(dest);
-    }
-    else
-    {
-        cout << "[ DEBUG] [designPathForDroneRelative] I don't understand this direction\n";
-    }
-    LOG_PRINT(1, "[designPathForDroneRelative] Completed\n");
-    return ;
-}
-
-void
-ControlUINode::move(double distance, int i)
-{
-    cout << "[ DEBUG] [move] Started\n";
-    clear2dVector(_interm_path);
-    getCurrentPositionOfDrone();
-    print1dVector(_last_drone_position, "[ DEBUG] Last drone position");
-    print1dVector(_node_current_pos_of_drone, "[ DEBUG] Current drone position");
-    // vector<double> _last_drone_position = targetPoints.back();
-    cout << "[ DEBUG] targetPoints size: " << targetPoints.size() << "\n";
-    cout << "[ DEBUG] _last_drone_position size: " << _last_drone_position.size() << "\n";
-    _node_dest_pos_of_drone.clear();
-    _node_dest_pos_of_drone.push_back(0.0);
-    _node_dest_pos_of_drone.push_back(0.0);
-    _node_dest_pos_of_drone.push_back(0.0);
-    _node_dest_pos_of_drone.push_back(0.0);
-    print1dVector(_last_drone_position, "[ DEBUG] [move] Current position of drone");
-    cout << "[ DEBUG] [move] Requested movement: " << distance << ", Direction: " << i << "\n";
-    double start = 0.0;
-    double move;
-    if(signbit(distance))
-    {
-        move = -1.0;
-    }
-    else
-    {
-        move = 1.0;
-    }
-    cout << "[ DEBUG] [move] Move: " << move << "\n";
-    bool to_move = false;
-    if(fabs(start - distance) < _move_heuristic)
-    {
-        start = distance;
-        _node_dest_pos_of_drone[i] = start;
-        print1dVector(_node_dest_pos_of_drone, "[ DEBUG] [move] Dest position of drone (relative)");
-        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        /*if(targetPoints.size() == 0)
-        {
-            convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }
-        else
-        {
-            convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }*/
-        _interm_path.push_back(_node_ac_dest_pos_of_drone);
-    }
-    else
-    {
-        to_move = true;
-    }
-    while(to_move)
-    {
-        if(fabs(start - distance) < _move_heuristic)
-        {
-            start = distance;
-            to_move = false;
-        }
-        else
-        {
-            start += (move * _move_heuristic);
-            to_move = true;
-        }
-        _node_dest_pos_of_drone[i] = start;
-        print1dVector(_node_dest_pos_of_drone, "[ DEBUG] [move] Dest position of drone (relative)");
-        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        /*if(targetPoints.size() == 0)
-        {
-            convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }
-        else
-        {
-            convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }*/
-        _interm_path.push_back(_node_ac_dest_pos_of_drone);
-    }
-    if(fabs(start - distance) < _move_heuristic)
-    {
-        start = distance;
-        _node_dest_pos_of_drone[i] = start;
-        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        /*if(targetPoints.size() == 0)
-        {
-            convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }
-        else
-        {
-            convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }*/
-        _interm_path.push_back(_node_ac_dest_pos_of_drone);
-    }
-    moveDroneViaSetOfPoints(_interm_path);
-    cout << "[ DEBUG] [move] Completed\n";
-    return ;
-}
-
-void
-ControlUINode::moveUp(double up_distance)
-{
-    cout << "[ DEBUG] [moveUp] Started\n";
-    move(up_distance, 2);
-    cout << "[ DEBUG] [moveUp] Completed\n";
-    return ;
-}
-
-void
-ControlUINode::moveDown(double down_distance)
-{
-    cout << "[ DEBUG] [moveDown] Started\n";
-    move(-down_distance, 2);
-    cout << "[ DEBUG] [moveDown] Completed\n";
-    return ;
-}
-
-void
-ControlUINode::moveLeft(double left_distance)
-{
-    cout << "[ DEBUG] [moveLeft] Started\n";
-    move(-left_distance, 0);
-    cout << "[ DEBUG] [moveLeft] Completed\n";
-    return ;
-}
-
-void
-ControlUINode::moveRight(double right_distance)
-{
-    cout << "[ DEBUG] [moveRight] Started\n";
-    move(right_distance, 0);
-    cout << "[ DEBUG] [moveRight] Completed\n";
-    return ;
-}
-
-void
-ControlUINode::moveForward(double forward_distance)
-{
-    cout << "[ DEBUG] [moveForward] Started\n";
-    move(forward_distance, 1);
-    cout << "[ DEBUG] [moveForward] Completed\n";
-    return ;
-}
-
-void
-ControlUINode::moveBackward(double backward_distance)
-{
-    cout << "[ DEBUG] [moveBackward] Started\n";
-    move(-backward_distance, 1);
-    cout << "[ DEBUG] [moveBackward] Completed\n";
-    return ;
-}
-
-void
-ControlUINode::moveInDirection(const vector<float> &dir, 
-                                        const vector<double> &position,
-                                        const vector<Point3f> &points)
-{
-    cout << "[ DEBUG] [moveInDirection] Started\n";
-    float point_distance = getPointToPlaneDistance(dir, position);
-    int move = (_fixed_distance >= point_distance) ? -1: 1;
-    float step_distance = fabs(_fixed_distance - point_distance);
-    cout << "[ DEBUG] [moveInDirection] Drone Distance: " << point_distance
-                << ", Fixed Distance: " << _fixed_distance << "\n";
-    cout << "[ DEBUG] [moveInDirection] Move: " << move << ", Step Distance: " << step_distance << "\n";
-    if(move == -1)
-    {
-        cout << "[ DEBUG] [moveInDirection] Moving backwards\n";
-    }
-    else if(move == 1)
-    {
-        cout << "[ DEBUG] [moveInDirection] Moving forwards\n";
-    }
-    Point3f pp, pos((float)position[0], (float)position[1], (float)position[2]);
-    float t, avg_a = 0.0, avg_b = 0.0, avg_c = 0.0;
-    float a = dir[0];
-    float b = dir[1];
-    float c = dir[2];
-    print1dVector(dir, "[ DEBUG] [moveInDirection] Plane Parameters for distance adjustment");
-    print1dVector(position, "[ DEBUG] [moveInDirection] Current position of drone");
-    unsigned int numberOfPointsInThisPlane = points.size();
-    for (unsigned int j = 0; j < numberOfPointsInThisPlane; ++j)
-    {
-        avg_a += points[j].x;
-        avg_b += points[j].y;
-        avg_c += points[j].z;
-    }
-    avg_a /= (float)points.size();
-    avg_b /= (float)points.size();
-    avg_c /= (float)points.size();
-    Point3f p(avg_a, avg_b, avg_c), qp;
-    float mag = ((a*a)+(b*b)+(c*c));
-    qp = pos - p;
-    t = (qp.x * (a/mag)) + (qp.y * (b/mag)) + ((qp.z * (c/mag)));
-    Point3f proj(pos.x - a*t, pos.y - b*t, pos.z - c*t);
-    Point3f dest;
-    cout << "[ DEBUG] [moveInDirection] t: " << t << "\n";
-    if(signbit(t)) {t = -1.0;}
-    else {t = 1.0;}
-    dest.x = proj.x + a*t*(_fixed_distance);
-    dest.y = proj.y + b*t*(_fixed_distance);
-    dest.z = proj.z + c*t*(_fixed_distance);
-    cout << "[ DEBUG] [moveInDirection] t: " << t*(_fixed_distance) << "\n";
-    cout << "[ DEBUG] [moveInDirection] Point on plane: " << proj << ", Point to move: " << dest << "\n";
-    vector<double> init_pos, dest_pos;
-    init_pos.push_back(position[0]);
-    init_pos.push_back(position[1]);
-    init_pos.push_back(position[2]);
-    dest_pos.push_back((double)dest.x);
-    dest_pos.push_back((double)dest.y);
-    dest_pos.push_back((double)dest.z);
-    clear2dVector(_interm_path);
-    getInitialPath(init_pos, dest_pos, position[3], position[3], _interm_path);
-    moveDroneViaSetOfPoints(_interm_path);
-    cout << "[ DEBUG] [moveInDirection] Completed\n";
-    return ;
 }
 
 /**
