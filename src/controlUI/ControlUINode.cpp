@@ -49,8 +49,8 @@ pthread_mutex_t ControlUINode::motion_CS = PTHREAD_MUTEX_INITIALIZER;
 ControlUINode::ControlUINode()
 {
     /* Set Debug and Log level information. Uncomment if you want to turn off debug and log statements */
-    SET_DEBUG_LEVEL(3);
-    SET_LOG_LEVEL(3);
+    SET_DEBUG_LEVEL(2);
+    SET_LOG_LEVEL(2);
 
     LOG_PRINT(1, "[ ControlUINode] ControlUINode Constructor\n");
     /* Channels */
@@ -370,7 +370,9 @@ ControlUINode::newPoseCb (const tum_ardrone::filter_stateConstPtr statePtr)
             if(targetPoints.size() == 0)
             {
                 _is_drone_moving = false;
+                printf("Releasing motion_CS lock\n");
                 pthread_mutex_unlock(&motion_CS);
+                printf("Motion Completed\n");
             }
             return;
         }
@@ -2218,15 +2220,15 @@ ControlUINode::move(double distance, int i)
         start = distance;
         _node_dest_pos_of_drone[i] = start;
         print1dVector(_node_dest_pos_of_drone, "[ DEBUG] [move] Dest position of drone (relative)");
-        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        /*if(targetPoints.size() == 0)
+        // convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        if(targetPoints.size() == 0)
         {
             convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
         }
         else
         {
             convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }*/
+        }
         _interm_path.push_back(_node_ac_dest_pos_of_drone);
     }
     else
@@ -2247,30 +2249,30 @@ ControlUINode::move(double distance, int i)
         }
         _node_dest_pos_of_drone[i] = start;
         print1dVector(_node_dest_pos_of_drone, "[ DEBUG] [move] Dest position of drone (relative)");
-        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        /*if(targetPoints.size() == 0)
+        // convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        if(targetPoints.size() == 0)
         {
             convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
         }
         else
         {
             convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }*/
+        }
         _interm_path.push_back(_node_ac_dest_pos_of_drone);
     }
     if(fabs(start - distance) < _move_heuristic)
     {
         start = distance;
         _node_dest_pos_of_drone[i] = start;
-        convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        /*if(targetPoints.size() == 0)
+        // convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
+        if(targetPoints.size() == 0)
         {
             convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
         }
         else
         {
             convertWRTQuadcopterOrigin(_last_drone_position, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
-        }*/
+        }
         _interm_path.push_back(_node_ac_dest_pos_of_drone);
     }
     // moveDroneViaSetOfPoints(_interm_path);
@@ -2407,7 +2409,7 @@ ControlUINode::makeTargetMotionPoints(const vector< vector<double> > &dest_point
     print2dVector(dest_points, "[ DEBUG] [makeTargetMotionPoints] Moving points");
     for (unsigned int i = 0; i < dest_points.size(); ++i)
     {
-        cout << "[ DEBUG] [makeTargetMotionPoints] Commands to execute: " << commands.size() << "\n";
+        cout << "[ DEBUG] [makeTargetMotionPoints] targetPoints to execute: " << targetPoints.size() << "\n";
         /*snprintf(buf, 100, "c goto %lf %lf %lf %lf",
             dest_points[i][0], dest_points[i][1], dest_points[i][2], dest_points[i][3]);*/
         // visited_motion_points.push_back(dest_points[i]);
@@ -2432,7 +2434,7 @@ ControlUINode::moveDroneViaSetOfPoints(const vector< vector<double> > &dest_poin
     char buf[100];
     // commands.clear();
     cout << "[ DEBUG] [moveDroneViaSetOfPoints] Total Commands: " << dest_points.size() << "\n";
-    print2dVector(dest_points, "[ DEBUG] [moveDroneViaSetOfPoints] Moving points");
+    print2dVector(dest_points, "[moveDroneViaSetOfPoints] Moving points");
     for (unsigned int i = 0; i < dest_points.size(); ++i)
     {
         cout << "[ DEBUG] [moveDroneViaSetOfPoints] Commands to execute: " << commands.size() << "\n";
@@ -2455,17 +2457,16 @@ ControlUINode::rotateClockwise(double step_angle)
     print1dVector(_last_drone_position, "[ DEBUG] Last drone position");
     print1dVector(_node_current_pos_of_drone, "[ DEBUG] Current drone position");
     cout << "[ DEBUG] targetPoints size: " << targetPoints.size() << "\n";
-    cout << "[ DEBUG] _last_drone_position size: " << _last_drone_position.size() << "\n";
-    designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]+step_angle);
-    /*if(targetPoints.size() == 0)
+    // designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]+step_angle);
+    if(targetPoints.size() == 0)
     {
         designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]+step_angle);
     }
     else
     {
         designPathToChangeYaw(_last_drone_position, _last_drone_position[3]+step_angle);
-    }*/
-    moveDroneViaSetOfPoints(_interm_path);
+    }
+    // moveDroneViaSetOfPoints(_interm_path);
     DEBUG_PRINT(1, "[rotateClockwise] Completed\n");
     return ;
 }
@@ -2480,16 +2481,16 @@ ControlUINode::rotateCounterClockwise(double step_angle)
     print1dVector(_node_current_pos_of_drone, "[ DEBUG] Current drone position");
     cout << "[ DEBUG] targetPoints size: " << targetPoints.size() << "\n";
     cout << "[ DEBUG] _last_drone_position size: " << _last_drone_position.size() << "\n";
-    designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]-step_angle);
-    /*if(targetPoints.size() == 0)
+    // designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]-step_angle);
+    if(targetPoints.size() == 0)
     {
         designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]-step_angle);
     }
     else
     {
         designPathToChangeYaw(_last_drone_position, _last_drone_position[3]-step_angle);
-    }*/
-    moveDroneViaSetOfPoints(_interm_path);
+    }
+    // moveDroneViaSetOfPoints(_interm_path);
     DEBUG_PRINT(1, "[rotateCounterClockwise] Completed\n");
     return ;
 }
@@ -3276,6 +3277,7 @@ ControlUINode::adjustYawToCurrentPlane()
     cout << "[ DEBUG] [adjustYawToCurrentPlane] Converting destination position wrt world quadcopter origin\n";
     // convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
     Point3f pOrigin;
+    cout << "[ DEBUG] Target Points Size: " << targetPoints.size() << "\n";
     if(targetPoints.size() == 0)
     {
         convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
@@ -3306,7 +3308,9 @@ ControlUINode::adjustYawToCurrentPlane()
     LOG_MSG << "[adjustYawToCurrentPlane] Angle to rotate: " << angle << "\n";
     PRINT_LOG_MESSAGE(2);
     // designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]+angle);
+    cout << "[ DEBUG] Applying motion_CS lock" << "\n";
     pthread_mutex_lock(&motion_CS);
+    cout << "[ DEBUG] Target Points Size: " << targetPoints.size() << "\n";
     if(targetPoints.size() == 0)
     {
         designPathToChangeYaw(_node_current_pos_of_drone, _node_current_pos_of_drone[3]+angle);
@@ -3315,6 +3319,7 @@ ControlUINode::adjustYawToCurrentPlane()
     {
         designPathToChangeYaw(_last_drone_position, _last_drone_position[3]+angle);
     }
+    makeTargetMotionPoints(_interm_path);
     moveDroneViaSetOfPoints(_interm_path);
     LOG_PRINT(1, "[adjustYawToCurrentPlane] Completed\n");
 }
@@ -3333,7 +3338,15 @@ ControlUINode::adjustTopBottomEdges()
     print1dVector(this_continuous_bounding_box_points, "[adjustTopBottomEdges] Sig CBB");
     getCurrentPositionOfDrone();
     print1dVector(_node_current_pos_of_drone, "[adjustTopBottomEdges] Current position of drone");
-    point_distance = getPointToPlaneDistance(this_plane_parameters, _node_current_pos_of_drone);
+    cout << "[ DEBUG] Target Points Size: " << targetPoints.size() << "\n";
+    if(targetPoints.size() == 0)
+    {
+        point_distance = getPointToPlaneDistance(this_plane_parameters, _node_current_pos_of_drone);
+    }
+    else
+    {
+        point_distance = getPointToPlaneDistance(this_plane_parameters, _last_drone_position);
+    }
     cout << "[ DEBUG] [adjustTopBottomEdges] Distance from the plane: " << point_distance << "\n";
     step_distance = fabs(_node_max_distance - point_distance);
     int move = (_node_max_distance >= point_distance) ? -1: 1;
@@ -3342,12 +3355,14 @@ ControlUINode::adjustTopBottomEdges()
     {
         cout << "[ DEBUG] [adjustTopBottomEdges] Moving backwards\n";
         designPathForDroneRelative(step_distance, MOVE_DIRECTIONS::BACKWARD);
+        makeTargetMotionPoints(_interm_path);
         moveDroneViaSetOfPoints(_interm_path);
     }
     else if(move == 1)
     {
         cout << "[ DEBUG] [adjustTopBottomEdges] Moving forwards\n";
         designPathForDroneRelative(step_distance, MOVE_DIRECTIONS::FORWARD);
+        makeTargetMotionPoints(_interm_path);
         moveDroneViaSetOfPoints(_interm_path);
     }
     getCurrentPositionOfDrone();
@@ -3355,27 +3370,52 @@ ControlUINode::adjustTopBottomEdges()
     if(!_fixed_height_set)
     {
         cout << "[ DEBUG] [adjustTopBottomEdges] Fixed height not set\n";
-        height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
-        cout << "[ DEBUG] [adjustTopBottomEdges] Height: " << height << "\n";
-        move = (_node_current_pos_of_drone[2] >= height) ? -1: 1;
-        step_distance = fabs(_node_current_pos_of_drone[2] - height);
+        // height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
+        cout << "[ DEBUG] Target Points Size: " << targetPoints.size() << "\n";
+        if(targetPoints.size() == 0)
+        {
+            height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
+            cout << "[ DEBUG] [adjustTopBottomEdges] Height: " << height << "\n";
+            move = (_node_current_pos_of_drone[2] >= height) ? -1: 1;
+            step_distance = fabs(_node_current_pos_of_drone[2] - height);
+        }
+        else
+        {
+            height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _last_drone_position);
+            cout << "[ DEBUG] [adjustTopBottomEdges] Height: " << height << "\n";
+            move = (_last_drone_position[2] >= height) ? -1: 1;
+            step_distance = fabs(_last_drone_position[2] - height);
+        }
     }
     else
     {
         cout << "[ DEBUG] [adjustTopBottomEdges] Fixed height set. Fixed Height: " << _fixed_height << "\n";
-        move = (_node_current_pos_of_drone[2] >= _fixed_height) ? -1: 1;
-        step_distance = fabs(_node_current_pos_of_drone[2] - _fixed_height);
+        // move = (_node_current_pos_of_drone[2] >= _fixed_height) ? -1: 1;
+        // step_distance = fabs(_node_current_pos_of_drone[2] - _fixed_height);
+        cout << "[ DEBUG] Target Points Size: " << targetPoints.size() << "\n";
+        if(targetPoints.size() == 0)
+        {
+           move = (_node_current_pos_of_drone[2] >= _fixed_height) ? -1: 1;
+           step_distance = fabs(_node_current_pos_of_drone[2] - _fixed_height);
+        }
+        else
+        {
+            move = (_node_current_pos_of_drone[2] >= _fixed_height) ? -1: 1;
+            step_distance = fabs(_last_drone_position[2] - _fixed_height);
+        }
     }
     if(move == -1)
     {
         cout << "[ DEBUG] [adjustTopBottomEdges] Moving down\n";
         designPathForDroneRelative(step_distance, MOVE_DIRECTIONS::DOWN);
+        makeTargetMotionPoints(_interm_path);
         moveDroneViaSetOfPoints(_interm_path);
     }
     else if(move == 1)
     {
         cout << "[ DEBUG] [adjustTopBottomEdges] Moving up\n";
         designPathForDroneRelative(step_distance, MOVE_DIRECTIONS::UP);
+        makeTargetMotionPoints(_interm_path);
         moveDroneViaSetOfPoints(_interm_path);
     }
     LOG_PRINT(1, "[adjustTopBottomEdges] Adjusting top and bottom done.\n");
@@ -3392,6 +3432,7 @@ ControlUINode::adjustLeftEdge()
     LOG_PRINT(1, "[adjustLeftEdge] Started\n");
     LOG_PRINT(2, "[adjustLeftEdge] Call Jlinkage\n");
     pthread_mutex_lock(&motion_CS);
+    printf("doJLinkage\n");
     doJLinkage();
     pthread_mutex_unlock(&motion_CS);
     bool planeLeftVisible;
@@ -3411,17 +3452,22 @@ ControlUINode::adjustLeftEdge()
         if(move == -1)
         {
             cout << "[ DEBUG] [adjustLeftEdge] Moving left\n";
+            cout << "[ DEBUG] Applying motion_CS lock" << "\n";
             pthread_mutex_lock(&motion_CS);
             designPathForDroneRelative(_move_heuristic, MOVE_DIRECTIONS::LEFT);
+            makeTargetMotionPoints(_interm_path);
             moveDroneViaSetOfPoints(_interm_path);
         }
         else if(move == 1)
         {
             cout << "[ DEBUG] [adjustLeftEdge] Moving right\n";
+            cout << "[ DEBUG] Applying motion_CS lock" << "\n";
             pthread_mutex_lock(&motion_CS);
             designPathForDroneRelative(_move_heuristic, MOVE_DIRECTIONS::RIGHT);
+            makeTargetMotionPoints(_interm_path);
             moveDroneViaSetOfPoints(_interm_path);
         }
+        cout << "[ DEBUG] Applying motion_CS lock" << "\n";
         pthread_mutex_lock(&motion_CS);
         doJLinkage();
         pthread_mutex_unlock(&motion_CS);
