@@ -583,12 +583,10 @@ ImageView::on_key_down(int key)
         /* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
         std::vector< RotateDirection > main_directions;
         /* Initiating the GUI (Runs in a thread) */
-        pthread_mutex_lock(&topview_CS);
         TopView *top = new TopView();
         top->startSystem();
         /* GUI has been closed here */
         LOG_PRINT(1, "[Key 'c'] Calling the GUI for drawing top view sketch of the surface\n");
-        pthread_mutex_lock(&topview_CS);
         while(!(top->getExitStatus()))
         {}
         /* Get the directions, angles and number of planes */
@@ -651,7 +649,6 @@ ImageView::on_key_down(int key)
             }
             LOG_MSG << "\n";
             int min_height_of_plane = 2.0;
-            
             float min_distance = getDistanceToSeePlane(min_height_of_plane);
             float max_distance = getDistanceToSeePlane(max_height_of_plane);
             LOG_MSG << "[Key 'c'] Min. Distance: " << min_distance << ", Max. Distance: " << max_distance << "\n";
@@ -667,12 +664,10 @@ ImageView::on_key_down(int key)
         /* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
         std::vector< RotateDirection > main_directions;
         /* Initiating the GUI (Runs in a thread) */
-        pthread_mutex_lock(&topview_CS);
         TopView *top = new TopView();
         top->startSystem();
         /* GUI has been closed here */
         LOG_PRINT(1, "[Key 'c'] Calling the GUI for drawing top view sketch of the surface\n");
-        pthread_mutex_lock(&topview_CS);
         while(!(top->getExitStatus()))
         {}
         /* Get the directions, angles and number of planes */
