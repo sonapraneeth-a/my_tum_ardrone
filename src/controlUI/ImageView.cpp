@@ -575,6 +575,90 @@ ImageView::on_key_down(int key)
         WriteInfoToFile(bounding_box_points, plane_parameters, plane_num_test, filename);
     }
     // Key c - Collect the bounding box points and plane parameters for all the planes
+    else if(key == 'x')
+    {
+        /* Launches GUI: Return approx. angles and orientations */
+        /* Angle with which quadcopter has to rotate to orient itself to the new plane */
+        std::vector< double > main_angles;
+        /* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
+        std::vector< RotateDirection > main_directions;
+        /* Initiating the GUI (Runs in a thread) */
+        pthread_mutex_lock(&topview_CS);
+        TopView *top = new TopView();
+        top->startSystem();
+        /* GUI has been closed here */
+        LOG_PRINT(1, "[Key 'c'] Calling the GUI for drawing top view sketch of the surface\n");
+        pthread_mutex_lock(&topview_CS);
+        while(!(top->getExitStatus()))
+        {}
+        /* Get the directions, angles and number of planes */
+        top->getDirections(main_directions);
+        top->getAngles(main_angles);
+        /* Printing the information to the terminal */
+        int number_of_planes = top->getNumberOfPlanes();
+        int type_of_surface = top->getTypeOfSurface();
+        int max_height_of_plane = top->getMaxHeightOfPlane();
+        int view_dir = top->getViewingDirection();
+        if(number_of_planes == 0)
+        {
+            cout << "[ ERROR] [Key 'c'] No diagram drawn\n";
+            cout << "[ ERROR] [Key 'c'] So, landing the quadcopter\n";
+            node->sendLand();
+            cout << "[ INFO] [Key 'c'] Quadcopter has landed.\n";
+        }
+        else
+        {
+            LOG_MSG << "[Key 'c'] Number of planes: " << number_of_planes << "\n";
+            LOG_MSG << "[Key 'c'] Max Height of the plane (as estimated by the user): " << max_height_of_plane << "\n";
+            if(type_of_surface == 0)
+            {
+                LOG_MSG << "[Key 'c'] Surface Drawn: " << "Open Surface" << "\n";
+                if(view_dir == 0)
+                {
+                    LOG_MSG << "[Key 'c'] Viewing the surface from front\n";
+                }
+                if(view_dir == 1)
+                {
+                    LOG_MSG << "[Key 'c'] Viewing the surface from back\n";
+                }
+            }
+            if(top->getTypeOfSurface() == 1)
+            {
+                LOG_MSG << "[Key 'c'] Surface Drawn: " << "Closed Surface" << "\n";
+                if(view_dir == 2)
+                {
+                    LOG_MSG << "[Key 'c'] Viewing the surface from outside the structure\n";
+                }
+                if(view_dir == 3)
+                {
+                    LOG_MSG << "[Key 'c'] Viewing the surface from inside the structure\n";
+                }
+            }
+            top->destroy();
+            LOG_MSG << "[Key 'c'] Angles: ";
+            for (unsigned int i = 0; i < main_angles.size(); ++i)
+            {
+                LOG_MSG << main_angles[i] << " ";
+            }
+            LOG_MSG << "\n";
+            LOG_MSG << "[Key 'c'] Directions: ";
+            for (unsigned int i = 0; i < main_directions.size(); ++i)
+            {
+                if(main_directions[i] == 0)
+                    LOG_MSG << "CLOCKWISE" << " ";
+                else if(main_directions[i] == 1)
+                    LOG_MSG << "ANTI-CLOCKWISE" << " ";
+            }
+            LOG_MSG << "\n";
+            int min_height_of_plane = 2.0;
+            
+            float min_distance = getDistanceToSeePlane(min_height_of_plane);
+            float max_distance = getDistanceToSeePlane(max_height_of_plane);
+            LOG_MSG << "[Key 'c'] Min. Distance: " << min_distance << ", Max. Distance: " << max_distance << "\n";
+            PRINT_LOG_MESSAGE(1);
+        }
+    }
+    // Key c - Collect the bounding box points and plane parameters for all the planes
     else if(key == 'c')
     {
         /* Launches GUI: Return approx. angles and orientations */
@@ -583,10 +667,12 @@ ImageView::on_key_down(int key)
         /* Direction in which quadcopter should rotate to orient its yaw with normal of new plane */
         std::vector< RotateDirection > main_directions;
         /* Initiating the GUI (Runs in a thread) */
+        pthread_mutex_lock(&topview_CS);
         TopView *top = new TopView();
         top->startSystem();
         /* GUI has been closed here */
         LOG_PRINT(1, "[Key 'c'] Calling the GUI for drawing top view sketch of the surface\n");
+        pthread_mutex_lock(&topview_CS);
         while(!(top->getExitStatus()))
         {}
         /* Get the directions, angles and number of planes */
@@ -658,7 +744,6 @@ ImageView::on_key_down(int key)
             node->setMainAngles(main_angles);
             node->setMainDirections(main_directions);
             node->alignQuadcopterToCurrentPlane();
-            
         }
     }
     // Key 0-9 - For testing (See ControlUNode.cpp for details)
