@@ -738,7 +738,8 @@ ImageView::on_key_down(int key)
             node->setValues(number_of_planes, min_height_of_plane, min_distance, max_height_of_plane, max_distance);
             node->setMainAngles(main_angles);
             node->setMainDirections(main_directions);
-            node->alignQuadcopterToCurrentPlane();
+            // node->alignQuadcopterToCurrentPlane();
+            align_drone->startSystem();
         }
     }
     // Key 0-9 - For testing (See ControlUNode.cpp for details)

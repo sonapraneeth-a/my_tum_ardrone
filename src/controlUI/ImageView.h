@@ -34,6 +34,7 @@
 #include "Headers.h"
 #include "makeBoundingRects.hpp"
 
+#include "AlignDrone.hpp"
 
 // CGAL specific
 /*#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -43,6 +44,7 @@
 #include <CGAL/convex_hull_3.h>*/
 
 class ControlUINode;
+class AlignDrone;
 struct grid;
 struct gridSquare;
 class TopView;
@@ -114,6 +116,8 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 
         //ControlUINode
         ControlUINode *node;
+        //
+        AlignDrone *align_drone;
         //
         int numPointsClicked;
         //
