@@ -28,8 +28,10 @@
 #include "ardrone_autonomy/RecordEnable.h"
 #include "ardrone_autonomy/Navdata.h"
 
+#include "AlignDrone.hpp"
 
 class ImageView;
+class AlignDrone;
 
 // Enum Constants for specifying moving directions - 8 possible direction
 enum MOVE_DIRECTIONS {LEFT, RIGHT, FORWARD, BACKWARD, UP, DOWN, CLOCK, COUNTERCLOCK};
@@ -585,6 +587,7 @@ class ControlUINode
     public:
 
         ImageView *image_gui;
+        AlignDrone *align_drone;
 
         /* Plane parameters for all planes obtained from jlinkage */
         vector< vector<float> > jlink_all_plane_parameters;

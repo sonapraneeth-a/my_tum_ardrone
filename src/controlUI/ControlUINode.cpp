@@ -49,8 +49,8 @@ pthread_mutex_t ControlUINode::motion_CS = PTHREAD_MUTEX_INITIALIZER;
 ControlUINode::ControlUINode()
 {
     /* Set Debug and Log level information. Uncomment if you want to turn off debug and log statements */
-    SET_DEBUG_LEVEL(2);
-    SET_LOG_LEVEL(2);
+    SET_DEBUG_LEVEL(3);
+    SET_LOG_LEVEL(3);
 
     LOG_PRINT(1, "[ ControlUINode] ControlUINode Constructor\n");
     /* Channels */
@@ -89,6 +89,7 @@ ControlUINode::ControlUINode()
     // Initiating image view class which displays the "drone_controlUI" window
     LOG_PRINT(3, "[ ControlUINode] Initiating ImageView object\n");
     image_gui = new ImageView(this);
+    align_drone = new AlignDrone(this);
 
     // RANSAC fit plane verbose - Not used anywhere in ransacFitPlane.cpp
     ransacVerbose = true;
@@ -2248,7 +2249,7 @@ ControlUINode::move(double distance, int i)
             to_move = true;
         }
         _node_dest_pos_of_drone[i] = start;
-        print1dVector(_node_dest_pos_of_drone, "[ DEBUG] [move] Dest position of drone (relative)");
+        print1dVector(_node_dest_pos_of_drone, "[move] Dest position of drone (relative)");
         // convertWRTQuadcopterOrigin(_node_current_pos_of_drone, _node_dest_pos_of_drone, _node_ac_dest_pos_of_drone);
         if(targetPoints.size() == 0)
         {
@@ -3139,8 +3140,9 @@ ControlUINode::testUtility(int test_no)
         _node_number_of_planes = 1;
         _node_min_distance = 3.0;
         _node_max_distance = 5.0;
-        doJLinkage();
-        alignQuadcopterToCurrentPlane();
+        // doJLinkage();
+        // alignQuadcopterToCurrentPlane();
+        align_drone->startSystem();
         cout << "[ DEBUG] [testUtility] Alignment done\n";
     }
     else
@@ -3544,7 +3546,15 @@ ControlUINode::captureTheCurrentPlane()
         top_mid.z = top_mid.z/(float)2.0;
         float distance = getDistanceToSeePlane((int)ceil(top_mid.z));
         _fixed_distance = distance;
-        float point_distance = getPointToPlaneDistance(this_plane_parameters, _node_current_pos_of_drone);
+        float point_distance;
+        if(targetPoints.size() == 0)
+        {
+            point_distance = getPointToPlaneDistance(this_plane_parameters, _node_current_pos_of_drone);
+        }
+        else
+        {
+            point_distance = getPointToPlaneDistance(this_plane_parameters, _last_drone_position);
+        }
         int move = (distance >= point_distance) ? -1: 1;
         float step_distance = fabs(distance - point_distance);
         if(move == -1)
@@ -3552,6 +3562,7 @@ ControlUINode::captureTheCurrentPlane()
             DEBUG_PRINT(1, "[captureTheCurrentPlane] Moving backwards\n");
             // moveBackward(step_distance);
             designPathForDroneRelative(step_distance, MOVE_DIRECTIONS::BACKWARD);
+            makeTargetMotionPoints(_interm_path);
             moveDroneViaSetOfPoints(_interm_path);
         }
         else if(move == 1)
@@ -3559,10 +3570,20 @@ ControlUINode::captureTheCurrentPlane()
             DEBUG_PRINT(3, "[captureTheCurrentPlane] Moving forwards\n");
             // moveForward(step_distance);
             designPathForDroneRelative(step_distance, MOVE_DIRECTIONS::FORWARD);
+            makeTargetMotionPoints(_interm_path);
             moveDroneViaSetOfPoints(_interm_path);
         }
         getCurrentPositionOfDrone();
-        float height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
+        float height;
+        if(targetPoints.size() == 0)
+        {
+            height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
+        }
+        else
+        {
+            height = getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _last_drone_position);
+        }
+        getHeightFromGround(this_plane_parameters, this_continuous_bounding_box_points, _node_current_pos_of_drone);
         _fixed_height = height;
         _fixed_height_set = true;
         move = (_node_current_pos_of_drone[2] >= height) ? -1: 1;
