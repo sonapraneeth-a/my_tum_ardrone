@@ -29,9 +29,11 @@
 #include "ardrone_autonomy/Navdata.h"
 
 #include "AlignDrone.hpp"
+#include "CapturePlane.hpp"
 
 class ImageView;
 class AlignDrone;
+class CapturePlane;
 
 // Enum Constants for specifying moving directions - 8 possible direction
 enum MOVE_DIRECTIONS {LEFT, RIGHT, FORWARD, BACKWARD, UP, DOWN, CLOCK, COUNTERCLOCK};
@@ -554,6 +556,15 @@ class ControlUINode
         std::chrono::high_resolution_clock::time_point _align_next_start, _align_next_end;
         std::chrono::high_resolution_clock::time_point _plane_start, _plane_end;
 
+        // Only for navigating the quadcopter
+        bool justNavigation;
+        int changeyawLockReleased;
+        bool traverseComplete;
+        bool linearTraversal;
+        unsigned int just_navigation_command_number;
+        unsigned int just_navigation_total_commands;
+        std::list<std_msgs::String> just_navigation_commands;
+
 
         // Only for navigating the quadcopter
         bool printDebugInfo;
@@ -581,6 +592,7 @@ class ControlUINode
         static pthread_mutex_t command_CS;
         static pthread_mutex_t navdata_CS;
         static pthread_mutex_t motion_CS;
+        static pthread_mutex_t changeyaw_CS;
 
 
 
@@ -588,6 +600,7 @@ class ControlUINode
 
         ImageView *image_gui;
         AlignDrone *align_drone;
+        CapturePlane *capture_plane;
 
         /* Plane parameters for all planes obtained from jlinkage */
         vector< vector<float> > jlink_all_plane_parameters;

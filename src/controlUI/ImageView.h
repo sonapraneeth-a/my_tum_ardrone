@@ -35,6 +35,7 @@
 #include "makeBoundingRects.hpp"
 
 #include "AlignDrone.hpp"
+#include "CapturePlane.hpp"
 
 // CGAL specific
 /*#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -44,7 +45,8 @@
 #include <CGAL/convex_hull_3.h>*/
 
 class ControlUINode;
-class AlignDrone;
+//class AlignDrone;
+/*class CapturePlane;*/
 struct grid;
 struct gridSquare;
 class TopView;
@@ -117,14 +119,15 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
         //ControlUINode
         ControlUINode *node;
         //
-        AlignDrone *align_drone;
         //
-        int numPointsClicked;
+        //CapturePlane *capture_plane;
+        //
+        // int numPointsClicked;
         //
         int numKeyPointsDetected;
 
         // 2d image points clicked
-        std::vector< std::vector<int> > pointsClicked;
+        // std::vector< std::vector<int> > pointsClicked;
         // the 3d keypoints of control node for nearest keypoints
         std::vector< std::vector<float> > keyPointsNearest;
         // corners of the convex hull
@@ -158,6 +161,10 @@ class ImageView : private CVD::Thread, private MouseKeyHandler
 
     public:
 
+        //
+        int numPointsClicked;
+        // 2d image points clicked
+        std::vector< std::vector<int> > pointsClicked;
         bool newImageAvailable; /*!< */
 
         /**

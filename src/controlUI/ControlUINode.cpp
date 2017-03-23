@@ -90,6 +90,7 @@ ControlUINode::ControlUINode()
     LOG_PRINT(3, "[ ControlUINode] Initiating ImageView object\n");
     image_gui = new ImageView(this);
     align_drone = new AlignDrone(this);
+    capture_plane = new CapturePlane(this);
 
     // RANSAC fit plane verbose - Not used anywhere in ransacFitPlane.cpp
     ransacVerbose = true;
@@ -2073,7 +2074,7 @@ ControlUINode::getMultiplePlanes3d (vector< vector<float> > &planeParameters,
                                     vector< vector<Point3f> > &sorted_3d_points,
                                     vector<float> &percentageOfEachPlane)
 {
-    LOG_PRINT(1, "[getMultiplePlanes3d] Started\n");
+    LOG_PRINT(1, "[getMultiplePlanes3d-1] Started\n");
     vector< Point3f > _in_points;
     _in_points.clear();
     // Add mutex lock to access 3D keypoints
@@ -2089,7 +2090,7 @@ ControlUINode::getMultiplePlanes3d (vector< vector<float> > &planeParameters,
     }
     // Add mutex lock to access 3D keypoints
     pthread_mutex_unlock(&keyPoint_CS);
-    DEBUG_PRINT(2, "[getMultiplePlanes3d] Captured all the 3d points\n");
+    DEBUG_PRINT(2, "[getMultiplePlanes3d-1] Captured all the 3d points\n");
     // See multiplePlanes.cpp
     vector< vector<Point3f> > in_points;
     vector< vector<float> > in_pp;
@@ -2098,7 +2099,7 @@ ControlUINode::getMultiplePlanes3d (vector< vector<float> > &planeParameters,
     // Jlinkage code for finding the multiple planes for set of 3D points obtained above
     findPercBoundEachPlane(_in_points, in_pp, in_cbb, in_points, in_p);
     getCurrentPositionOfDrone();
-    DEBUG_PRINT(1, "[getMultiplePlanes3d] Fixing plane orientation and CBB\n");
+    DEBUG_PRINT(1, "[getMultiplePlanes3d-1] Fixing plane orientation and CBB\n");
     // Re-arrange the planes by their centroids position from the positoin where drone has taken off
     orderPlanesFromQuadcopterPosition(_node_current_pos_of_drone, 
                                     in_points, in_pp, in_cbb, in_p,
@@ -2108,7 +2109,7 @@ ControlUINode::getMultiplePlanes3d (vector< vector<float> > &planeParameters,
     clear2dVector(in_pp);
     clear2dVector(in_cbb);
     in_p.clear();
-    DEBUG_PRINT(1, "[getMultiplePlanes3d] Completed\n");
+    DEBUG_PRINT(1, "[getMultiplePlanes3d-1] Completed\n");
     return ;
 }
 
@@ -3114,7 +3115,7 @@ ControlUINode::testUtility(int test_no)
     }
     else if(test_no == 8)
     {
-        vector< Point3f > _in_points;
+        /*vector< Point3f > _in_points;
         _in_points.clear();
         pthread_mutex_lock(&keyPoint_CS);
         for(unsigned int i = 0; i < _3d_points.size(); i++)
@@ -3132,7 +3133,8 @@ ControlUINode::testUtility(int test_no)
         cout << "[ INFO] [testUtility] fitPlane3D\n";
         fitPlane3D(_in_points, plane_2);
         print1dVector(plane_1, "[ INFO] [testUtility] 4 matrix");
-        print1dVector(plane_2, "[ INFO] [testUtility] 3 matrix");
+        print1dVector(plane_2, "[ INFO] [testUtility] 3 matrix");*/
+        capture_plane->startSystem();
     }
     else if(test_no == 9)
     {
@@ -3512,6 +3514,7 @@ ControlUINode::captureTheCurrentPlane()
     DEBUG_PRINT(2, "[captureTheCurrentPlane] Get multiple planes from the clicked points using JLinkage\n");
     // Calls JLinkage and finds all planes within the clicked region
     vector< vector<float> > test_plane_parameters;
+    cout << cc_points.size() << " " << points_clicked.size() << "\n";
     pthread_mutex_lock(&motion_CS);
     doJLinkage();
     pthread_mutex_unlock(&motion_CS);

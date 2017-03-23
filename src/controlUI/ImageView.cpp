@@ -54,6 +54,7 @@ ImageView::ImageView(ControlUINode *cnode)
     tum_ardrone_pub = nh_.advertise<std_msgs::String>(command_channel, 50);
 
     node = cnode;
+    //capture_plane = new CapturePlane(this);
 
     numPointsClicked = 0;
     numKeyPointsDetected = 0;
@@ -739,7 +740,7 @@ ImageView::on_key_down(int key)
             node->setMainAngles(main_angles);
             node->setMainDirections(main_directions);
             // node->alignQuadcopterToCurrentPlane();
-            align_drone->startSystem();
+            node->align_drone->startSystem();
         }
     }
     // Key 0-9 - For testing (See ControlUNode.cpp for details)
@@ -794,10 +795,19 @@ ImageView::on_key_down(int key)
             LOG_PRINT(2, "[on_key_down] Capturing the current plane\n");
             // Capture the plane enclosed by the 4 points clicked the user and pick the one which is the
             // last unseen
-            node->captureTheCurrentPlane();
+            // node->captureTheCurrentPlane();
+            node->capture_plane->startSystem();
             // Clear all Vectors
-            clearInputVectors();
-            numPointsClicked = 0;
+            // cout << "1\n";
+            // clearInputVectors();
+            // cout << "2\n";
+            // for(unsigned int i = 0; i < pointsClicked.size(); i++)
+            // {
+            //     DEBUG_MSG << "[" << pointsClicked[i][0] << ", " << pointsClicked[i][1] << "]\n";
+            // }
+            // DEBUG_MSG << "\n";
+            // PRINT_DEBUG_MESSAGE(3);
+            // numPointsClicked = 0;
         }
         else
         {
