@@ -285,6 +285,8 @@ set(CONTROLUI_SOURCE_FILES
     src/controlUI/GLWindow2.cc
     src/controlUI/GLWindowMenu.cc
     src/controlUI/ImageView.cpp
+    src/controlUI/AlignDrone.cpp
+    src/controlUI/CapturePlane.cpp
     ${MULTIPLEPLANEJLINKAGE_SOURCE_FILES}
     ${TOPVIEW_SOURCE_FILES})
 
@@ -295,6 +297,8 @@ set(CONTROLUI_HEADER_FILES
     src/controlUI/GLWindow2.h
     src/controlUI/GLWindowMenu.h
     src/controlUI/ImageView.h
+    src/controlUI/AlignDrone.hpp
+    src/controlUI/CapturePlane.hpp
     src/controlUI/Helper.h
     src/controlUI/VisionHelper.h
     src/controlUI/Headers.h
