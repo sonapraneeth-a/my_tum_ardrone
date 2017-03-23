@@ -26,8 +26,10 @@
 #include "Headers.h"
 
 #include "ControlUINode.h"
+#include "ImageView.h"
 
 class ControlUINode;
+class ImageView;
 /**
  * @brief @todo 
  * @details @todo
@@ -39,6 +41,7 @@ class AlignDrone : private CVD::Thread
 
         //ControlUINode
         ControlUINode *node;
+        ImageView *iv;
 
     public:
 
@@ -51,6 +54,7 @@ class AlignDrone : private CVD::Thread
          * @return
          */
         AlignDrone(ControlUINode* node);
+        AlignDrone(ImageView *iv);
 
         /**
          * @brief Destructor 

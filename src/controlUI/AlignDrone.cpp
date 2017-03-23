@@ -27,6 +27,11 @@ AlignDrone::AlignDrone(ControlUINode *cnode)
     node = cnode;
 }
 
+AlignDrone::AlignDrone(ImageView *ivnode)
+{
+    iv = ivnode;
+}
+
 AlignDrone::~AlignDrone()
 {
 
